@@ -1,83 +1,70 @@
-# Sâm Lốc Game Server
+# Sam Lốc Socket Engine (C++ / SQLite / CMake)
 
-A C++ implementation of the Sâm Lốc card game with SQLite database and network support.
+Dự án **Sam Lốc Socket Engine** là nền tảng backend cho trò chơi bài **Sâm Lốc** (và có thể mở rộng cho Mạt Chược).  
+Dự án được viết bằng **C++17**, sử dụng **SQLite** làm cơ sở dữ liệu cục bộ, và **CMake** để biên dịch độc lập trên mọi hệ điều hành.
 
-## Prerequisites
+## Yêu cầu môi trường
 
-- CMake (3.10 or higher)
-- C++ compiler with C++17 support
-- SQLite3 development libraries
-- Boost libraries
-- Docker (optional)
+### Cài đặt CMake
 
-## Project Structure
+1. Tải bản mới nhất tại trang chính thức:
+   [https://cmake.org/download/](https://cmake.org/download/)
 
-```
-samloc-socket-engine/
-├── server/
-│   ├── src/
-│   │   ├── db/
-│   │   ├── game/
-│   │   └── network/
-│   ├── migrations/
-│   ├── CMakeLists.txt
-│   └── Dockerfile
-├── data/
-└── docker-compose.yaml
-```
+2. Các bước cài đặt:
+   - Chạy file cài đặt `.msi`
+   - Tại bước "Installation Options", chọn *Add CMake to system PATH for all users*
 
-## Building and Running
+3. Kiểm tra cài đặt:
+   - Mở lại VS Code hoặc Terminal
+   - Chạy lệnh kiểm tra:
+   ```bash
+   cmake --version
+   ```
 
-### Using Docker (Recommended)
+## Hướng dẫn chạy project
 
-1. Build and start the container:
+### Build project bằng CMake
+
+1. Mở Terminal tại thư mục gốc (samloc-socket-engine/) và chạy:
+   ```bash
+   cmake -B build -S . -G "MinGW Makefiles"
+   cmake --build build
+   ```
+
+   Lệnh đầu tiên tạo cấu hình build trong thư mục build/,
+   lệnh thứ hai biên dịch toàn bộ mã nguồn.
+
+2. Nếu build thành công, sẽ xuất hiện file thực thi:
+   ```
+   build/samloc.exe
+   ```
+
+### Chạy chương trình
+
+Chạy lệnh sau trong terminal (từ thư mục gốc):
 ```bash
-docker-compose up --build
+./build/samloc.exe
 ```
 
-### Manual Build
+## Kiểm tra dữ liệu bằng DB Browser for SQLite
 
-1. Install dependencies:
-```bash
-# Ubuntu/Debian
-sudo apt-get update
-sudo apt-get install -y cmake libsqlite3-dev libboost-all-dev
+### Cài đặt DB Browser
 
-# Windows with vcpkg
-vcpkg install sqlite3:x64-windows boost:x64-windows
-```
+1. Tải bản mới nhất tại:
+   [https://sqlitebrowser.org](https://sqlitebrowser.org)
 
-2. Build the project:
-```bash
-cd server
-mkdir build && cd build
-cmake ..
-make
-```
+2. Chọn phiên bản tương ứng với Windows (64-bit)
 
-3. Run the server:
-```bash
-./samloc_server
-```
+3. Cài đặt như phần mềm bình thường
 
-## Database
+### Sử dụng DB Browser
 
-The project uses SQLite3 for data storage. The database file will be created at `data/samloc.db` when the server starts.
+1. Mở DB Browser for SQLite
 
-## Game Rules
+2. Nhấn "Open Database"
 
-Sâm Lốc is a Vietnamese card game played with a standard 52-card deck. The goal is to be the first player to get rid of all their cards.
+3. Chọn file samloc.db trong thư mục gốc project
 
-Basic Rules:
-1. Players are dealt 13 cards each
-2. Game starts with player holding 3♠
-3. Valid card combinations:
-   - Single card
-   - Pairs
-   - Three of a kind
-   - Straight (sequence of 3 or more cards)
-   - Straight pairs (two or more consecutive pairs)
+4. Vào tab "Browse Data"
 
-## License
-
-MIT License
+5. Chọn bảng cần xem (ví dụ: players, rooms, game_results...)
