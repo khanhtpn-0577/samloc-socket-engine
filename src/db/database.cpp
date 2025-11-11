@@ -2,6 +2,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
+#include <sqlite3.h>
 
 // ------------------------------------------------------
 // Constructor
@@ -94,4 +96,21 @@ bool Database::loadSampleDataFromFile(const std::string& sampleFile) {
         std::cerr << "❌ Failed to load sample data.\n";
         return false;
     }
+}
+
+bool Database::applyMigrations(const std::string& dirPath) {
+    namespace fs = std::filesystem;
+    for (const auto& entry : fs::directory_iterator(dirPath)) {
+        if (entry.path().extension() == ".sql") {
+            std::cout << "⚙️ Applying migration: " << entry.path().filename() << std::endl;
+            std::string sql = readFile(entry.path().string());
+            char* errMsg = nullptr;
+            if (sqlite3_exec(db, sql.c_str(), nullptr, nullptr, &errMsg) != SQLITE_OK) {
+                std::cerr << "❌ Migration failed: " << errMsg << std::endl;
+                sqlite3_free(errMsg);
+                return false;
+            }
+        }
+    }
+    return true;
 }
