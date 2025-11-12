@@ -17,6 +17,9 @@ public:
     // Load dữ liệu mẫu từ file sample_data.sql
     bool loadSampleDataFromFile(const std::string& sampleFile);
 
+    //migration
+    bool applyMigrations(const std::string& dirPath);
+
 private:
     sqlite3* db = nullptr;
     std::string readFile(const std::string& path);

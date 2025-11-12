@@ -23,6 +23,21 @@ target_link_libraries(samloc
         game
 )
 
+# =============================
+# Executable khởi tạo database (init_db)
+# =============================
+add_executable(init_db
+    src/init_db.cpp
+    third_party/sqlite3.c
+)
+
+target_include_directories(init_db PRIVATE third_party)
+
+target_link_libraries(init_db
+    PRIVATE
+        db
+)
+
 # --- Compiler warnings ---
 if (MSVC)
     target_compile_options(samloc PRIVATE /W4)
