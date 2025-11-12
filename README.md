@@ -37,7 +37,16 @@ Dự án được viết bằng **C++17**, sử dụng **SQLite** làm cơ sở 
 2. Nếu build thành công, sẽ xuất hiện file thực thi:
    ```
    build/samloc.exe
+   build/init_db.exe
    ```
+
+3. Khởi tạo hoặc cập nhật database:
+   ```bash
+   ./build/init_db.exe
+   ```
+
+   Lệnh này sẽ tạo file `samloc.db` trong thư mục gốc project hoặc cập nhật nó
+   nếu đã tồn tại theo các migration scripts.
 
 ### Chạy chương trình
 
@@ -68,3 +77,36 @@ Chạy lệnh sau trong terminal (từ thư mục gốc):
 4. Vào tab "Browse Data"
 
 5. Chọn bảng cần xem (ví dụ: players, rooms, game_results...)
+
+## Quản lý Database Migrations
+
+### Cấu trúc thư mục migrations
+
+Các migration scripts được lưu trữ trong thư mục `server/migrations/`:
+```
+server/migrations/
+├── 001_init_schema.sql
+├── 002_add_users_table.sql
+├── 003_add_game_sessions.sql
+└── ...
+```
+
+### Quy tắc Migration
+
+1. **Tạo migration mới**: Khi cần cập nhật database, tạo một file SQL mới với tên theo quy cách:
+   - Định dạng: `NNN_description.sql` (NNN là số thứ tự tăng dần)
+   - Ví dụ: `004_add_rankings_table.sql`
+
+2. **Nội dung migration**: Viết các lệnh SQL để:
+   - Tạo bảng mới (CREATE TABLE)
+   - Thêm cột mới (ALTER TABLE ADD COLUMN)
+   - Cập nhật cấu trúc cơ sở dữ liệu
+
+3. **Áp dụng migration**: Sau khi tạo file migration mới, chạy lại:
+   ```bash
+   ./build/init_db.exe
+   ```
+
+   Chương trình sẽ tự động phát hiện và thực thi các migration chưa được áp dụng.
+
+4. **Kiểm tra kết quả**: Mở DB Browser for SQLite để xác nhận các thay đổi đã được áp dụng thành công.

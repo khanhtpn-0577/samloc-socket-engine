@@ -150,3 +150,12 @@ CREATE TABLE IF NOT EXISTS cards (
     display_name  TEXT,
     order_value   INTEGER
 );
+
+-------------------------------------------------
+-- 12. Migrations (quản lý lịch sử cập nhật DB)
+-------------------------------------------------
+CREATE TABLE IF NOT EXISTS migrations (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT NOT NULL UNIQUE,           -- tên file migration
+    applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
