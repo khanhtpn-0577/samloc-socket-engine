@@ -1,0 +1,168 @@
+CƠ CHẾ HOẠT ĐỘNG CỦA GAME MẠT CHƯỢC – SÂM LỐC
+
+1. Cơ chế kết bạn
+Người chơi có thể kết bạn với nhau thông qua hai hình thức:
+Tìm kiếm theo tên
+
+
+Người chơi nhập tên người muốn kết bạn vào khung tìm kiếm.
+
+
+Gửi lời mời kết bạn trực tiếp từ kết quả tìm kiếm.
+
+
+Kết bạn trong phòng chơi
+
+
+Trong giao diện phòng, người chơi có thể nhấn nút “Gửi lời mời kết bạn” cho bất kỳ người chơi nào đang cùng phòng.
+
+
+Xử lý lời mời kết bạn:
+Người nhận có quyền đồng ý hoặc từ chối lời mời.
+
+
+Khi đồng ý, hai bên trở thành bạn bè và có thể dễ dàng mời nhau chơi ở những lần sau.
+2. Cơ chế tìm phòng
+2.1. Tham gia chơi với bạn bè
+Một người chơi tạo phòng mới.
+
+
+Hệ thống cung cấp link truy cập phòng.
+
+
+Người tạo phòng gửi link cho bạn.
+
+
+Bạn bè nhấn vào link để tham gia trực tiếp vào phòng.
+Không tính tiền
+
+
+
+2.2. Tham gia chơi với người lạ
+a. Cơ chế tham gia phòng
+Khi mở giao diện tìm phòng, người chơi sẽ thấy danh sách các phòng theo từng loại chơi/mức cược
+
+
+Mỗi phòng cho tối đa 4 người.
+
+
+Người chơi có thể vào phòng nếu phòng chưa đủ người và phòng đang không trong ván chơi
+
+
+Cơ chế tự mở/đóng phòng
+Hệ thống tự động điều chỉnh số lượng phòng sao cho:
+
+
+Mỗi loại phòng luôn có tối thiểu 5 phòng trống.
+
+
+Mỗi loại có tối đa 20 phòng.
+
+
+b. Cơ chế bắt đầu ván chơi
+
+
+Mỗi ván chơi kết thúc sẽ có 1 phút rưỡi thời gian chờ để thay đổi người chơi
+Nếu từ 2 người trở lên cùng ở trong phòng, thì bắt đầu count down 30s, hết thời gian count down, ván mới tự bắt đầu
+
+
+
+
+
+
+
+
+
+
+3. Cơ chế chat trong ván chơi
+Người chơi trong cùng một phòng hoặc cùng một ván mạt chược có thể trò chuyện trực tiếp. 
+Chat với bạn 
+
+
+
+
+3. Luật chơi 
+Giống luật chơi sâm lốc
+Mỗi lượt chờ tối đa 13s, hết thời gian tự động chuyển lượt
+4. Cơ chế thưởng phạt loại phòng đặt cược
+
+4.1. Mức cược
+Có 4 loại phòng tương ứng 4 mức cược:
+100k
+
+
+200k
+
+
+500k
+
+
+1000k
+
+
+Điều kiện vào phòng:
+Người chơi phải có tối thiểu:
+ a (mức cược phòng) + 50k
+ → Ví dụ: phòng 200k → cần ít nhất 250k.
+
+
+
+
+
+
+
+4.2. Cơ chế phạt
+Trường hợp vi phạm / kết quả
+Phạt
+Về bét
+-a
+Về ba
+-0.75a
+Về nhì
+0
+Thối heo
+-5k / 1 heo (tối đa 3 heo)
+Bị chặt heo
+-10k / 1 heo (tối đa 3 heo)
+Mất kết nối / thoát phòng giữa chừng
+Về bét → -a
+Báo sâm nhưng bị chặn
+Về bét → -a
+
+
+4.3. Cơ chế thưởng
+Trường hợp
+Thưởng
+Về nhất
++a
+Chặt heo
++10k / 1 heo (tối đa 3 heo)
+Báo sâm thành công
++2a
+
+4.4. Cơ chế báo sâm
+Người chơi được phép báo sâm nếu thỏa mãn một trong hai điều kiện:
+Có tứ heo
+
+
+Có thể đánh một mạch từ đầu tới cuối mà không ai chặn được
+Những người thua -0.75a
+
+
+
+
+
+
+5. Cơ chế thưởng phạt loại phòng đếm lá
+Cơ chế thu phí
+Mỗi người vào phòng phải đóng 20k cho nhà cái/app.
+
+
+5.1. Cơ chế phạt
+Người về sau phải trả tiền theo số cây bài còn lại của đối thủ:
+ Số cây bài còn lại × 5k
+
+
+5.2. Cơ chế thưởng
+Người về nhất nhận được:
+ Tổng số cây bài còn lại của tất cả đối thủ × 5k
