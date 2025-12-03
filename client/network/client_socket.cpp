@@ -1,10 +1,23 @@
 #include "client_socket.h"
 #include <iostream>
 #include <cstring>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <unistd.h>
+#include <vector>
+#ifdef _WIN32
+    // --- Dành cho Windows ---
+    #include <winsock2.h>
+    #include <ws2tcpip.h>
+    #include <io.h>      // Thay thế cho unistd.h trên Windows
+    
+    // Định nghĩa lại một số hàm/macro để giống Linux
+    #define close closesocket
+    #pragma comment(lib, "ws2_32.lib") // Tự động link thư viện socket trên Windows
+#else
+    // --- Dành cho Linux / WSL ---
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
+    #include <unistd.h> // Chứa hàm close()
+#endif
 
 #define CLOSE_SOCKET close
 #define INVALID_SOCKET -1
@@ -82,7 +95,7 @@ bool ClientSocket::send(const std::string& data) {
     size_t dataSize = data.size();
     
     while (totalSent < dataSize) {
-        int sent = ::send(socketFd, data.c_str() + totalSent, dataSize - totalSent, 0);
+        int sent = ::send(socketFd, data.c_str() + totalSent, dataSize - totalSent, 0); //dataSize - totalSent: so byte con lai de gui
         
         if (sent < 0) {
             std::cerr << "Failed to send data\n";
@@ -109,10 +122,9 @@ std::string ClientSocket::receive(size_t bufferSize) {
         return "";
     }
     
-    char buffer[bufferSize];
-    std::memset(buffer, 0, bufferSize);
+    std::vector<char> buffer(bufferSize);
     
-    int received = recv(socketFd, buffer, bufferSize - 1, 0);
+    int received = recv(socketFd, buffer.data(), bufferSize - 1, 0); //received = so byte nhan duoc; bufferSize - 1: so byte toi da co the nhan de con cho dau '\0'
     
     if (received < 0) {
         std::cerr << "Failed to receive data\n";
@@ -126,7 +138,7 @@ std::string ClientSocket::receive(size_t bufferSize) {
         return "";
     }
     
-    return std::string(buffer, received);
+    return std::string(buffer.data(), received);
 }
 
 // Send message (serialized)
@@ -140,7 +152,7 @@ Message ClientSocket::receiveMessage() {
     // First, receive header (50 bytes)
     std::string headerData;
     while (headerData.size() < sizeof(MessageHeader)) {
-        std::string chunk = receive(sizeof(MessageHeader) - headerData.size());
+        std::string chunk = receive(sizeof(MessageHeader) - headerData.size()); //nhan so byte con thieu de du 50 byte
         if (chunk.empty()) {
             return Message();  // Connection error
         }
@@ -149,7 +161,7 @@ Message ClientSocket::receiveMessage() {
     
     // Parse header to get payload length
     MessageHeader header;
-    std::memcpy(&header, headerData.data(), sizeof(MessageHeader));
+    std::memcpy(&header, headerData.data(), sizeof(MessageHeader)); //copy 50 byte tu headerData vao header, gan cac truong tuong ung trong header
     
     // Receive payload
     std::string payloadData;

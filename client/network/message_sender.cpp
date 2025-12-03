@@ -3,7 +3,11 @@
 #include <chrono>
 #include <cstring>
 #include <sstream>
-
+#ifdef _WIN32
+    #include <winsock2.h> // Dành cho Windows (để VS Code không báo lỗi)
+#else
+    #include <arpa/inet.h> // Dành cho Linux/WSL
+#endif
 // Constructor
 MessageSender::MessageSender(ClientSocket& socket, uint32_t userId, const std::string& token)
     : socket(socket), userId(userId), token(token) {

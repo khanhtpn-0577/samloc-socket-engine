@@ -29,6 +29,7 @@ struct MessageHeader {
     
     // Total: 50 bytes
     
+    //constructor
     MessageHeader() : messageType(0), senderId(0), timestamp(0), payloadLength(0) {
         std::memset(token, 0, 32);
     }
@@ -40,7 +41,7 @@ struct Message {
     MessageHeader header;
     std::string payload;  // Variable length data
     
-    Message() = default;
+    Message() = default; //constructor mac dinh
     
     // Serialize message to bytes
     std::string serialize() const {
@@ -61,7 +62,7 @@ struct Message {
         Message msg;
         
         if (data.size() < sizeof(MessageHeader)) {
-            return msg;  // Invalid
+            return msg;  // neu du lieu < do dai header --> invalid
         }
         
         // Extract header

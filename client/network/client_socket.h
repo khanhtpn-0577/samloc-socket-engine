@@ -6,8 +6,8 @@
 
 class ClientSocket {
 public:
-    ClientSocket(const std::string& serverIp, int port);
-    ~ClientSocket();
+    ClientSocket(const std::string& serverIp, int port); // constructor
+    ~ClientSocket(); // destructor
     
     // Connect to server
     bool connect();
@@ -35,8 +35,8 @@ public:
 
 private:
     std::string serverIp;
-    int port;
-    int socketFd;
+    int port; // port cua server
+    int socketFd; //File descriptor của socket (giá trị int)
     bool connected;
     
     // Helper: Create socket
