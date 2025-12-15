@@ -1,38 +1,55 @@
-# --- Định nghĩa các file nguồn và header của Client ---
+cmake_minimum_required(VERSION 3.10)
+project(samloc_client)
+
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# =========================
+# Client source files
+# =========================
 set(CLIENT_SOURCES
     main.cpp
-    network/client_socket.cpp
-    network/message_sender.cpp
-    handlers/chat_handler.cpp
+
+    net/client_socket.cpp
+    net/chat/message_sender.cpp
+
+    logic/chat/chat_logic.cpp
+    handlers/chat/chat_handler.cpp
 )
 
 set(CLIENT_HEADERS
-    network/client_socket.h
-    network/message_sender.h
-    network/protocol.h
-    handlers/chat_handler.h
+    net/client_socket.h
+    net/protocol.h
+    net/chat/message_sender.h
+
+    logic/chat/chat_logic.h
+    handlers/chat/chat_handler.h
 )
 
-# --- Tạo executable cho Client ---
+# =========================
+# Build executable
+# =========================
 add_executable(samloc_client
     ${CLIENT_SOURCES}
     ${CLIENT_HEADERS}
 )
 
-# --- Cấu hình Include Directories ---
-# Giúp compiler tìm thấy các file header khi include
+# =========================
+# Include directories
+# =========================
 target_include_directories(samloc_client PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# --- Link thư viện ---
-# Vì bạn dùng std::mutex trong message_sender.h nên cần link thư viện Threads
+# =========================
+# Threads (Linux / Windows)
+# =========================
 find_package(Threads REQUIRED)
-target_link_libraries(samloc_client PRIVATE
-    Threads::Threads
-)
+target_link_libraries(samloc_client PRIVATE Threads::Threads)
 
-# --- Cấu hình Warnings (kế thừa từ root hoặc set riêng) ---
+# =========================
+# Compiler warnings
+# =========================
 if (MSVC)
     target_compile_options(samloc_client PRIVATE /W4)
 else()

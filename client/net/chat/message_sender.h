@@ -4,8 +4,8 @@
 #include <cstdint>
 #include <queue>
 #include <mutex>
-#include "protocol.h"
-#include "client_socket.h"
+#include "../protocol.h"
+#include "../client_socket.h"
 
 class MessageSender {
 public:

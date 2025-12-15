@@ -1,6 +1,6 @@
 #include <iostream>
 #include <string>
-#include "network/client_socket.h"
+#include "net/client_socket.h"
 
 int main() {
     std::cout << "=== Samloc Client - Simple Socket Test ===" << std::endl;
