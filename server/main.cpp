@@ -1,46 +1,44 @@
-#include "db/database.h"
-#include "network/server_socket.h"
-#include "network/connection_handler.h"
 #include <iostream>
-#include <thread>
-#include <unistd.h>
+#include <csignal>
+
+#include "net/server_socket.h"
+#include "handler/connection_handler.h"
 
 int main() {
-    std::cout << "Sam Loc Engine – Server Initialization\n";
+    constexpr int SERVER_PORT = 5000;
 
-    // Kết nối database
-    Database db("samloc.db");
+    std::cout << "=== Samloc Server ===" << std::endl;
 
-    // Khởi tạo server socket
-    int port = 5000;
-    ServerSocket server(port);
+    // 1. Create server socket
+    ServerSocket server(SERVER_PORT);
 
+    // 2. Start listening
     if (!server.listen()) {
-        std::cerr << "Failed to start server on port " << port << "\n";
+        std::cerr << "Failed to start server on port "
+                  << SERVER_PORT << std::endl;
         return 1;
     }
 
-    std::cout << " Server started on port " << port << "\n";
-    std::cout << " Listening for client connections...\n";
+    std::cout << "Server started successfully." << std::endl;
 
-    //  Lặp chấp nhận kết nối từ client
+    // 3. Accept loop
     while (true) {
-        int clientSocket = server.accept(); //lang nghe va tao socket moi lam viec voi client
-        
-        if (clientSocket != -1) {
-            std::cout << "Client connected with fd=" << clientSocket << "\n";
-            
-            // Xử lý client trong thread riêng
-            std::thread clientThread([clientSocket]() {
-                ConnectionHandler handler(clientSocket);
-                handler.handle();
-            });
-            
-            clientThread.detach();
-        } else {
-            std::cerr << " Failed to accept client connection\n";
-            sleep(1);  // Tránh spin loop
+        int clientFd = server.accept();
+
+        if (clientFd < 0) {
+            std::cerr << "Accept failed, continue..." << std::endl;
+            continue;
         }
+
+        // 4. Handle one client (single-thread mode)
+        ConnectionHandler handler(clientFd);
+        handler.handle();
+
+        // NOTE:
+        // Hiện tại server xử lý tuần tự (blocking).
+        // Khi scale:
+        //  - thread per client
+        //  - hoặc epoll / select
     }
 
     return 0;
