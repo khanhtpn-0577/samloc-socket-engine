@@ -15,7 +15,8 @@ enum class MessageType : uint16_t {
     DECLARE_SAM = 0x0022,
     SPIN_WHEEL = 0x0030,
     LOGIN = 0x0100,
-    LOGOUT = 0x0101
+    LOGOUT = 0x0101,
+    CHAT_DIRECT_ACK = 0x8001,
 };
 
 // Message Header Structure

@@ -1,28 +1,48 @@
-add_subdirectory(db)
-add_subdirectory(game)
-add_subdirectory(network)
+cmake_minimum_required(VERSION 3.10)
+project(samloc_server)
 
-# Main executable
-add_executable(samloc
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# --- Định nghĩa các file nguồn và header của Server ---
+set(SERVER_SOURCES
     main.cpp
-    ../third_party/sqlite3.c
+
+    net/server_socket.cpp
+    handler/connection_handler.cpp
+    logic/chat/chat_logic.cpp
 )
 
-# Link libraries
-target_link_libraries(samloc
-    PRIVATE
-        db
-        game
-        network
-        pthread
+set(SERVER_HEADERS
+    net/server_socket.h
+    net/protocol.h
+
+    handler/connection_handler.h
+    logic/chat/chat_logic.h
 )
 
-# Include directories
-target_include_directories(samloc
-    PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/../third_party
+# --- Tạo executable cho Server ---
+add_executable(samloc_server
+    ${SERVER_SOURCES}
+    ${SERVER_HEADERS}
 )
 
-# Include third_party for all subdirectories
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party)
+# --- Cấu hình Include Directories ---
+# Giúp compiler tìm thấy các file header khi include
+target_include_directories(samloc_server PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
+# --- Link thư viện ---
+# Chuẩn bị sẵn cho thread per client
+find_package(Threads REQUIRED)
+target_link_libraries(samloc_server PRIVATE
+    Threads::Threads
+)
+
+# --- Cấu hình Warnings ---
+if (MSVC)
+    target_compile_options(samloc_server PRIVATE /W4)
+else()
+    target_compile_options(samloc_server PRIVATE -Wall -Wextra)
+endif()
