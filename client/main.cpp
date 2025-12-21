@@ -5,6 +5,7 @@
 #include "net/chat/message_sender.h"
 #include "logic/chat/chat_logic.h"
 #include "net/protocol.h"
+#include "handlers/chat/chat_handler.h"
 
 int main() {
     std::cout << "=== Samloc Client - Direct Chat Test ===\n\n";
@@ -14,7 +15,7 @@ int main() {
     int serverPort = 5000;
 
     // ===== User info (test cứng) =====
-    uint32_t userId = 1001;          // senderId
+    uint32_t userId = 1002;
     std::string token = "test_token";
 
     // ===== Create socket =====
@@ -30,9 +31,15 @@ int main() {
 
     std::cout << "Connected successfully!\n\n";
 
-    // ===== Create sender & logic =====
+    // ===== Create core components =====
     MessageSender messageSender(socket, userId, token);
     ChatLogic chatLogic(messageSender);
+
+    ClientSession session;
+    ChatHandler chatHandler(chatLogic, session);
+
+    // ===== Enter private chat =====
+    session.setState(ClientState::IN_PRIVATE_CHAT);
 
     uint32_t receiverId;
     std::cout << "Enter receiverId: ";
@@ -50,25 +57,21 @@ int main() {
             break;
         }
 
-        // ===== Send direct chat =====
-        if (!chatLogic.sendDirectMessage(receiverId, message)) {
-            std::cout << "Failed to send message\n";
-            continue;
-        }
+        // ===== GUI → Handler =====
+        chatHandler.onSendPrivateChat(receiverId, message);
 
-        std::cout << "Message sent, waiting for ACK...\n";
+        // ===== Blocking receive (demo đơn giản) =====
+        Message serverMsg = socket.receiveMessage();
 
-        // ===== Receive ACK =====
-        Message ackMsg = socket.receiveMessage();
-
-        if (ackMsg.header.messageType ==
+        if (serverMsg.header.messageType ==
             static_cast<uint16_t>(MessageType::CHAT_DIRECT_ACK)) {
 
+            chatHandler.onServerACK(serverMsg);
             std::cout << "[SERVER ACK] "
-                      << ackMsg.payload << std::endl;
+                      << serverMsg.payload << "\n";
         } else {
-            std::cout << "Received unexpected message type: "
-                      << ackMsg.header.messageType << std::endl;
+            // sau này có thể là deliver message
+            chatHandler.onServerDeliverMessage(serverMsg);
         }
     }
 

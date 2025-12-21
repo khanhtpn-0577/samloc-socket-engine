@@ -2,7 +2,7 @@
 #include <csignal>
 
 #include "net/server_socket.h"
-#include "handler/connection_handler.h"
+#include "handler/connection/connection_handler.h"
 
 int main() {
     constexpr int SERVER_PORT = 5000;

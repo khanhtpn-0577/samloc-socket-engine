@@ -2,6 +2,7 @@
 
 #include <string>
 #include <cstdint>
+#include "../../net/protocol.h"
 
 class ChatLogic;
 
@@ -10,6 +11,7 @@ public:
     explicit ConnectionHandler(int clientFd);
 
     void handle();
+    bool sendMessage(const Message& msg);
 
 private:
     bool recvAll(void* buffer, size_t size);

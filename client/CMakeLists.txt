@@ -15,6 +15,9 @@ set(CLIENT_SOURCES
 
     logic/chat/chat_logic.cpp
     handlers/chat/chat_handler.cpp
+    handlers/connection/client_connection_handler.cpp
+    handlers/session/client_session.cpp
+
 )
 
 set(CLIENT_HEADERS
@@ -24,6 +27,8 @@ set(CLIENT_HEADERS
 
     logic/chat/chat_logic.h
     handlers/chat/chat_handler.h
+    handlers/connection/client_connection_handler.h
+    handlers/session/client_session.h
 )
 
 # =========================
