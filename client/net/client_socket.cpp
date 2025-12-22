@@ -36,7 +36,7 @@ ClientSocket::~ClientSocket() {
 bool ClientSocket::createSocket() {
     socketFd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (socketFd == INVALID_SOCKET) {
-        std::cerr << "Failed to create socket\n";
+        std::cerr << "[client_socket]Failed to create socket\n";
         return false;
     }
     
@@ -57,13 +57,13 @@ bool ClientSocket::connect() {
     
     // Convert IP address
     if (inet_pton(AF_INET, serverIp.c_str(), &serverAddr.sin_addr) <= 0) {
-        std::cerr << "Invalid server IP address: " << serverIp << "\n";
+        std::cerr << "[client_socket]Invalid server IP address: " << serverIp << "\n";
         return false;
     }
     
     // Connect to server
     if (::connect(socketFd, (struct sockaddr*)&serverAddr, sizeof(serverAddr)) < 0) {
-        std::cerr << "Connection to server failed: " << serverIp << ":" << port << "\n";
+        std::cerr << "[client_socket]Connection to server failed: " << serverIp << ":" << port << "\n";
         CLOSE_SOCKET(socketFd);
         socketFd = INVALID_SOCKET;
         return false;
@@ -81,13 +81,13 @@ void ClientSocket::disconnect() {
         socketFd = INVALID_SOCKET;
     }
     connected = false;
-    std::cout << "Disconnected from server\n";
+    std::cout << "[client_socket]Disconnected from server\n";
 }
 
 // Send raw data
 bool ClientSocket::send(const std::string& data) {
     if (!connected || socketFd == INVALID_SOCKET) {
-        std::cerr << "Not connected to server\n";
+        std::cerr << "[client_socket]Not connected to server\n";
         return false;
     }
     
@@ -98,13 +98,13 @@ bool ClientSocket::send(const std::string& data) {
         int sent = ::send(socketFd, data.c_str() + totalSent, dataSize - totalSent, 0); //dataSize - totalSent: so byte con lai de gui
         
         if (sent < 0) {
-            std::cerr << "Failed to send data\n";
+            std::cerr << "[client_socket]Failed to send data\n";
             disconnect();
             return false;
         }
         
         if (sent == 0) {
-            std::cerr << "Server closed connection\n";
+            std::cerr << "[client_socket]sent = 0: Server closed connection\n";
             disconnect();
             return false;
         }
@@ -116,30 +116,43 @@ bool ClientSocket::send(const std::string& data) {
 }
 
 // Receive data
-std::string ClientSocket::receive(size_t bufferSize) {
-    if (!connected || socketFd == INVALID_SOCKET) {
-        std::cerr << "Not connected to server\n";
-        return "";
-    }
-    
-    std::vector<char> buffer(bufferSize);
-    
-    int received = recv(socketFd, buffer.data(), bufferSize - 1, 0); //received = so byte nhan duoc; bufferSize - 1: so byte toi da co the nhan de con cho dau '\0'
-    
-    if (received < 0) {
-        std::cerr << "Failed to receive data\n";
+bool ClientSocket::receive(void* buffer, size_t size) {
+    char* buf = static_cast<char*>(buffer);
+    size_t received = 0;
+
+    while (received < size) {
+        ssize_t r = ::recv(socketFd, buf + received, size - received, 0);
+
+        if (r > 0) {
+            received += static_cast<size_t>(r);
+            continue;
+        }
+
+        if (r == 0) {
+            // peer closed connection
+            std::cerr << "[client_socket] recv EOF (server closed)\n";
+            disconnect();
+            return false;
+        }
+
+        // r < 0
+        if (errno == EINTR) {
+            continue; // retry
+        }
+
+        if (errno == EAGAIN || errno == EWOULDBLOCK) {
+            continue; // retry (blocking socket hiếm khi vào đây)
+        }
+
+        std::cerr << "[client_socket] recv error errno="
+                  << errno << " (" << std::strerror(errno) << ")\n";
         disconnect();
-        return "";
+        return false;
     }
-    
-    if (received == 0) {
-        std::cerr << "Server closed connection\n";
-        disconnect();
-        return "";
-    }
-    
-    return std::string(buffer.data(), received);
+
+    return true;
 }
+
 
 // Send message (serialized)
 bool ClientSocket::sendMessage(const Message& message) {
@@ -149,39 +162,31 @@ bool ClientSocket::sendMessage(const Message& message) {
 
 // Receive message
 Message ClientSocket::receiveMessage() {
-    // First, receive header (50 bytes)
-    std::string headerData;
-    while (headerData.size() < sizeof(MessageHeader)) {
-        std::string chunk = receive(sizeof(MessageHeader) - headerData.size()); //nhan so byte con thieu de du 50 byte
-        if (chunk.empty()) {
-            return Message();  // Connection error
-        }
-        headerData += chunk;
-    }
-    
-    // Parse header to get payload length
     MessageHeader header;
-    std::memcpy(&header, headerData.data(), sizeof(MessageHeader)); //copy 50 byte tu headerData vao header, gan cac truong tuong ung trong header
-    
-    // Receive payload
-    std::string payloadData;
-    uint32_t payloadLength = header.payloadLength;
-    
-    while (payloadData.size() < payloadLength) {
-        size_t remainingBytes = payloadLength - payloadData.size();
-        std::string chunk = receive(remainingBytes);
-        if (chunk.empty() && payloadLength > 0) {
-            return Message();  // Connection error
-        }
-        payloadData += chunk;
+
+    // ===== Read header exactly =====
+    if (!receive(&header, sizeof(MessageHeader))) {
+        return Message(); // connection closed or error
     }
-    
-    // Combine header and payload
-    std::string completeData = headerData + payloadData;
-    
-    // Deserialize
-    return Message::deserialize(completeData);
+
+    // ===== Read payload exactly =====
+    std::string payload;
+    if (header.payloadLength > 0) {
+        payload.resize(header.payloadLength);
+
+        if (!receive(payload.data(), header.payloadLength)) {
+            return Message(); // connection closed or error
+        }
+    }
+
+    // ===== Build message =====
+    Message msg;
+    msg.header = header;
+    msg.payload = payload;
+
+    return msg;
 }
+
 
 // Check if connected
 bool ClientSocket::isConnected() const {

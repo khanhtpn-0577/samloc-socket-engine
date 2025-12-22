@@ -10,6 +10,10 @@ ClientConnectionHandler::ClientConnectionHandler(
 
 void ClientConnectionHandler::handleMessage(const Message& message){
     MessageType type = static_cast<MessageType>(message.header.messageType);
+    std::cout << "[ClientConnectionHandler] Received message. "
+              << "type=0x"
+              << std::hex << message.header.messageType
+              << std::dec << "\n";
 
     switch (type) {
         case MessageType::CHAT_DIRECT_ACK:

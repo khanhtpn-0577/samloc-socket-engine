@@ -1,22 +1,27 @@
 #pragma once
 
-#include <string>
-#include <cstdint>
 #include "../../net/protocol.h"
-
-class ChatLogic;
+#include <string>
 
 class ConnectionHandler {
 public:
     explicit ConnectionHandler(int clientFd);
+    ~ConnectionHandler() = default;
 
-    void handle();
+    // gọi khi poll() báo fd readable
+    bool onReadable();
+
+    void closeConnection();
+    int getFd() const;
+
     bool sendMessage(const Message& msg);
 
 private:
+    bool sendAll(const char* data, size_t size);
     bool recvAll(void* buffer, size_t size);
-    bool sendAll(const void* buffer, size_t size);
+    
 
 private:
     int clientFd;
+    uint32_t boundUserId;
 };

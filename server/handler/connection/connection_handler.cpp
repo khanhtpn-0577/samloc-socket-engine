@@ -1,22 +1,19 @@
 #include "connection_handler.h"
-#include "../../net/protocol.h"
 
 #include "../chat/chat_handler.h"
 #include "../../logic/chat/chat_logic.h"
 #include "../session/session_manager.h"
 
+#include <sys/socket.h>
 #include <unistd.h>
-#include <cstring>
-#include <iostream>
-#include <sys/socket.h>   // recv, send
-#include <unistd.h>       // close
-#include <arpa/inet.h>    // ntohl, htonl
-#include <cstring>
 #include <iostream>
 
+ConnectionHandler::ConnectionHandler(int fd)
+    : clientFd(fd), boundUserId(0) {}
 
-ConnectionHandler::ConnectionHandler(int clientFd)
-    : clientFd(clientFd) {}
+int ConnectionHandler::getFd() const {
+    return clientFd;
+}
 
 bool ConnectionHandler::recvAll(void* buffer, size_t size) {
     size_t received = 0;
@@ -24,23 +21,41 @@ bool ConnectionHandler::recvAll(void* buffer, size_t size) {
 
     while (received < size) {
         ssize_t r = recv(clientFd, buf + received, size - received, 0);
-        if (r <= 0) return false;
+        if (r == 0) {
+            std::cout << "[Server] recv EOF (peer closed) fd=" << clientFd << "\n";
+            return false;
+        }
+        if (r < 0) {
+            std::cout << "[Server] recv error fd=" << clientFd
+                    << " errno=" << errno
+                    << " (" << std::strerror(errno) << ")\n";
+            return false;
+        }
         received += r;
     }
     return true;
 }
 
-bool ConnectionHandler::sendAll(const void* buffer, size_t size) {
+bool ConnectionHandler::sendAll(const char* data, size_t size) {
     size_t sent = 0;
-    const char* buf = static_cast<const char*>(buffer);
-
     while (sent < size) {
-        ssize_t s = send(clientFd, buf + sent, size - sent, 0);
-        if (s <= 0) return false;
-        sent += s;
+        ssize_t s = send(clientFd, data + sent, size - sent, 0);
+        if (s < 0) {
+            if (errno == EINTR) continue;
+            std::cerr << "[Server] send error fd=" << clientFd
+                      << " errno=" << errno
+                      << " (" << strerror(errno) << ")\n";
+            return false;
+        }
+        if (s == 0) {
+            std::cerr << "[Server] send returned 0 fd=" << clientFd << "\n";
+            return false;
+        }
+        sent += static_cast<size_t>(s);
     }
     return true;
 }
+
 
 bool ConnectionHandler::sendMessage(const Message& msg) {
     std::string bytes = msg.serialize();
@@ -48,62 +63,81 @@ bool ConnectionHandler::sendMessage(const Message& msg) {
 }
 
 
-void ConnectionHandler::handle() {
-    // ===== receive header =====
+/**
+ * Xử lý 1 event READ
+ * return false => client disconnect
+ */
+bool ConnectionHandler::onReadable() {
     MessageHeader header;
     if (!recvAll(&header, sizeof(header))) {
-        close(clientFd);
-        return;
+        return false;
     }
 
-    // ===== receive payload =====
     std::string payload;
     if (header.payloadLength > 0) {
         payload.resize(header.payloadLength);
         if (!recvAll(payload.data(), header.payloadLength)) {
-            close(clientFd);
-            return;
+            return false;
         }
     }
 
-    Message incomingMsg;
-    incomingMsg.header = header;
-    incomingMsg.payload = payload;
+    Message incoming{header, payload};
 
-    MessageType type =
-        static_cast<MessageType>(header.messageType);
-
-    // =====REGISTER SESSION (QUAN TRỌNG) =====
-    uint32_t senderId = incomingMsg.header.senderId;
-    if (senderId != 0) {
-        SessionManager::instance().add(senderId, this);
+    // bind session lần đầu
+    if (boundUserId == 0 && header.senderId != 0) {
+        boundUserId = header.senderId;
+        SessionManager::instance().add(boundUserId, this);
+        std::cout << "[Server] User " << boundUserId << " bound to fd "
+                  << clientFd << std::endl;
     }
 
-    // ===== create logic & handlers =====
     ChatLogic chatLogic;
     ChatHandler chatHandler(chatLogic);
 
     Message response;
 
-
-    // ===== dispatch =====
-    switch (type) {
+    switch (static_cast<MessageType>(header.messageType)) {
     case MessageType::CHAT_DIRECT:
-        response = chatHandler.handleChatDirect(incomingMsg);
+        response = chatHandler.handleChatDirect(incoming);
         break;
 
     default:
-        std::cerr << "Unsupported message type\n";
-        close(clientFd);
-        return;
+        std::cerr << "[Server] Unsupported message type: "
+                  << header.messageType << std::endl;
+        return true;
     }
 
-    // ===== send response(ACK) =====
-    std::string bytes = response.serialize();
-    sendAll(bytes.data(), bytes.size());
+    // ===== log nội dung response =====
+    std::cout << "[Server] Sending response"
+              << " toFd=" << clientFd
+              << " type=" << static_cast<int>(response.header.messageType)
+              << " senderId=" << response.header.senderId
+              << " payloadLen=" << response.header.payloadLength
+              << std::endl;
 
-    // =====UNREGISTER SESSION =====
-    SessionManager::instance().remove(senderId);
+    if (!response.payload.empty()) {
+        std::cout << "[Server] Response payload: "
+                  << response.payload << std::endl;
+    }
 
+    // ===== gửi response =====
+    bool sendOk = sendMessage(response);
+
+    if (sendOk) {
+        std::cout << "[Server] Response sent successfully"
+                  << " fd=" << clientFd << std::endl;
+    } else {
+        std::cerr << "[Server] Failed to send response"
+                  << " fd=" << clientFd << std::endl;
+        return false; // coi như connection lỗi
+    }
+    return true;
+}
+
+void ConnectionHandler::closeConnection() {
+    if (boundUserId != 0) {
+        SessionManager::instance().remove(boundUserId);
+        std::cout << "[Server] User " << boundUserId << " unbound\n";
+    }
     close(clientFd);
 }
