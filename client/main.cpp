@@ -50,17 +50,16 @@ int main() {
 
     std::cout << "\n=== Start chatting ===\n";
 
+    std::string text;
+    std::cout << "\nYou: ";
+    std::getline(std::cin, text);
+
+    chatHandler.onSendPrivateChat(receiverId, text);
+
     // ===== Main loop =====
     
     while (true) {
-        std::string text;
-        std::cout << "\nYou: ";
-        std::getline(std::cin, text);
-
-        if (text == "quit") break;
-
-        chatHandler.onSendPrivateChat(receiverId, text);
-
+    
         Message serverMsg = socket.receiveMessage();
         connHandler.handleMessage(serverMsg);
     }   

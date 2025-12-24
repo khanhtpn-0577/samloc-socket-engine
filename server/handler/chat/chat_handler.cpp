@@ -19,15 +19,15 @@ Message ChatHandler::handleChatDirect(const Message& incomingMsg) {
     std::string message =
         incomingMsg.payload.substr(sizeof(uint32_t));
 
-    // ===== chỉ gọi logic =====
-    // std::string ackText =
-    //     chatLogic.handleDirectChat(
-    //         incomingMsg.header.senderId,
-    //         receiverId,
-    //         message,
-    //         incomingMsg
-    //     );
-    std::string ackText = "ACK from server";
+    //===== chỉ gọi logic =====
+    std::string ackText =
+        chatLogic.handleDirectChat(
+            incomingMsg.header.senderId,
+            receiverId,
+            message,
+            incomingMsg
+        );
+    // std::string ackText = "ACK from server";
 
     // ===== build ACK =====
     Message ackMsg;

@@ -20,7 +20,7 @@ void ClientConnectionHandler::handleMessage(const Message& message){
             chatHandler_.onServerACK(message);
             break;
 
-        case MessageType::SERVER_DELIVER_MESSAGE:
+        case MessageType::CHAT_DIRECT:
             chatHandler_.onServerDeliverMessage(message);
             break;
 

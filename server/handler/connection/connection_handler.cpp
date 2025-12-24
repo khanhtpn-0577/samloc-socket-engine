@@ -26,6 +26,9 @@ bool ConnectionHandler::recvAll(void* buffer, size_t size) {
             return false;
         }
         if (r < 0) {
+            if(errno == EAGAIN || errno == EWOULDBLOCK){
+                continue; // khong co du lieu, tiep tuc poll()
+            }
             std::cout << "[Server] recv error fd=" << clientFd
                     << " errno=" << errno
                     << " (" << std::strerror(errno) << ")\n";

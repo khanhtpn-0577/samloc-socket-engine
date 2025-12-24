@@ -2,6 +2,7 @@
 #include <vector>
 #include <unordered_map>
 #include <poll.h>
+#include <fcntl.h>
 
 #include "net/server_socket.h"
 #include "handler/connection/connection_handler.h"
@@ -33,6 +34,14 @@ int main(){
             if (fd == server.getFd()){ //neu fd readable hien tai la listenfd --> co client moi --> append vao pollFds
                 int clientFd = server.acceptClient();
                 if(clientFd >= 0){ //neu tao fd cho client thanh cong --> ghi vao pollFds
+                    //set non-blocking cho client socket
+                    int flags = fcntl(clientFd, F_GETFL, 0);
+                    if (flags == -1){
+                        std::cerr << "[Server] Error getting flags for fd" << clientFd << std::endl;
+                    } else {
+                        fcntl(clientFd, F_SETFL, flags | O_NONBLOCK);
+                    }
+                    
                     pollFds.push_back({clientFd, POLLIN, 0});
                     handlers[clientFd] = new ConnectionHandler(clientFd); //map clientfd va handler
 
