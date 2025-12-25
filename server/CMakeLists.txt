@@ -9,15 +9,26 @@ set(SERVER_SOURCES
     main.cpp
 
     net/server_socket.cpp
-    handler/connection_handler.cpp
+    net/chat/message_sender.cpp
+
+    handler/connection/connection_handler.cpp
+    handler/session/session_manager.cpp
+    handler/chat/chat_handler.cpp
+
     logic/chat/chat_logic.cpp
 )
 
 set(SERVER_HEADERS
     net/server_socket.h
     net/protocol.h
+    net/chat/message_sender.h
 
-    handler/connection_handler.h
+
+    handler/connection/connection_handler.h
+    handler/session/session_manager.h
+    handler/chat/chat_handler.h
+
+
     logic/chat/chat_logic.h
 )
 

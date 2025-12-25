@@ -52,7 +52,7 @@ bool MessageSender::sendDirectMessage(uint32_t receiverId, const std::string& me
     Message msg = createMessage(MessageType::CHAT_DIRECT, payload);
     
     if (socket.sendMessage(msg)) {
-        std::cout << "Direct message sent to user " << receiverId << ": " << messageContent << "\n";
+        std::cout << "[Client: message_sender: Direct message sent to server to delivery to user " << receiverId << ": " << messageContent << "\n";
         return true;
     } else {
         std::cerr << "Failed to send direct message\n";

@@ -2,8 +2,7 @@
 #include <iostream>
 
 ChatLogic::ChatLogic(MessageSender& messageSender)
-    : messageSender(messageSender) {
-}
+    : messageSender(messageSender) {}
 
 bool ChatLogic::isValidMessage(const std::string& message) const {
     if (message.empty()) {
@@ -20,10 +19,8 @@ bool ChatLogic::isValidMessage(const std::string& message) const {
     return true;
 }
 
-bool ChatLogic::sendDirectMessage(
-    uint32_t receiverId,
-    const std::string& message
-) {
+bool ChatLogic::sendDirectMessage(uint32_t receiverId,
+                                  const std::string& message) {
     if (receiverId == 0) {
         std::cerr << "Invalid receiver ID\n";
         return false;
@@ -36,10 +33,8 @@ bool ChatLogic::sendDirectMessage(
     return messageSender.sendDirectMessage(receiverId, message);
 }
 
-bool ChatLogic::sendRoomMessage(
-    uint32_t roomId,
-    const std::string& message
-) {
+bool ChatLogic::sendRoomMessage(uint32_t roomId,
+                                const std::string& message) {
     if (roomId == 0) {
         std::cerr << "Invalid room ID\n";
         return false;

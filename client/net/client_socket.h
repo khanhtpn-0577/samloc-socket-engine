@@ -19,8 +19,8 @@ public:
     bool send(const std::string& data);
     
     // Receive data with size
-    std::string receive(size_t bufferSize = 4096);
-    
+    bool receive(void* buffer, size_t size);
+
     // Send message (serialized)
     bool sendMessage(const Message& message);
     
