@@ -14,8 +14,12 @@ set(SERVER_SOURCES
     handler/connection/connection_handler.cpp
     handler/session/session_manager.cpp
     handler/chat/chat_handler.cpp
+    handler/auth/auth_handler.cpp
+    handler/challenge/challenge_handler.cpp
 
     logic/chat/chat_logic.cpp
+    logic/auth/auth_logic.cpp
+    logic/challenge/challenge_logic.cpp
 )
 
 set(SERVER_HEADERS
@@ -23,13 +27,15 @@ set(SERVER_HEADERS
     net/protocol.h
     net/chat/message_sender.h
 
-
     handler/connection/connection_handler.h
     handler/session/session_manager.h
     handler/chat/chat_handler.h
-
+    handler/auth/auth_handler.h
+    handler/challenge/challenge_handler.h
 
     logic/chat/chat_logic.h
+    logic/auth/auth_logic.h
+    logic/challenge/challenge_logic.h
 )
 
 # --- Tạo executable cho Server ---
@@ -47,8 +53,16 @@ target_include_directories(samloc_server PRIVATE
 # --- Link thư viện ---
 # Chuẩn bị sẵn cho thread per client
 find_package(Threads REQUIRED)
+find_package(OpenSSL REQUIRED)
+
+# Add database subdirectory
+add_subdirectory(db)
+
 target_link_libraries(samloc_server PRIVATE
     Threads::Threads
+    OpenSSL::SSL
+    OpenSSL::Crypto
+    samloc_db
 )
 
 # --- Cấu hình Warnings ---

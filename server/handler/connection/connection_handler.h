@@ -1,11 +1,12 @@
 #pragma once
 
 #include "../../net/protocol.h"
+#include "../../db/database.h"
 #include <string>
 
 class ConnectionHandler {
 public:
-    explicit ConnectionHandler(int clientFd);
+    ConnectionHandler(int clientFd, Database& db);
     ~ConnectionHandler() = default;
 
     // gọi khi poll() báo fd readable
@@ -24,4 +25,5 @@ private:
 private:
     int clientFd;
     uint32_t boundUserId;
+    Database& db;
 };
