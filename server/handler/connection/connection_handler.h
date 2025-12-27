@@ -1,12 +1,13 @@
 #pragma once
 
 #include "../../net/protocol.h"
+#include "../../db/database.h"
 #include <string>
 #include <vector>
 
 class ConnectionHandler {
 public:
-    explicit ConnectionHandler(int clientFd);
+    ConnectionHandler(int clientFd, Database& db);
     ~ConnectionHandler() = default;
 
     // gọi khi poll() báo fd readable

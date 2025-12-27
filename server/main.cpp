@@ -6,8 +6,14 @@
 
 #include "net/server_socket.h"
 #include "handler/connection/connection_handler.h"
+#include "db/database.h"
 
 int main(){
+    // Initialize database
+    const std::string dbPath = "samloc.db";
+    Database db(dbPath);
+    std::cout << "[Server] Database initialized: " << dbPath << "\n";
+    
     ServerSocket server(5000);
     if(!server.listen()) return 1;
 
@@ -43,7 +49,7 @@ int main(){
                     }
                     
                     pollFds.push_back({clientFd, POLLIN, 0});
-                    handlers[clientFd] = new ConnectionHandler(clientFd); //map clientfd va handler
+                    handlers[clientFd] = new ConnectionHandler(clientFd, db); //map clientfd va handler
 
                     std::cout << "[Server] New client fd = " << clientFd << std::endl;
                 }

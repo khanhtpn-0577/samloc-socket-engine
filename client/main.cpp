@@ -8,6 +8,8 @@
 #include "logic/chat/chat_logic.h"
 #include "handlers/chat/chat_handler.h"
 #include "handlers/connection/client_connection_handler.h"
+#include "handlers/auth/auth_handler.h"
+#include "handlers/challenge/challenge_handler.h"
 #include "net/protocol.h"
 
 // Biến cờ hiệu để kiểm soát vòng lặp, atomic đảm bảo an toàn thread
@@ -68,7 +70,9 @@ int main() {
     session.setState(ClientState::IN_PRIVATE_CHAT);
 
     ChatHandler chatHandler(chatLogic, session);
-    ClientConnectionHandler connHandler(chatHandler);
+    AuthHandler authHandler(session);
+    ChallengeHandler challengeHandler(session);
+    ClientConnectionHandler connHandler(chatHandler, authHandler, challengeHandler);
 
     // ===== Input receiver =====
     uint32_t receiverId;

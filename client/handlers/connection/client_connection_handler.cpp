@@ -1,12 +1,18 @@
 #include "client_connection_handler.h"
 #include "../chat/chat_handler.h"
+#include "../auth/auth_handler.h"
+#include "../challenge/challenge_handler.h"
 #include <iostream>
 
 //constructor
 ClientConnectionHandler::ClientConnectionHandler(
-    ChatHandler& chatHandler
+    ChatHandler& chatHandler,
+    AuthHandler& authHandler,
+    ChallengeHandler& challengeHandler
 ):
-    chatHandler_(chatHandler){}
+    chatHandler_(chatHandler),
+    authHandler_(authHandler),
+    challengeHandler_(challengeHandler){}
 
 void ClientConnectionHandler::handleMessage(const Message& message){
     MessageType type = static_cast<MessageType>(message.header.messageType);
@@ -22,6 +28,42 @@ void ClientConnectionHandler::handleMessage(const Message& message){
 
         case MessageType::CHAT_DIRECT:
             chatHandler_.onServerDeliverMessage(message);
+            break;
+
+        case MessageType::SIGNUP_RESPONSE:
+            authHandler_.onSignupResponse(message);
+            break;
+
+        case MessageType::LOGIN_RESPONSE:
+            authHandler_.onLoginResponse(message);
+            break;
+
+        case MessageType::LOGOUT_RESPONSE:
+            authHandler_.onLogoutResponse(message);
+            break;
+
+        case MessageType::CHALLENGE_NOTIFICATION:
+            challengeHandler_.onChallengeNotification(message);
+            break;
+
+        case MessageType::SEND_CHALLENGE_RESPONSE:
+            challengeHandler_.onSendChallengeResponse(message);
+            break;
+
+        case MessageType::ACCEPT_CHALLENGE_RESPONSE:
+            challengeHandler_.onAcceptChallengeResponse(message);
+            break;
+
+        case MessageType::REJECT_CHALLENGE_RESPONSE:
+            challengeHandler_.onRejectChallengeResponse(message);
+            break;
+
+        case MessageType::CANCEL_CHALLENGE_RESPONSE:
+            challengeHandler_.onCancelChallengeResponse(message);
+            break;
+
+        case MessageType::CHALLENGE_EXPIRED:
+            challengeHandler_.onChallengeExpired(message);
             break;
 
         default:
