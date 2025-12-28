@@ -84,10 +84,10 @@ SignupResult AuthLogic::signup(
     std::string passwordHash = hashPassword(password, salt);
     std::string storedHash = salt + ":" + passwordHash;
     
-    // Insert user
+    // Insert user (set legacy plaintext `password` to empty string to satisfy NOT NULL)
     bool inserted = db.executePrepared(
-        "INSERT INTO players (username, password_hash, display_name, balance, status) "
-        "VALUES (?, ?, ?, 0, 'online');",
+        "INSERT INTO players (username, password, password_hash, display_name, balance, status) "
+        "VALUES (?, '', ?, ?, 0, 'online');",
         {username, storedHash, displayName.empty() ? username : displayName}
     );
     
