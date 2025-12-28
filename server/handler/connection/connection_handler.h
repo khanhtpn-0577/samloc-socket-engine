@@ -2,6 +2,7 @@
 
 #include "../../net/protocol.h"
 #include <string>
+#include <vector>
 
 class ConnectionHandler {
 public:
@@ -24,4 +25,8 @@ private:
 private:
     int clientFd;
     uint32_t boundUserId;
+
+    //buffer luu du lieu doc duoc tu tcp stream
+    std::vector<char> inputBuffer;
+    void processIncomingMessage(const Message& msg);
 };

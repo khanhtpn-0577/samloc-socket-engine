@@ -1,5 +1,5 @@
 -- ================================================================
--- 🎲 Lucky Spin Feature Migration
+-- Lucky Spin Feature Migration
 -- ================================================================
 PRAGMA foreign_keys = ON;
 

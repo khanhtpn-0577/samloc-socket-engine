@@ -1,4 +1,5 @@
 #include "../include/ChatScreen.h"
+#include "../../handlers/chat/chat_handler.h"
 #include <SFML/Window.hpp>
 #include <iostream>
 

@@ -9,34 +9,12 @@
 #include <iostream>
 
 ConnectionHandler::ConnectionHandler(int fd)
-    : clientFd(fd), boundUserId(0) {}
+    : clientFd(fd), boundUserId(0) {
+        inputBuffer.reserve(4096);
+    }
 
 int ConnectionHandler::getFd() const {
     return clientFd;
-}
-
-bool ConnectionHandler::recvAll(void* buffer, size_t size) {
-    size_t received = 0;
-    char* buf = static_cast<char*>(buffer);
-
-    while (received < size) {
-        ssize_t r = recv(clientFd, buf + received, size - received, 0);
-        if (r == 0) {
-            std::cout << "[Server] recv EOF (peer closed) fd=" << clientFd << "\n";
-            return false;
-        }
-        if (r < 0) {
-            if(errno == EAGAIN || errno == EWOULDBLOCK){
-                continue; // khong co du lieu, tiep tuc poll()
-            }
-            std::cout << "[Server] recv error fd=" << clientFd
-                    << " errno=" << errno
-                    << " (" << std::strerror(errno) << ")\n";
-            return false;
-        }
-        received += r;
-    }
-    return true;
 }
 
 bool ConnectionHandler::sendAll(const char* data, size_t size) {
@@ -71,70 +49,98 @@ bool ConnectionHandler::sendMessage(const Message& msg) {
  * return false => client disconnect
  */
 bool ConnectionHandler::onReadable() {
-    MessageHeader header;
-    if (!recvAll(&header, sizeof(header))) {
+    char tempBuf[4096];
+    ssize_t bytesRead = recv(clientFd, tempBuf, sizeof(tempBuf), 0);
+
+    if(bytesRead > 0){
+        inputBuffer.insert(inputBuffer.end(), tempBuf, tempBuf + bytesRead);
+    } else if (bytesRead ==0){
+        //client close connection
         return false;
-    }
-
-    std::string payload;
-    if (header.payloadLength > 0) {
-        payload.resize(header.payloadLength);
-        if (!recvAll(payload.data(), header.payloadLength)) {
-            return false;
+    }else{
+        //bytesRead<0: kiem tra loi
+        if(errno == EAGAIN || errno ==EWOULDBLOCK){
+            //khong co du lieu, giu connection, cho lan poll sau
+            return true;
         }
+
+        // Lỗi thật sự
+        std::cerr << "[Server] recv error fd=" << clientFd
+                  << " errno=" << errno << " (" << strerror(errno) << ")\n";
+        return false;
+
     }
 
-    Message incoming{header, payload};
+    //Parse message va handle
+    while(true){
+        //check header
+        if (inputBuffer.size() < sizeof(MessageHeader)){
+            break; //Chưa đủ header -> thoát, chờ lần đọc sau
+        }
 
-    // bind session lần đầu
-    if (boundUserId == 0 && header.senderId != 0) {
-        boundUserId = header.senderId;
+        //doc header
+        MessageHeader* header = reinterpret_cast<MessageHeader*>(inputBuffer.data());
+        
+        size_t totalMsgSize = sizeof(MessageHeader) + header->payloadLength;
+
+        //Kiem tra da du payload chua
+        if (inputBuffer.size() < totalMsgSize) {
+            break; // Đã có header, biết cần bao nhiêu byte nữa, nhưng chưa đủ -> chờ
+        }
+
+        //da co du 1 goi tin hoan chinh --> trich xuat
+        std::string payload;
+
+        if(header->payloadLength > 0){
+            payload.assign(inputBuffer.begin() + sizeof(MessageHeader), inputBuffer.begin() + totalMsgSize); //payload.assign(first, last)-->sao chep du lieu tu first toi last
+        }
+
+        Message msg;
+        msg.header = *header;
+        msg.payload = payload;
+
+        processIncomingMessage(msg);
+
+        //Xóa gói tin đã xử lý khỏi buffer để trượt sang gói tiếp theo
+        inputBuffer.erase(inputBuffer.begin(), inputBuffer.begin() + totalMsgSize);
+    }
+    return true;
+}
+
+void ConnectionHandler::processIncomingMessage(const Message& incoming){
+    //bind session lan dau neu chua co
+    if(boundUserId == 0 && incoming.header.senderId!=0){
+        boundUserId = incoming.header.senderId;
         SessionManager::instance().add(boundUserId, this);
-        std::cout << "[Server] User " << boundUserId << " bound to fd "
-                  << clientFd << std::endl;
+        std::cout<< "[Server] User " << boundUserId << " bound to fd " << clientFd << std::endl;
+
     }
 
     ChatLogic chatLogic;
     ChatHandler chatHandler(chatLogic);
 
     Message response;
+    bool needRespond = false;
 
-    switch (static_cast<MessageType>(header.messageType)) {
-    case MessageType::CHAT_DIRECT:
-        response = chatHandler.handleChatDirect(incoming);
-        break;
-
-    default:
-        std::cerr << "[Server] Unsupported message type: "
-                  << header.messageType << std::endl;
-        return true;
+    switch (static_cast<MessageType>(incoming.header.messageType)) {
+        case MessageType::CHAT_DIRECT:
+            response = chatHandler.handleChatDirect(incoming);
+            needRespond = true;
+            break;
+        default:
+            std::cerr << "[Server] Unsupported message type: " 
+                      << incoming.header.messageType << std::endl;
+            return;
     }
 
-    // ===== log nội dung response =====
-    std::cout << "[Server] Sending response"
-              << " toFd=" << clientFd
-              << " type=" << static_cast<int>(response.header.messageType)
-              << " senderId=" << response.header.senderId
-              << " payloadLen=" << response.header.payloadLength
-              << std::endl;
-
-    if (!response.payload.empty()) {
-        std::cout << "[Server] Response payload: "
-                  << response.payload << std::endl;
+    if (needRespond) {
+        std::cout << "[Server] Sending response type=" << response.header.messageType 
+                  << " to fd=" << clientFd << std::endl;
+        
+        if (!sendMessage(response)) {
+            std::cerr << "[Server] Failed to send response to fd=" << clientFd << std::endl;
+        }
     }
-
-    // ===== gửi response =====
-    bool sendOk = sendMessage(response);
-
-    if (sendOk) {
-        std::cout << "[Server] Response sent successfully"
-                  << " fd=" << clientFd << std::endl;
-    } else {
-        std::cerr << "[Server] Failed to send response"
-                  << " fd=" << clientFd << std::endl;
-        return false; // coi như connection lỗi
-    }
-    return true;
 }
 
 void ConnectionHandler::closeConnection() {
