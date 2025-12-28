@@ -16,6 +16,7 @@ public:
     void setCallback(std::function<void()> cb);
 
     void handleEvent(const sf::Event& event, const sf::Vector2f& mousePos);
+    bool isClicked(const sf::Vector2f& mousePos) const;
     void draw(sf::RenderWindow& window) const;
 
 private:

@@ -37,6 +37,8 @@ void LobbyState::onEnter() {
     
     // Mock player list for now (replace with real data from server)
     playerList_.clear();
+    playerList_.reserve(10); // Reserve space to avoid reallocations
+    
     for (uint32_t i = 1; i <= 5; ++i) {
         if (i == ctx_.session.userId()) continue;
         
@@ -52,12 +54,9 @@ void LobbyState::onEnter() {
         item.challengeButton.setText("Challenge", 18);
         item.challengeButton.setSize(sf::Vector2f(140.f, 35.f));
         item.challengeButton.setColors(sf::Color(0, 100, 0), sf::Color::White, sf::Color::White);
-        item.challengeButton.setCallback([this, userId = item.userId]() {
-            ctx_.network.challengeSender().sendChallenge(userId);
-            std::cout << "Sent challenge to user " << userId << "\n";
-        });
+        // Don't set callback here - will be set during event handling
         
-        playerList_.push_back(item);
+        playerList_.push_back(std::move(item));
     }
     
     rebuildPlayerList();
@@ -70,13 +69,30 @@ void LobbyState::onExit() {
 void LobbyState::handleEvent(const sf::Event& event, const sf::Vector2f& mousePos) {
     logoutButton_.handleEvent(event, mousePos);
     
-    for (auto& player : playerList_) {
-        player.challengeButton.handleEvent(event, mousePos);
-    }
-    
-    for (auto& challenge : pendingChallenges_) {
-        challenge.acceptButton.handleEvent(event, mousePos);
-        challenge.rejectButton.handleEvent(event, mousePos);
+    // Handle player challenge buttons with direct click detection
+    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+        for (auto& player : playerList_) {
+            if (player.challengeButton.isClicked(mousePos)) {
+                ctx_.network.challengeSender().sendChallenge(player.userId);
+                std::cout << "Sent challenge to user " << player.userId << "\n";
+            }
+        }
+        
+        for (size_t i = 0; i < pendingChallenges_.size(); ++i) {
+            auto& challenge = pendingChallenges_[i];
+            if (challenge.acceptButton.isClicked(mousePos)) {
+                ctx_.network.challengeSender().acceptChallenge(challenge.challengeId);
+                pendingChallenges_.erase(pendingChallenges_.begin() + i);
+                rebuildChallengeList();
+                break;
+            }
+            if (challenge.rejectButton.isClicked(mousePos)) {
+                ctx_.network.challengeSender().rejectChallenge(challenge.challengeId);
+                pendingChallenges_.erase(pendingChallenges_.begin() + i);
+                rebuildChallengeList();
+                break;
+            }
+        }
     }
 }
 
@@ -173,33 +189,19 @@ void LobbyState::consumeNetworkEvents() {
                     pc.acceptButton.setText("Accept", 18);
                     pc.acceptButton.setSize(sf::Vector2f(140.f, 35.f));
                     pc.acceptButton.setColors(sf::Color(0, 120, 0), sf::Color::White, sf::Color::White);
-                    pc.acceptButton.setCallback([this, cid = challengeId]() {
-                        ctx_.network.challengeSender().acceptChallenge(cid);
-                        // Remove from list
-                        pendingChallenges_.erase(
-                            std::remove_if(pendingChallenges_.begin(), pendingChallenges_.end(),
-                                [cid](const PendingChallenge& c) { return c.challengeId == cid; }),
-                            pendingChallenges_.end()
-                        );
-                        rebuildChallengeList();
-                    });
+                    // Callback removed - handled in handleEvent
                     
                     pc.rejectButton.setFont(ctx_.font);
                     pc.rejectButton.setText("Reject", 18);
                     pc.rejectButton.setSize(sf::Vector2f(140.f, 35.f));
                     pc.rejectButton.setColors(sf::Color(120, 0, 0), sf::Color::White, sf::Color::White);
-                    pc.rejectButton.setCallback([this, cid = challengeId]() {
-                        ctx_.network.challengeSender().rejectChallenge(cid);
-                        // Remove from list
-                        pendingChallenges_.erase(
-                            std::remove_if(pendingChallenges_.begin(), pendingChallenges_.end(),
-                                [cid](const PendingChallenge& c) { return c.challengeId == cid; }),
-                            pendingChallenges_.end()
-                        );
-                        rebuildChallengeList();
-                    });
+                    // Callback removed - handled in handleEvent
                     
-                    pendingChallenges_.push_back(pc);
+                    pendingChallenges_.push_back(std::move(pc));
+                    rebuildChallengeList();
+                        );
+                    
+                    pendingChallenges_.push_back(std::move(pc));
                     rebuildChallengeList();
                 }
             } else if (type == MessageType::ACCEPT_CHALLENGE_RESPONSE ||

@@ -42,6 +42,10 @@ void Button::handleEvent(const sf::Event& event, const sf::Vector2f& mousePos) {
     }
 }
 
+bool Button::isClicked(const sf::Vector2f& mousePos) const {
+    return shape_.getGlobalBounds().contains(mousePos);
+}
+
 void Button::draw(sf::RenderWindow& window) const {
     window.draw(shape_);
     window.draw(text_);

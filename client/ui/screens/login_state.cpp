@@ -142,6 +142,16 @@ void LoginState::onSignupClicked() {
 void LoginState::consumeNetworkEvents() {
     AuthHandler authHandler(ctx_.session);
 
+    auto parseField = [](const std::string& payload, const std::string& key) {
+        std::string searchKey = "\"" + key + "\":\"";
+        size_t keyPos = payload.find(searchKey);
+        if (keyPos == std::string::npos) return std::string();
+        size_t valueStart = keyPos + searchKey.length();
+        size_t valueEnd = payload.find("\"", valueStart);
+        if (valueEnd == std::string::npos) return std::string();
+        return payload.substr(valueStart, valueEnd - valueStart);
+    };
+
     while (auto opt = ctx_.eventQueue.tryPop()) {
         NetworkEvent& ev = *opt;
 
@@ -156,7 +166,8 @@ void LoginState::consumeNetworkEvents() {
 
             if (type == MessageType::SIGNUP_RESPONSE) {
                 bool success = msg.payload.find("\"success\":true") != std::string::npos;
-                std::string statusMsg = success ? "Signup successful! You can now login." : "Signup failed.";
+                std::string serverMsg = parseField(msg.payload, "message");
+                std::string statusMsg = success ? "Signup successful! You can now login." : ("Signup failed: " + serverMsg);
                 statusText_.setString(statusMsg);
                 statusText_.setFillColor(success ? sf::Color::Green : sf::Color::Red);
                 showDisplayName_ = false;
@@ -174,7 +185,8 @@ void LoginState::consumeNetworkEvents() {
                     
                     ctx_.requestTransition(GameStateType::Lobby);
                 } else {
-                    statusText_.setString("Login failed: Incorrect credentials");
+                    std::string serverMsg = parseField(msg.payload, "message");
+                    statusText_.setString("Login failed: " + serverMsg);
                     statusText_.setFillColor(sf::Color::Red);
                 }
             }
