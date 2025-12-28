@@ -37,6 +37,11 @@ Message MessageSender::createMessage(MessageType type, const std::string& payloa
     return msg;
 }
 
+void MessageSender::updateIdentity(uint32_t newUserId, const std::string& newToken) {
+    userId = newUserId;
+    token = newToken;
+}
+
 // Send direct message
 bool MessageSender::sendDirectMessage(uint32_t receiverId, const std::string& messageContent) {
     // Create payload: receiverId (4 bytes) + message content

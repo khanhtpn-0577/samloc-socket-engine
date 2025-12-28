@@ -13,6 +13,8 @@ public:
     bool sendLogin(const std::string& username, const std::string& password);
     bool sendLogout();
 
+    void updateIdentity(uint32_t newUserId, const std::string& newToken);
+
 private:
     ClientSocket& socket;
     uint32_t userId;

@@ -23,6 +23,8 @@ public:
     // Get current timestamp
     static uint64_t getCurrentTimestamp();
 
+    void updateIdentity(uint32_t newUserId, const std::string& newToken);
+
 private:
     ClientSocket& socket;
     uint32_t userId;

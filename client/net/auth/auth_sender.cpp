@@ -67,3 +67,8 @@ bool AuthSender::sendLogout() {
     }
     return false;
 }
+
+void AuthSender::updateIdentity(uint32_t newUserId, const std::string& newToken) {
+    userId = newUserId;
+    token = newToken;
+}

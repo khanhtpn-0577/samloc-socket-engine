@@ -79,3 +79,8 @@ bool ChallengeSender::cancelChallenge(uint32_t challengeId) {
     }
     return false;
 }
+
+void ChallengeSender::updateIdentity(uint32_t newUserId, const std::string& newToken) {
+    userId = newUserId;
+    token = newToken;
+}

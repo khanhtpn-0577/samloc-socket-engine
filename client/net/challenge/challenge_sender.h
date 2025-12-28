@@ -14,6 +14,8 @@ public:
     bool rejectChallenge(uint32_t challengeId);
     bool cancelChallenge(uint32_t challengeId);
 
+    void updateIdentity(uint32_t newUserId, const std::string& newToken);
+
 private:
     ClientSocket& socket;
     uint32_t userId;
