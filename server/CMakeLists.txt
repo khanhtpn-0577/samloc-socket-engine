@@ -8,6 +8,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(SERVER_SOURCES
     main.cpp
 
+    ../third_party/sqlite3.c
+
     net/server_socket.cpp
     net/chat/message_sender.cpp
 
@@ -16,6 +18,9 @@ set(SERVER_SOURCES
     handler/chat/chat_handler.cpp
 
     logic/chat/chat_logic.cpp
+
+    db/database.cpp
+    db/repository/private_chat_repository.cpp
 )
 
 set(SERVER_HEADERS
@@ -30,6 +35,9 @@ set(SERVER_HEADERS
 
 
     logic/chat/chat_logic.h
+
+    db/database.h
+    db/repository/private_chat_repository.h
 )
 
 # --- Tạo executable cho Server ---
@@ -42,6 +50,7 @@ add_executable(samloc_server
 # Giúp compiler tìm thấy các file header khi include
 target_include_directories(samloc_server PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/../third_party
 )
 
 # --- Link thư viện ---
