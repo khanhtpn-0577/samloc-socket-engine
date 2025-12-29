@@ -18,6 +18,7 @@ set(CLIENT_SOURCES
     handlers/connection/client_connection_handler.cpp
     handlers/session/client_session.cpp
 
+    gui/src/ChatScreen.cpp
 )
 
 set(CLIENT_HEADERS
@@ -29,6 +30,8 @@ set(CLIENT_HEADERS
     handlers/chat/chat_handler.h
     handlers/connection/client_connection_handler.h
     handlers/session/client_session.h
+
+    gui/include/ChatScreen.h
 )
 
 # =========================
@@ -45,6 +48,12 @@ add_executable(samloc_client
 target_include_directories(samloc_client PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
+
+# =========================
+# Link SFML library
+# =========================
+find_package(SFML 2.5 REQUIRED graphics window system)  # Find SFML package
+target_link_libraries(samloc_client PRIVATE sfml-graphics sfml-window sfml-system)
 
 # =========================
 # Threads (Linux / Windows)
