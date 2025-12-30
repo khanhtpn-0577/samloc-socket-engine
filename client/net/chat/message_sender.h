@@ -17,17 +17,13 @@ public:
     // Send room message
     bool sendRoomMessage(uint32_t roomId, const std::string& messageContent);
     
-    // Send login
-    bool sendLogin(const std::string& username, const std::string& password);
-    
-    // Send logout
-    bool sendLogout();
-    
     // Generic send message
     bool sendMessage(MessageType type, const std::string& payload);
     
     // Get current timestamp
     static uint64_t getCurrentTimestamp();
+
+    void updateIdentity(uint32_t newUserId, const std::string& newToken);
 
 private:
     ClientSocket& socket;

@@ -8,7 +8,16 @@
 #include "logic/chat/chat_logic.h"
 #include "handlers/chat/chat_handler.h"
 #include "handlers/connection/client_connection_handler.h"
+#include "handlers/auth/auth_handler.h"
+#include "handlers/challenge/challenge_handler.h"
 #include "net/protocol.h"
+#include <SFML/Graphics.hpp>
+#include "core/network_client.h"
+#include "core/thread_safe_queue.h"
+#include "core/network_event.h"
+#include "handlers/session/client_session.h"
+#include "ui/game_manager.h"
+#include "ui/state_context.h"
 
 // Biến cờ hiệu để kiểm soát vòng lặp, atomic đảm bảo an toàn thread
 std::atomic<bool> isRunning(true);
@@ -37,38 +46,37 @@ void receiveTask(ClientSocket* socket, ClientConnectionHandler* connHandler) {
 }
 
 int main() {
-    std::cout << "=== Samloc Client - Direct Chat Demo ===\n\n";
+    std::cout << "=== Samloc Client - SFML UI ===\n\n";
 
-    // ===== Server config =====
-    std::string serverIp = "127.0.0.1";
-    int serverPort = 5000;
+    // Network config
+    NetworkConfig netCfg;
+    netCfg.serverIp = "127.0.0.1";
+    netCfg.serverPort = 5000;
 
     // ===== Input sender =====
     uint32_t senderId;
     std::cout << "Enter your userId: ";
     std::cin >> senderId;
     std::cin.ignore(); // Xóa bộ đệm sau khi nhập số
+    // Event queue
+    ThreadSafeQueue<NetworkEvent> eventQueue;
 
-    std::string token = "test_token";
-
-    // ===== Connect socket =====
-    ClientSocket socket(serverIp, serverPort);
-    if (!socket.connect()) {
-        std::cerr << "Failed to connect to server\n";
+    // Network client (background thread)
+    NetworkClient networkClient(netCfg, eventQueue);
+    if (!networkClient.start()) {
+        std::cerr << "Failed to start network client\n";
         return 1;
     }
 
-    std::cout << "Connected to server\n";
-
-    // ===== Core components =====
-    MessageSender messageSender(socket, senderId, token);
-    ChatLogic chatLogic(messageSender);
-
+    // Session
     ClientSession session;
-    session.setState(ClientState::IN_PRIVATE_CHAT);
 
-    ChatHandler chatHandler(chatLogic, session);
-    ClientConnectionHandler connHandler(chatHandler);
+    // Load font
+    sf::Font font;
+    if (!font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")) {
+        std::cerr << "Failed to load font. Using default (may not render).\n";
+        // Continue anyway; SFML will use a default font
+    }
 
     // ===== Input receiver =====
     uint32_t receiverId;
@@ -111,5 +119,40 @@ int main() {
     }
 
     std::cout << "\nClient closed\n";
+    // SFML window
+    sf::RenderWindow window(sf::VideoMode(1280, 720), "Samloc - Casino Card Game");
+    window.setFramerateLimit(60);
+
+    // State context
+    StateContext stateCtx(networkClient, session, eventQueue, font);
+
+    // Game manager
+    GameManager gameManager(stateCtx);
+
+    // Clock for delta time
+    sf::Clock clock;
+
+    // Main loop
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            }
+
+            sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
+            gameManager.handleEvent(event, mousePos);
+        }
+
+        float dt = clock.restart().asSeconds();
+        gameManager.update(dt);
+
+        window.clear();
+        gameManager.draw(window);
+        window.display();
+    }
+
+    networkClient.stop();
+    std::cout << "Client closed\n";
     return 0;
 }

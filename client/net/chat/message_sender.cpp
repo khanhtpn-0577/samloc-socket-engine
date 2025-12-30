@@ -37,6 +37,11 @@ Message MessageSender::createMessage(MessageType type, const std::string& payloa
     return msg;
 }
 
+void MessageSender::updateIdentity(uint32_t newUserId, const std::string& newToken) {
+    userId = newUserId;
+    token = newToken;
+}
+
 // Send direct message
 bool MessageSender::sendDirectMessage(uint32_t receiverId, const std::string& messageContent) {
     // Create payload: receiverId (4 bytes) + message content
@@ -83,44 +88,6 @@ bool MessageSender::sendRoomMessage(uint32_t roomId, const std::string& messageC
     }
 }
 
-// Send login
-bool MessageSender::sendLogin(const std::string& username, const std::string& password) {
-    // Create payload: username length + username + password length + password
-    std::string payload;
-    
-    // Add username
-    uint32_t usernameLen = username.size();
-    payload.append(reinterpret_cast<const char*>(&usernameLen), sizeof(uint32_t));
-    payload.append(username);
-    
-    // Add password
-    uint32_t passwordLen = password.size();
-    payload.append(reinterpret_cast<const char*>(&passwordLen), sizeof(uint32_t));
-    payload.append(password);
-    
-    Message msg = createMessage(MessageType::LOGIN, payload);
-    
-    if (socket.sendMessage(msg)) {
-        std::cout << "Login request sent for user: " << username << "\n";
-        return true;
-    } else {
-        std::cerr << "Failed to send login\n";
-        return false;
-    }
-}
-
-// Send logout
-bool MessageSender::sendLogout() {
-    Message msg = createMessage(MessageType::LOGOUT, "");
-    
-    if (socket.sendMessage(msg)) {
-        std::cout << "Logout request sent\n";
-        return true;
-    } else {
-        std::cerr << "Failed to send logout\n";
-        return false;
-    }
-}
 
 // Generic send message
 bool MessageSender::sendMessage(MessageType type, const std::string& payload) {

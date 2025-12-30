@@ -1,8 +1,13 @@
 #include "connection_handler.h"
 
 #include "../chat/chat_handler.h"
+#include "../auth/auth_handler.h"
+#include "../challenge/challenge_handler.h"
 #include "../../logic/chat/chat_logic.h"
+#include "../../logic/auth/auth_logic.h"
+#include "../../logic/challenge/challenge_logic.h"
 #include "../session/session_manager.h"
+#include "../../db/database.h"
 
 #include <sys/socket.h>
 #include <unistd.h>
@@ -116,21 +121,56 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming){
 
     }
 
+    // Create logic and handler instances
     ChatLogic chatLogic;
+    AuthLogic authLogic(db);
+    ChallengeLogic challengeLogic(db);
+    
     ChatHandler chatHandler(chatLogic);
+    AuthHandler authHandler(authLogic);
+    ChallengeHandler challengeHandler(challengeLogic);
 
     Message response;
     bool needRespond = false;
 
-    switch (static_cast<MessageType>(incoming.header.messageType)) {
-        case MessageType::CHAT_DIRECT:
-            response = chatHandler.handleChatDirect(incoming);
-            needRespond = true;
-            break;
-        default:
-            std::cerr << "[Server] Unsupported message type: " 
-                      << incoming.header.messageType << std::endl;
-            return;
+    switch (static_cast<MessageType>(header.messageType)) {
+    case MessageType::CHAT_DIRECT:
+        response = chatHandler.handleChatDirect(incoming);
+        needRespond = true;
+        break;
+
+    case MessageType::SIGNUP:
+        response = authHandler.handleSignup(incoming);
+        break;
+
+    case MessageType::LOGIN:
+        response = authHandler.handleLogin(incoming);
+        break;
+
+    case MessageType::LOGOUT:
+        response = authHandler.handleLogout(incoming);
+        break;
+
+    case MessageType::SEND_CHALLENGE:
+        response = challengeHandler.handleSendChallenge(incoming);
+        break;
+
+    case MessageType::ACCEPT_CHALLENGE:
+        response = challengeHandler.handleAcceptChallenge(incoming);
+        break;
+
+    case MessageType::REJECT_CHALLENGE:
+        response = challengeHandler.handleRejectChallenge(incoming);
+        break;
+
+    case MessageType::CANCEL_CHALLENGE:
+        response = challengeHandler.handleCancelChallenge(incoming);
+        break;
+
+    default:
+        std::cerr << "[Server] Unsupported message type: "
+                  << header.messageType << std::endl;
+        return true;
     }
 
     if (needRespond) {

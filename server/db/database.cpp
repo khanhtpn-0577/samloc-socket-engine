@@ -156,6 +156,107 @@ bool Database::loadSampleDataFromFile(const std::string& sampleFile) {
     }
 }
 
+// ------------------------------------------------------
+// Query with results
+// ------------------------------------------------------
+QueryResult Database::query(const std::string& sql) {
+    QueryResult result;
+    
+    if (!db) return result;
+
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "SQL prepare error: " << sqlite3_errmsg(db) << std::endl;
+        return result;
+    }
+
+    int columnCount = sqlite3_column_count(stmt);
+    
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        QueryRow row;
+        for (int i = 0; i < columnCount; i++) {
+            const char* columnName = sqlite3_column_name(stmt, i);
+            const char* columnValue = reinterpret_cast<const char*>(sqlite3_column_text(stmt, i));
+            row[columnName] = columnValue ? columnValue : "";
+        }
+        result.push_back(row);
+    }
+
+    sqlite3_finalize(stmt);
+    return result;
+}
+
+// ------------------------------------------------------
+// Execute prepared statement
+// ------------------------------------------------------
+bool Database::executePrepared(const std::string& sql, const std::vector<std::string>& params) {
+    if (!db) return false;
+
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "SQL prepare error: " << sqlite3_errmsg(db) << std::endl;
+        return false;
+    }
+
+    // Bind parameters
+    for (size_t i = 0; i < params.size(); i++) {
+        sqlite3_bind_text(stmt, i + 1, params[i].c_str(), -1, SQLITE_TRANSIENT);
+    }
+
+    int rc = sqlite3_step(stmt);
+    sqlite3_finalize(stmt);
+
+    if (rc != SQLITE_DONE) {
+        std::cerr << "SQL execute error: " << sqlite3_errmsg(db) << std::endl;
+        return false;
+    }
+
+    return true;
+}
+
+// ------------------------------------------------------
+// Query with prepared statement
+// ------------------------------------------------------
+QueryResult Database::queryPrepared(const std::string& sql, const std::vector<std::string>& params) {
+    QueryResult result;
+    
+    if (!db) return result;
+
+    sqlite3_stmt* stmt;
+    if (sqlite3_prepare_v2(db, sql.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+        std::cerr << "SQL prepare error: " << sqlite3_errmsg(db) << std::endl;
+        return result;
+    }
+
+    // Bind parameters
+    for (size_t i = 0; i < params.size(); i++) {
+        sqlite3_bind_text(stmt, i + 1, params[i].c_str(), -1, SQLITE_TRANSIENT);
+    }
+
+    int columnCount = sqlite3_column_count(stmt);
+    
+    while (sqlite3_step(stmt) == SQLITE_ROW) {
+        QueryRow row;
+        for (int i = 0; i < columnCount; i++) {
+            const char* columnName = sqlite3_column_name(stmt, i);
+            const char* columnValue = reinterpret_cast<const char*>(sqlite3_column_text(stmt, i));
+            row[columnName] = columnValue ? columnValue : "";
+        }
+        result.push_back(row);
+    }
+
+    sqlite3_finalize(stmt);
+    return result;
+}
+
+// ------------------------------------------------------
+// Get last insert row ID
+// ------------------------------------------------------
+int64_t Database::getLastInsertId() {
+    if (!db) return -1;
+    return sqlite3_last_insert_rowid(db);
+}
+
 bool Database::applyMigrations(const std::string& dirPath) {
     namespace fs = std::filesystem;
 
