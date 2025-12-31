@@ -7,6 +7,10 @@
 #include "../session/client_session.h"
 #include "../../net/protocol.h"
 
+#include <thread>
+#include <atomic>
+#include <mutex>
+
 
 /**
  * ChatHandler
@@ -30,6 +34,15 @@ class ChatHandler {
         void onServerDeliverMessage(const Message& msg);
 
     private:
+        void startAckTimer();
+        void stopAckTimer();
+        void onAckTimeout();
+
+    private:
         ChatLogic& chatLogic_;
         ClientSession& session_;
+
+        std::thread ackTimerThread_; //tao thread rieng de quan ly timer
+        std::atomic<bool> ackTimerActive_{false}; //bien de kiem soat timer, khong dung bool truyen thong vi no khong an toan trong da luong, cu the khi mot luong doc va mot luong ghi
+        std::mutex ackTimerMutex_; //mutex de dong bo hoa truy cap den ackTimerActive_
 };

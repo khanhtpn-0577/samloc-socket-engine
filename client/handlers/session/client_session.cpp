@@ -3,11 +3,11 @@
 //constructor
 ClientSession::ClientSession():
     currentState_(ClientState::LOGGED_OUT),
-    returnState_(ClientState::LOGGED_OUT),
     loggedIn_(false),
     userId_(0),
     token_(""),
-    username_(""){}
+    username_(""),
+    chatState_(ChatState::CHAT_IDLE){}
 
 //getter
 ClientState ClientSession::state() const{
@@ -17,18 +17,6 @@ ClientState ClientSession::state() const{
 //setter
 void ClientSession::setState(ClientState newState){
     currentState_ = newState;
-}
-
-void ClientSession::setReturnState(ClientState state){
-    returnState_ = state;
-}
-
-ClientState ClientSession::returnState() const{
-    return returnState_ ;
-}
-
-bool ClientSession::isSending() const{
-    return currentState_ == ClientState::SENDING_MESSAGE;
 }
 
 // Auth state
@@ -63,3 +51,17 @@ std::string ClientSession::username() const {
 void ClientSession::setUsername(const std::string& name) {
     username_ = name;
 }
+
+ChatState ClientSession::chatState() const {
+    return chatState_;
+}
+
+void ClientSession::setChatState(ChatState state){
+    chatState_ = state;
+}
+
+bool ClientSession::canSendChat() const {
+    return chatState_ == ChatState::CHAT_IDLE;
+}
+
+

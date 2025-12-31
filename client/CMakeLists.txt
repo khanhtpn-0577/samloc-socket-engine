@@ -102,14 +102,14 @@ target_include_directories(samloc_client PRIVATE
 # =========================
 # Link SFML library
 # =========================
-find_package(SFML 2.5 REQUIRED graphics window system)  # Find SFML package
-target_link_libraries(samloc_client PRIVATE sfml-graphics sfml-window sfml-system)
+# FetchContent_MakeAvailable already provides SFML, no need for find_package
+target_link_libraries(samloc_client PRIVATE sfml-graphics sfml-window sfml-system sfml-network)
 
 # =========================
 # Threads (Linux / Windows)
 # =========================
 find_package(Threads REQUIRED)
-target_link_libraries(samloc_client PRIVATE Threads::Threads sfml-graphics sfml-window sfml-system sfml-network)
+target_link_libraries(samloc_client PRIVATE Threads::Threads)
 
 # =========================
 # Compiler warnings
