@@ -1,19 +1,36 @@
 #include "game_manager.h"
 #include <iostream>
+#include "screens/private_chat_state.h"
 
-GameManager::GameManager(StateContext& ctx)
-    : ctx_(ctx), currentStateType_(GameStateType::Login) {
+
+
+// GameManager::GameManager(StateContext& ctx)
+//     : ctx_(ctx), currentStateType_(GameStateType::Login) {
     
-    // Setup transition callback
+//     // Setup transition callback
+//     ctx_.requestTransition = [this](GameStateType newState) {
+//         transitionTo(newState);
+//     };
+    
+//     // Create initial state
+//     stateCache_[GameStateType::Login] = std::make_unique<LoginState>(ctx_);
+//     stateCache_[GameStateType::Lobby] = std::make_unique<LobbyState>(ctx_);
+    
+//     currentState_ = std::make_unique<LoginState>(ctx_);
+//     currentState_->onEnter();
+// }
+
+//Game manager to test private chat state
+GameManager::GameManager(StateContext& ctx)
+    : ctx_(ctx),
+      currentStateType_(GameStateType::PrivateChat) {
+
     ctx_.requestTransition = [this](GameStateType newState) {
         transitionTo(newState);
     };
-    
-    // Create initial state
-    stateCache_[GameStateType::Login] = std::make_unique<LoginState>(ctx_);
-    stateCache_[GameStateType::Lobby] = std::make_unique<LobbyState>(ctx_);
-    
-    currentState_ = std::make_unique<LoginState>(ctx_);
+
+    //KHỞI TẠO TRỰC TIẾP PRIVATE CHAT
+    currentState_ = std::make_unique<PrivateChatState>(ctx_);
     currentState_->onEnter();
 }
 
@@ -36,6 +53,9 @@ void GameManager::transitionTo(GameStateType newState) {
             break;
         case GameStateType::Lobby:
             currentState_ = std::make_unique<LobbyState>(ctx_);
+            break;
+        case GameStateType::PrivateChat:
+            currentState_ = std::make_unique<PrivateChatState>(ctx_);
             break;
         case GameStateType::InGame:
             // TODO: implement InGameState

@@ -20,6 +20,8 @@ public:
     bool sendRoomMessage(uint32_t roomId,
                          const std::string& message);
 
+    void requestFriendList(uint32_t userId);
+
 private:
     bool isValidMessage(const std::string& message) const;
 

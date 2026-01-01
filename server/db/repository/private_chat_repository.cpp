@@ -31,3 +31,27 @@ bool PrivateChatRepository::save(
 
     return true;
 }
+
+std::vector<FriendInfo>
+PrivateChatRepository::getFriends(uint32_t userId) {
+    std::vector<FriendInfo> result;
+
+    std::string sql =
+        "SELECT p.player_id, p.username "
+        "FROM friends f "
+        "JOIN players p ON p.player_id = f.friend_id "
+        "WHERE f.player_id = ?;";
+
+    QueryResult rows =
+        database.queryPrepared(sql, { std::to_string(userId) });
+
+    for (const auto& row : rows) {
+        FriendInfo f;
+        f.userId = std::stoul(row.at("player_id"));
+        f.username = row.at("username");
+        result.push_back(f);
+    }
+
+    return result;
+}
+

@@ -65,3 +65,47 @@ Message ChatHandler::handleChatDirect(const Message& incomingMsg) {
     return ackMsg;
 }
 
+Message ChatHandler::handleFriendListRequest(
+    const Message& incomingMsg
+) {
+    uint32_t userId = incomingMsg.header.senderId;
+    std::cout << "[Server] Handling FRIEND_LIST_REQUEST for userId="
+              << userId << "\n";
+    std::string dbPath = "../../samloc.db";
+
+    std::string payload = R"({"friends":[)";
+
+    try {
+        Database db(dbPath);
+        PrivateChatRepository repo(db);
+
+        auto friends = repo.getFriends(userId);
+
+        for (size_t i = 0; i < friends.size(); ++i) {
+            payload += "{";
+            payload += "\"id\":" + std::to_string(friends[i].userId) + ",";
+            payload += "\"name\":\"" + friends[i].username + "\"}";
+            if (i + 1 < friends.size()) payload += ",";
+        }
+    } catch (...) {
+        std::cerr << "[DB] Failed to load friend list\n";
+    }
+
+    payload += "]}";
+
+    Message response;
+    response.header.messageType =
+        static_cast<uint16_t>(MessageType::FRIEND_LIST_RESPONSE);
+    response.header.senderId = 0;
+    response.header.timestamp =
+        std::chrono::duration_cast<std::chrono::milliseconds>(
+            std::chrono::system_clock::now().time_since_epoch()
+        ).count();
+    response.header.payloadLength = payload.size();
+    std::memset(response.header.token, 0, 32);
+    response.payload = payload;
+
+    return response;
+}
+
+

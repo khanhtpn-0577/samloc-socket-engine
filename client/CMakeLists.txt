@@ -30,6 +30,7 @@ set(CLIENT_SOURCES
     ui/components/text_input.cpp
     ui/screens/login_state.cpp
     ui/screens/lobby_state.cpp
+    ui/screens/private_chat_state.cpp
     ui/game_manager.cpp
 )
 
@@ -59,6 +60,7 @@ set(CLIENT_HEADERS
     ui/components/text_input.h
     ui/screens/login_state.h
     ui/screens/lobby_state.h
+    ui/screens/private_chat_state.h
     ui/game_manager.h
 )
 
@@ -102,14 +104,14 @@ target_include_directories(samloc_client PRIVATE
 # =========================
 # Link SFML library
 # =========================
-find_package(SFML 2.5 REQUIRED graphics window system)  # Find SFML package
-target_link_libraries(samloc_client PRIVATE sfml-graphics sfml-window sfml-system)
+# FetchContent_MakeAvailable already provides SFML, no need for find_package
+target_link_libraries(samloc_client PRIVATE sfml-graphics sfml-window sfml-system sfml-network)
 
 # =========================
 # Threads (Linux / Windows)
 # =========================
 find_package(Threads REQUIRED)
-target_link_libraries(samloc_client PRIVATE Threads::Threads sfml-graphics sfml-window sfml-system sfml-network)
+target_link_libraries(samloc_client PRIVATE Threads::Threads)
 
 # =========================
 # Compiler warnings

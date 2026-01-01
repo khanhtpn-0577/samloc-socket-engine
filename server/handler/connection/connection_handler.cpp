@@ -13,8 +13,8 @@
 #include <unistd.h>
 #include <iostream>
 
-ConnectionHandler::ConnectionHandler(int fd)
-    : clientFd(fd), boundUserId(0) {
+ConnectionHandler::ConnectionHandler(int clientFd, Database& db)
+    : clientFd(clientFd), boundUserId(0), db(db) {
         inputBuffer.reserve(4096);
     }
 
@@ -133,9 +133,15 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming){
     Message response;
     bool needRespond = false;
 
-    switch (static_cast<MessageType>(header.messageType)) {
+    switch (static_cast<MessageType>(incoming.header.messageType)) {
     case MessageType::CHAT_DIRECT:
         response = chatHandler.handleChatDirect(incoming);
+        needRespond = true;
+        break;
+
+    case MessageType::FRIEND_LIST_REQUEST:
+        std::cout <<"[Server] Handling FRIEND_LIST_REQUEST\n";
+        response = chatHandler.handleFriendListRequest(incoming);
         needRespond = true;
         break;
 
@@ -169,8 +175,7 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming){
 
     default:
         std::cerr << "[Server] Unsupported message type: "
-                  << header.messageType << std::endl;
-        return true;
+                  << incoming.header.messageType << std::endl;
     }
 
     if (needRespond) {

@@ -12,12 +12,16 @@
     LOGGED_OUT,
     LOGGING_IN,
     LOGGED_IN,
-    IN_ROOM,
-    IN_PRIVATE_CHAT,
-    SENDING_MESSAGE,
     DISCONNECTED,
     ERROR
  };
+
+ enum class ChatState {
+    CHAT_IDLE,
+    CHAT_WAIT_ACK,
+    CHAT_FAILED
+};
+
 
 /**
  * ClientSession
@@ -34,14 +38,6 @@ class ClientSession{
         //set state
         void setState(ClientState newState);
 
-        // return state(dung khi sending message de biet can quay ve state nao sau khi gui tin nhan xong)
-        void setReturnState(ClientState state);
-
-        //getter return state
-        ClientState returnState() const;
-
-        bool isSending() const;
-
         // Auth state
         bool isLoggedIn() const;
         void setLoggedIn(bool loggedIn);
@@ -54,14 +50,21 @@ class ClientSession{
         
         std::string username() const;
         void setUsername(const std::string& name);
+        
+        ChatState chatState() const;
+
+        void setChatState(ChatState state);
+
+        bool canSendChat() const; 
     
     private:
         ClientState currentState_;
-        ClientState returnState_;
         
         // Auth state
         bool loggedIn_;
         uint32_t userId_;
         std::string token_;
         std::string username_;
+
+        ChatState chatState_;
 };

@@ -199,7 +199,6 @@ void LobbyState::consumeNetworkEvents() {
                     
                     pendingChallenges_.push_back(std::move(pc));
                     rebuildChallengeList();
-                        );
                     
                     pendingChallenges_.push_back(std::move(pc));
                     rebuildChallengeList();

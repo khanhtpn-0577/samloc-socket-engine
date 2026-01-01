@@ -46,3 +46,20 @@ bool ChatLogic::sendRoomMessage(uint32_t roomId,
 
     return messageSender.sendRoomMessage(roomId, message);
 }
+
+void ChatLogic::requestFriendList(uint32_t userId){
+    if(userId == 0){
+        std::cerr << "Invalid user ID for friend list request\n";
+        return;
+    }
+
+    // Construct payload (e.g., JSON format)
+    std::string payload = "{\"userId\":" + std::to_string(userId) + "}";
+
+    if(!messageSender.sendMessage(MessageType::FRIEND_LIST_REQUEST, payload)){
+        std::cerr << "[ChatLogic] Failed to send friend list request\n";
+    } else {
+        std::cout << "[ChatLogic] Friend list request sent for userId="
+                  << userId << "\n";
+    }
+}
