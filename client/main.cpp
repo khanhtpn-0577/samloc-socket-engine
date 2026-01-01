@@ -3,92 +3,131 @@
 
 #include "ui/game_manager.h"
 #include "ui/state_context.h"
+#include "ui/screens/private_chat_state.h"
+
 #include "core/network_client.h"
 #include "core/thread_safe_queue.h"
 #include "core/network_event.h"
+
 #include "handlers/session/client_session.h"
 
-// ===============================
-// ENTRY POINT
-// ===============================
-int main() {
-    // -------------------------------
-    // Create window
-    // -------------------------------
-    sf::RenderWindow window(
-        sf::VideoMode(1280, 720),
-        "Samloc - Private Chat UI Test"
-    );
+#include "handlers/connection/client_connection_handler.h"
+#include "handlers/auth/auth_handler.h"
+#include "handlers/challenge/challenge_handler.h"
+
+
+// Hàm xử lý các sự kiện den client
+void consumeNetworkEvents(
+    ThreadSafeQueue<NetworkEvent>& eventQueue,
+    ClientConnectionHandler& connHandler
+) {
+    while (true) {
+        auto opt = eventQueue.tryPop();
+        if (!opt.has_value()) break;
+
+        NetworkEvent& ev = *opt;
+
+        if (std::holds_alternative<RawMessageEvent>(ev.payload)) {
+            const Message& msg =
+                std::get<RawMessageEvent>(ev.payload).message;
+            connHandler.handleMessage(msg);
+        }
+        else if (std::holds_alternative<DisconnectEvent>(ev.payload)) {
+            const auto& dc =
+                std::get<DisconnectEvent>(ev.payload);
+            std::cerr << "[Client] Disconnected: "
+                      << dc.reason << "\n";
+        }
+    }
+}
+
+
+int main(){
+    // ===== Window =====
+    sf::RenderWindow window(sf::VideoMode(1280, 720), "Samloc - Private Chat");
     window.setFramerateLimit(60);
 
-    // -------------------------------
     // Load font
-    // -------------------------------
     sf::Font font;
     if (!font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")) {
         std::cerr << "Failed to load font. Using default (may not render).\n";
         // Continue anyway; SFML will use a default font
     }
 
-    // -------------------------------
-    // Mock core components
-    // -------------------------------
+    // ===== Network =====
     ThreadSafeQueue<NetworkEvent> eventQueue;
 
+    NetworkConfig cfg{
+        .serverIp = "127.0.0.1",
+        .serverPort = 5000
+    };
+
+    NetworkClient network(cfg, eventQueue);
+    if (!network.start()) {
+        std::cerr << "Failed to start network client\n";
+        return 1;
+    }
+
+    // ===== Session =====
     ClientSession session;
-    session.setLoggedIn(true);
     session.setUserId(1);
-    session.setUsername("TestUser");
+    session.setUsername("Player1");
+    session.setLoggedIn(true);
 
-    // Dummy network config (KHÔNG start)
-    NetworkConfig netCfg;
-    netCfg.serverIp = "127.0.0.1";
-    netCfg.serverPort = 5000;
+    MessageSender& chatSender = network.chatSender();
+    chatSender.updateIdentity(session.userId(), "");
+    ChatLogic chatLogic(chatSender);
+    ChatHandler chatHandler(chatLogic, session);
 
-    NetworkClient network(netCfg, eventQueue);
-    //Không gọi network.start()
+    AuthHandler authHandler(session);
+    ChallengeHandler challengeHandler(session);
+    ClientConnectionHandler connHandler(
+        chatHandler,
+        authHandler,
+        challengeHandler
+    );
 
-    // -------------------------------
-    // Create StateContext
-    // -------------------------------
+
+    // ===== State Context =====
     StateContext ctx(
         network,
         session,
+        chatHandler,
         eventQueue,
         font
     );
 
-    // -------------------------------
-    // Game manager (boot PRIVATE CHAT)
-    // -------------------------------
+    // ===== Game Manager =====
     GameManager gameManager(ctx);
 
-    // -------------------------------
-    // Main loop
-    // -------------------------------
+    // ⚠️ Bypass Login/Lobby
+    gameManager.transitionTo(GameStateType::PrivateChat);
+
+    // ===== Main Loop =====
     sf::Clock clock;
     while (window.isOpen()) {
         sf::Event event;
+        sf::Vector2f mousePos =
+            window.mapPixelToCoords(sf::Mouse::getPosition(window));
+
         while (window.pollEvent(event)) {
             if (event.type == sf::Event::Closed) {
                 window.close();
             }
-
-            sf::Vector2f mousePos =
-                window.mapPixelToCoords(
-                    sf::Mouse::getPosition(window)
-                );
-
             gameManager.handleEvent(event, mousePos);
         }
 
+        // Xử lý sự kiện mạng
+        consumeNetworkEvents(eventQueue, connHandler);
         float dt = clock.restart().asSeconds();
         gameManager.update(dt);
 
-        window.clear(sf::Color(20, 20, 20));
+        window.clear();
         gameManager.draw(window);
         window.display();
     }
 
+    // ===== Cleanup =====
+    network.stop();
     return 0;
 }

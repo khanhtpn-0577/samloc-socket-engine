@@ -103,3 +103,64 @@ void ChatHandler::onAckTimeout(){
     session_.setChatState(ChatState::CHAT_FAILED);
     //TODO: notify UI ve loi
 }
+
+void ChatHandler::requestFriendList(){
+    std::cout << "[ChatHandler] Requesting friend list from server...\n";
+    if (!session_.isLoggedIn()) return;
+    chatLogic_.requestFriendList(session_.userId());
+}
+
+void ChatHandler::onServerDeliverFriendList(const Message& message) {
+    const std::string& payload = message.payload;
+
+    std::vector<FriendInfo> friends;
+
+    size_t pos = payload.find("\"friends\"");
+    if (pos == std::string::npos) {
+        std::cerr << "[ChatHandler] Invalid friend list payload\n";
+        return;
+    }
+
+    pos = payload.find("[", pos);
+    if (pos == std::string::npos) return;
+    ++pos; // move past '['
+
+    while (true) {
+        size_t idPos = payload.find("\"id\":", pos);
+        if (idPos == std::string::npos) break;
+
+        size_t idStart = idPos + 5;
+        size_t idEnd = payload.find(",", idStart);
+        uint32_t id =
+            static_cast<uint32_t>(
+                std::stoul(payload.substr(idStart, idEnd - idStart))
+            );
+
+        size_t namePos = payload.find("\"name\":\"", idEnd);
+        if (namePos == std::string::npos) break;
+
+        size_t nameStart = namePos + 8;
+        size_t nameEnd = payload.find("\"", nameStart);
+        std::string name =
+            payload.substr(nameStart, nameEnd - nameStart);
+
+        friends.push_back({id, name});
+
+        pos = nameEnd;
+    }
+
+    std::cout << "[ChatHandler] Received friend list: "
+              << friends.size() << " friends\n";
+
+    // Notify UI
+    if (friendListCallback_) {
+        friendListCallback_(friends);
+    }
+}
+
+void ChatHandler::setFriendListCallback(FriendListCallback callback) {
+    friendListCallback_ = callback;
+}
+
+
+

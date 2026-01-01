@@ -5,6 +5,7 @@
 #include "../core/thread_safe_queue.h"
 #include "../core/network_event.h"
 #include "../handlers/session/client_session.h"
+#include "../handlers/chat/chat_handler.h"
 #include <memory>
 #include <functional>
 
@@ -21,10 +22,11 @@ class StateContext {
 public:
     NetworkClient& network;
     ClientSession& session;
+    ChatHandler& chatHandler;
     ThreadSafeQueue<NetworkEvent>& eventQueue;
     StateTransitionCallback requestTransition;
     sf::Font& font;
 
-    StateContext(NetworkClient& net, ClientSession& sess, ThreadSafeQueue<NetworkEvent>& eq, sf::Font& f)
-        : network(net), session(sess), eventQueue(eq), font(f) {}
+    StateContext(NetworkClient& net, ClientSession& sess, ChatHandler& chat_handler, ThreadSafeQueue<NetworkEvent>& eq, sf::Font& f)
+        : network(net), session(sess), chatHandler(chat_handler), eventQueue(eq), font(f) {}
 };

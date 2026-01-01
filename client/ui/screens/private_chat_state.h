@@ -51,4 +51,7 @@ class PrivateChatState: public GameState{
     private:
         void buildDummyFriendList();
         void rebuildFriendListLayout();
+        void requestFriendList();
+        void buildFriendListFromData(const std::vector<FriendInfo>& friends);
+
 };

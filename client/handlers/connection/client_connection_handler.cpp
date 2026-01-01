@@ -66,6 +66,10 @@ void ClientConnectionHandler::handleMessage(const Message& message){
             challengeHandler_.onChallengeExpired(message);
             break;
 
+        case MessageType::FRIEND_LIST_RESPONSE:
+            chatHandler_.onServerDeliverFriendList(message);
+            break;
+
         default:
             std::cerr << "[ClientConnectionHandler] "
                       << "Unhandled message type: "

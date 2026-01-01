@@ -62,8 +62,18 @@ PrivateChatState::PrivateChatState(StateContext& ctx)
 
 void PrivateChatState::onEnter() {
     std::cout << "[PrivateChatState] Entered\n";
-    buildDummyFriendList();
-    rebuildFriendListLayout();
+
+    // 1. Register callback nhận friend list
+    ctx_.chatHandler.setFriendListCallback(
+        [this](const std::vector<FriendInfo>& friends) {
+            std::cout << "[UI] Friend list received: "
+                      << friends.size() << " friends\n";
+            buildFriendListFromData(friends);
+        }
+    );
+
+    // 2. Request friend list từ server
+    requestFriendList();
 }
 
 void PrivateChatState::onExit(){
@@ -143,3 +153,41 @@ void PrivateChatState::rebuildFriendListLayout(){
         y += 50.f;
     }
 }
+
+void PrivateChatState::requestFriendList() {
+    std::cout << "[UI] Request friend list\n";
+    ctx_.chatHandler.requestFriendList();
+}
+
+void PrivateChatState::buildFriendListFromData(
+    const std::vector<FriendInfo>& friends
+) {
+    friends_.clear();
+
+    for (const auto& info : friends) {
+        FriendItem f;
+        f.userId = info.userId;
+        f.username = info.username;
+
+        f.nameText.setFont(ctx_.font);
+        f.nameText.setString(f.username);
+        f.nameText.setCharacterSize(18);
+        f.nameText.setFillColor(sf::Color::White);
+
+        f.selectButton.setFont(ctx_.font);
+        f.selectButton.setText("Open", 14);
+        f.selectButton.setSize({70.f, 28.f});
+        f.selectButton.setColors(
+            sf::Color(80, 80, 80),
+            sf::Color::White,
+            sf::Color::White
+        );
+
+        friends_.push_back(std::move(f));
+    }
+
+    rebuildFriendListLayout();
+}
+
+
+

@@ -14,6 +14,10 @@ enum class MessageType : uint16_t {
     PASS_ROUND = 0x0021,
     DECLARE_SAM = 0x0022,
     SPIN_WHEEL = 0x0030,
+
+    FRIEND_LIST_REQUEST = 0x0040,
+    FRIEND_LIST_RESPONSE = 0x0041,
+
     
     // Auth messages
     SIGNUP = 0x0100,

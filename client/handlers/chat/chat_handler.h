@@ -2,6 +2,7 @@
 
 #include <string>
 #include <cstdint>
+#include <functional>
 
 #include "../../logic/chat/chat_logic.h"
 #include "../session/client_session.h"
@@ -24,6 +25,9 @@ class ClientSession;
 
 class ChatHandler {
     public:
+        using FriendListCallback =
+            std::function<void(const std::vector<FriendInfo>&)>;
+
         ChatHandler(ChatLogic& logic, ClientSession& session);
 
         void onSendPrivateChat(uint32_t receiverId, const std::string& message);
@@ -32,6 +36,12 @@ class ChatHandler {
         void onServerACK(const Message& ackMsg);
 
         void onServerDeliverMessage(const Message& msg);
+
+        void requestFriendList();
+
+        void onServerDeliverFriendList(const Message& message);
+
+        void setFriendListCallback(FriendListCallback cb);
 
     private:
         void startAckTimer();
@@ -45,4 +55,5 @@ class ChatHandler {
         std::thread ackTimerThread_; //tao thread rieng de quan ly timer
         std::atomic<bool> ackTimerActive_{false}; //bien de kiem soat timer, khong dung bool truyen thong vi no khong an toan trong da luong, cu the khi mot luong doc va mot luong ghi
         std::mutex ackTimerMutex_; //mutex de dong bo hoa truy cap den ackTimerActive_
+        FriendListCallback friendListCallback_;
 };
