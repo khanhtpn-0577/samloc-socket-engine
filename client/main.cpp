@@ -1,118 +1,94 @@
+#include <SFML/Graphics.hpp>
 #include <iostream>
-#include <string>
-#include <thread>   // Thư viện cho luồng
-#include <atomic>   // Thư viện cho biến cờ hiệu an toàn giữa các luồng
 
-#include "net/client_socket.h"
-#include "net/chat/message_sender.h"
-#include "logic/chat/chat_logic.h"
-#include "handlers/chat/chat_handler.h"
-#include "handlers/auth/auth_handler.h"
-#include "handlers/challenge/challenge_handler.h"
-#include "handlers/connection/client_connection_handler.h"
-#include "net/protocol.h"
+#include "ui/game_manager.h"
+#include "ui/state_context.h"
+#include "core/network_client.h"
+#include "core/thread_safe_queue.h"
+#include "core/network_event.h"
+#include "handlers/session/client_session.h"
 
-// Biến cờ hiệu để kiểm soát vòng lặp, atomic đảm bảo an toàn thread
-std::atomic<bool> isRunning(true);
-
-// Hàm lắng nghe tin nhắn (sẽ chạy ở luồng riêng)
-void receiveTask(ClientSocket* socket, ClientConnectionHandler* connHandler) {
-    while (isRunning) {
-        try {
-            // Giả sử receiveMessage là blocking (chờ đến khi có tin mới)
-            // Cần xử lý trường hợp socket bị đóng hoặc lỗi để break vòng lặp
-            Message serverMsg = socket->receiveMessage();
-            
-            // In dấu xuống dòng để không bị đè lên dòng "You: " đang nhập dở
-            std::cout << "\n"; 
-            connHandler->handleMessage(serverMsg);
-            
-            // In lại prompt nhập liệu cho đẹp (optional)
-            std::cout << "\nYou: " << std::flush; 
-        } catch (const std::exception& e) {
-            // Nếu socket lỗi hoặc ngắt kết nối
-            if (isRunning) std::cerr << "\nConnection lost: " << e.what() << "\n";
-            isRunning = false;
-            break;
-        }
-    }
-}
-
+// ===============================
+// ENTRY POINT
+// ===============================
 int main() {
-    std::cout << "=== Samloc Client - Direct Chat Demo ===\n\n";
+    // -------------------------------
+    // Create window
+    // -------------------------------
+    sf::RenderWindow window(
+        sf::VideoMode(1280, 720),
+        "Samloc - Private Chat UI Test"
+    );
+    window.setFramerateLimit(60);
 
-    // ===== Server config =====
-    std::string serverIp = "127.0.0.1";
-    int serverPort = 5000;
-
-    // ===== Input sender =====
-    uint32_t senderId;
-    std::cout << "Enter your userId: ";
-    std::cin >> senderId;
-    std::cin.ignore(); // Xóa bộ đệm sau khi nhập số
-
-    std::string token = "test_token";
-
-    // ===== Connect socket =====
-    ClientSocket socket(serverIp, serverPort);
-    if (!socket.connect()) {
-        std::cerr << "Failed to connect to server\n";
-        return 1;
+    // -------------------------------
+    // Load font
+    // -------------------------------
+    sf::Font font;
+    if (!font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")) {
+        std::cerr << "Failed to load font. Using default (may not render).\n";
+        // Continue anyway; SFML will use a default font
     }
 
-    std::cout << "Connected to server\n";
-
-    // ===== Core components =====
-    MessageSender messageSender(socket, senderId, token);
-    ChatLogic chatLogic(messageSender);
+    // -------------------------------
+    // Mock core components
+    // -------------------------------
+    ThreadSafeQueue<NetworkEvent> eventQueue;
 
     ClientSession session;
+    session.setLoggedIn(true);
+    session.setUserId(1);
+    session.setUsername("TestUser");
 
-    ChatHandler chatHandler(chatLogic, session);
-    AuthHandler authHandler(session);
-    ChallengeHandler challengeHandler(session);
-    ClientConnectionHandler connHandler(chatHandler, authHandler, challengeHandler);
+    // Dummy network config (KHÔNG start)
+    NetworkConfig netCfg;
+    netCfg.serverIp = "127.0.0.1";
+    netCfg.serverPort = 5000;
 
-    // ===== Input receiver =====
-    uint32_t receiverId;
-    std::cout << "Enter receiverId (Person you want to chat with): ";
-    std::cin >> receiverId;
-    std::cin.ignore();
+    NetworkClient network(netCfg, eventQueue);
+    //Không gọi network.start()
 
-    std::cout << "\n=== Start chatting (Type 'exit' to quit) ===\n";
+    // -------------------------------
+    // Create StateContext
+    // -------------------------------
+    StateContext ctx(
+        network,
+        session,
+        eventQueue,
+        font
+    );
 
-    // ===== BƯỚC 1: KHỞI TẠO LUỒNG LẮNG NGHE (RECEIVER THREAD) =====
-    // Tạo một luồng mới, truyền vào con trỏ của socket và handler
-    std::thread receiverThread(receiveTask, &socket, &connHandler);
+    // -------------------------------
+    // Game manager (boot PRIVATE CHAT)
+    // -------------------------------
+    GameManager gameManager(ctx);
 
-    // ===== BƯỚC 2: VÒNG LẶP NHẬP LIỆU (MAIN THREAD) =====
-    std::string text;
-    while (isRunning) {
-        std::cout << "You: ";
-        std::getline(std::cin, text);
+    // -------------------------------
+    // Main loop
+    // -------------------------------
+    sf::Clock clock;
+    while (window.isOpen()) {
+        sf::Event event;
+        while (window.pollEvent(event)) {
+            if (event.type == sf::Event::Closed) {
+                window.close();
+            }
 
-        if (text == "exit") {
-            isRunning = false;
-            break;
+            sf::Vector2f mousePos =
+                window.mapPixelToCoords(
+                    sf::Mouse::getPosition(window)
+                );
+
+            gameManager.handleEvent(event, mousePos);
         }
 
-        // Gửi tin nhắn
-        if (!text.empty()) {
-            chatHandler.onSendPrivateChat(receiverId, text);
-        }
+        float dt = clock.restart().asSeconds();
+        gameManager.update(dt);
+
+        window.clear(sf::Color(20, 20, 20));
+        gameManager.draw(window);
+        window.display();
     }
 
-    // ===== Cleanup =====
-    std::cout << "Disconnecting...\n";
-    
-    // Ngắt kết nối socket để luồng receiveTask thoát khỏi trạng thái blocking (chờ recv)
-    socket.disconnect(); 
-
-    // Chờ luồng phụ kết thúc rồi mới thoát chương trình chính
-    if (receiverThread.joinable()) {
-        receiverThread.join();
-    }
-
-    std::cout << "\nClient closed\n";
     return 0;
 }

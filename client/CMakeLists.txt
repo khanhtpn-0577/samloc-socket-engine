@@ -30,6 +30,7 @@ set(CLIENT_SOURCES
     ui/components/text_input.cpp
     ui/screens/login_state.cpp
     ui/screens/lobby_state.cpp
+    ui/screens/private_chat_state.cpp
     ui/game_manager.cpp
 )
 
@@ -59,6 +60,7 @@ set(CLIENT_HEADERS
     ui/components/text_input.h
     ui/screens/login_state.h
     ui/screens/lobby_state.h
+    ui/screens/private_chat_state.h
     ui/game_manager.h
 )
 
