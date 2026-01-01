@@ -63,3 +63,31 @@ void ChatLogic::requestFriendList(uint32_t userId){
                   << userId << "\n";
     }
 }
+
+void ChatLogic::requestPrivateChatHistory(uint32_t friendId){
+    if(friendId == 0){
+        std::cerr << "Invalid friend ID for private chat history request\n";
+        return;
+    }
+
+    // Construct payload (e.g., JSON format)
+    std::string payload = "{\"friendId\":" + std::to_string(friendId) + "}";
+
+    if(!messageSender.sendMessage(MessageType::PRIVATE_CHAT_HISTORY_REQUEST, payload)){
+        std::cerr << "[ChatLogic] Failed to send private chat history request\n";
+    } else {
+        std::cout << "[ChatLogic] Private chat history request sent for friendId="
+                  << friendId << "\n";
+    }
+}
+
+std::string ChatLogic::normalizeChatContent(
+    const std::string& raw
+) const {
+    if (raw.size() <= 4) {
+        return "";
+    }
+
+    // Bỏ 4 byte đầu
+    return raw.substr(4);
+}

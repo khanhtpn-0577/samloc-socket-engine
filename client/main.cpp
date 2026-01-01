@@ -70,8 +70,15 @@ int main(){
 
     // ===== Session =====
     ClientSession session;
-    session.setUserId(1);
-    session.setUsername("Player1");
+    
+    // Get userId from user input
+    uint32_t userId;
+    std::cout << "Enter your User ID: ";
+    std::cin >> userId;
+    std::cin.ignore(); // Clear the newline from input buffer
+    
+    session.setUserId(userId);
+    session.setUsername("Player" + std::to_string(userId));
     session.setLoggedIn(true);
 
     MessageSender& chatSender = network.chatSender();

@@ -145,6 +145,12 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming){
         needRespond = true;
         break;
 
+    case MessageType::PRIVATE_CHAT_HISTORY_REQUEST:
+        std::cout <<"[Server] Handling PRIVATE_CHAT_HISTORY_REQUEST\n";
+        response = chatHandler.handlePrivateChatHistoryRequest(incoming);
+        needRespond = true;
+        break;
+
     case MessageType::SIGNUP:
         response = authHandler.handleSignup(incoming);
         break;
@@ -180,7 +186,7 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming){
 
     if (needRespond) {
         std::cout << "[Server] Sending response type=" << response.header.messageType 
-                  << " to fd=" << clientFd << std::endl;
+                  << " to fd=" << clientFd << "with payload: " << response.payload << std::endl;
         
         if (!sendMessage(response)) {
             std::cerr << "[Server] Failed to send response to fd=" << clientFd << std::endl;

@@ -43,6 +43,21 @@ class ChatHandler {
 
         void setFriendListCallback(FriendListCallback cb);
 
+        void requestPrivateChatHistory(uint32_t friendId);
+
+        void onServerDeliverPrivateChatHistory(const Message& message);
+
+        using ChatHistoryCallback = std::function<void(const std::vector<ChatHistoryItem>&)>;
+
+        void setChatHistoryCallback(ChatHistoryCallback cb);
+
+        using IncomingMessageCallback = std::function<void(uint32_t senderId, const std::string& message)>;
+
+        void setIncomingMessageCallback(IncomingMessageCallback cb);
+
+
+
+
     private:
         void startAckTimer();
         void stopAckTimer();
@@ -56,4 +71,7 @@ class ChatHandler {
         std::atomic<bool> ackTimerActive_{false}; //bien de kiem soat timer, khong dung bool truyen thong vi no khong an toan trong da luong, cu the khi mot luong doc va mot luong ghi
         std::mutex ackTimerMutex_; //mutex de dong bo hoa truy cap den ackTimerActive_
         FriendListCallback friendListCallback_;
+        ChatHistoryCallback chatHistoryCallback_;
+        IncomingMessageCallback incomingMessageCallback_;
+
 };

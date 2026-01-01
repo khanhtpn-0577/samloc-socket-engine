@@ -55,3 +55,42 @@ PrivateChatRepository::getFriends(uint32_t userId) {
     return result;
 }
 
+
+std::vector<ChatMessage>
+PrivateChatRepository::getPrivateChatHistory(
+    uint32_t userId,
+    uint32_t friendId
+) {
+    std::vector<ChatMessage> result;
+
+    std::string sql =
+        "SELECT sender_id, receiver_id, message, sent_at "
+        "FROM private_chats "
+        "WHERE "
+        "(sender_id = ? AND receiver_id = ?) "
+        "OR "
+        "(sender_id = ? AND receiver_id = ?) "
+        "ORDER BY sent_at ASC;";
+
+    QueryResult rows = database.queryPrepared(
+        sql,
+        {
+            std::to_string(userId),
+            std::to_string(friendId),
+            std::to_string(friendId),
+            std::to_string(userId)
+        }
+    );
+
+    for (const auto& row : rows) {
+        ChatMessage msg;
+        msg.senderId   = std::stoul(row.at("sender_id"));
+        msg.receiverId = std::stoul(row.at("receiver_id"));
+        msg.content    = row.at("message");
+        msg.sentAt     = row.at("sent_at");
+        result.push_back(std::move(msg));
+    }
+
+    return result;
+}
+

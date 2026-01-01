@@ -17,6 +17,8 @@ enum class MessageType : uint16_t {
 
     FRIEND_LIST_REQUEST = 0x0040,
     FRIEND_LIST_RESPONSE = 0x0041,
+    PRIVATE_CHAT_HISTORY_REQUEST = 0x0042,
+    PRIVATE_CHAT_HISTORY_RESPONSE = 0x0043,
 
     
     // Auth messages
