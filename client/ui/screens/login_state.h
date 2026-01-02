@@ -5,6 +5,7 @@
 #include "../components/button.h"
 #include "../components/text_input.h"
 #include <SFML/Graphics.hpp>
+#include <string>
 
 class LoginState : public GameState {
 public:
@@ -31,4 +32,6 @@ private:
     sf::Text statusText_;
     sf::RectangleShape background_;
     bool showDisplayName_;
+    std::string pendingSignupUsername_;
+    std::string pendingSignupPassword_;
 };

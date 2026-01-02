@@ -17,6 +17,7 @@ set(CLIENT_SOURCES
     core/network_client.cpp
 
     logic/chat/chat_logic.cpp
+    logic/auth/auth_logic.cpp
     
     handlers/chat/chat_handler.cpp
     handlers/connection/client_connection_handler.cpp
@@ -44,6 +45,7 @@ set(CLIENT_HEADERS
     core/network_client.h
 
     logic/chat/chat_logic.h
+    logic/auth/auth_logic.h
     
     handlers/chat/chat_handler.h
     handlers/connection/client_connection_handler.h

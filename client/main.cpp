@@ -15,6 +15,9 @@
 #include "handlers/auth/auth_handler.h"
 #include "handlers/challenge/challenge_handler.h"
 
+#include "logic/auth/auth_logic.h"
+#include "logic/chat/chat_logic.h"
+
 
 // Hàm xử lý các sự kiện den client
 void consumeNetworkEvents(
@@ -70,23 +73,15 @@ int main(){
 
     // ===== Session =====
     ClientSession session;
-    
-    // Get userId from user input
-    uint32_t userId;
-    std::cout << "Enter your User ID: ";
-    std::cin >> userId;
-    std::cin.ignore(); // Clear the newline from input buffer
-    
-    session.setUserId(userId);
-    session.setUsername("Player" + std::to_string(userId));
-    session.setLoggedIn(true);
 
     MessageSender& chatSender = network.chatSender();
-    chatSender.updateIdentity(session.userId(), "");
     ChatLogic chatLogic(chatSender);
     ChatHandler chatHandler(chatLogic, session);
 
-    AuthHandler authHandler(session);
+    AuthSender& authSender = network.authSender();
+    AuthLogic authLogic(authSender);
+    AuthHandler authHandler(authLogic, session);
+    
     ChallengeHandler challengeHandler(session);
     ClientConnectionHandler connHandler(
         chatHandler,
@@ -101,14 +96,15 @@ int main(){
         session,
         chatHandler,
         eventQueue,
+        authHandler,
         font
     );
 
     // ===== Game Manager =====
     GameManager gameManager(ctx);
 
-    // ⚠️ Bypass Login/Lobby
-    gameManager.transitionTo(GameStateType::PrivateChat);
+    // Start with Login/Signup screen
+    gameManager.transitionTo(GameStateType::Login);
 
     // ===== Main Loop =====
     sf::Clock clock;
@@ -124,8 +120,6 @@ int main(){
             gameManager.handleEvent(event, mousePos);
         }
 
-        // Xử lý sự kiện mạng
-        consumeNetworkEvents(eventQueue, connHandler);
         float dt = clock.restart().asSeconds();
         gameManager.update(dt);
 
