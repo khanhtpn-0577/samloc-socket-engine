@@ -90,7 +90,6 @@ void LoginState::handleEvent(const sf::Event& event, const sf::Vector2f& mousePo
 
 void LoginState::update(float dt) {
     (void)dt;
-    consumeNetworkEvents();
 }
 
 void LoginState::draw(sf::RenderWindow& window) {
@@ -126,124 +125,153 @@ void LoginState::onSignupClicked() {
 
     if (username.empty() || password.empty()) {
         statusText_.setString("Username and password required");
+        statusText_.setFillColor(sf::Color::Red);
         return;
     }
 
+    // Signup lần 1 → hiện display name
     if (!showDisplayName_) {
         showDisplayName_ = true;
         statusText_.setString("Enter display name and click Signup again");
+        statusText_.setFillColor(sf::Color::White);
         return;
     }
 
+    // Signup lần 2
     if (displayName.empty()) {
         displayName = username;
     }
 
-    statusText_.setString("Signing up...");
     pendingSignupUsername_ = username;
     pendingSignupPassword_ = password;
+
+    statusText_.setString("Signing up...");
+    statusText_.setFillColor(sf::Color::White);
+
+    // CALLBACK
+    ctx_.auth_handler.setSignupCallback(
+        [this](bool success,
+               uint32_t userId,
+               const std::string&,
+               const std::string&,
+               const std::string& message) {
+
+            showDisplayName_ = false;
+
+            if (success) {
+                std::cout << "[LoginState] Signup success. Transition to Lobby\n";
+                ctx_.requestTransition(GameStateType::Lobby);
+            } else {
+                statusText_.setString("Signup failed: " + message);
+                statusText_.setFillColor(sf::Color::Red);
+            }
+        }
+    );
+
+    // Gửi signup
     ctx_.auth_handler.onSignupSender(username, password, displayName);
 }
 
-void LoginState::consumeNetworkEvents() {
-    AuthLogic authLogic(ctx_.network.authSender());
-    AuthHandler authHandler(authLogic, ctx_.session);
 
-    auto parseField = [](const std::string& payload, const std::string& key) {
-        std::string searchKey = "\"" + key + "\":\"";
-        size_t keyPos = payload.find(searchKey);
-        if (keyPos == std::string::npos) return std::string();
-        size_t valueStart = keyPos + searchKey.length();
-        size_t valueEnd = payload.find("\"", valueStart);
-        if (valueEnd == std::string::npos) return std::string();
-        return payload.substr(valueStart, valueEnd - valueStart);
-    };
+// void LoginState::consumeNetworkEvents() {
+//     AuthLogic authLogic(ctx_.network.authSender());
+//     AuthHandler authHandler(authLogic, ctx_.session);
 
-    auto parseUint32Field = [](const std::string& payload, const std::string& key) -> uint32_t {
-        std::string searchKey = "\"" + key + "\":";
-        size_t keyPos = payload.find(searchKey);
-        if (keyPos == std::string::npos) return 0;
-        size_t valueStart = keyPos + searchKey.length();
-        size_t valueEnd = payload.find_first_of(",}", valueStart);
-        if (valueEnd == std::string::npos) return 0;
-        std::string valueStr = payload.substr(valueStart, valueEnd - valueStart);
-        try {
-            return static_cast<uint32_t>(std::stoul(valueStr));
-        } catch (...) {
-            return 0;
-        }
-    };
+//     auto parseField = [](const std::string& payload, const std::string& key) {
+//         std::string searchKey = "\"" + key + "\":\"";
+//         size_t keyPos = payload.find(searchKey);
+//         if (keyPos == std::string::npos) return std::string();
+//         size_t valueStart = keyPos + searchKey.length();
+//         size_t valueEnd = payload.find("\"", valueStart);
+//         if (valueEnd == std::string::npos) return std::string();
+//         return payload.substr(valueStart, valueEnd - valueStart);
+//     };
 
-    while (auto opt = ctx_.eventQueue.tryPop()) {
-        NetworkEvent& ev = *opt;
+//     auto parseUint32Field = [](const std::string& payload, const std::string& key) -> uint32_t {
+//         std::string searchKey = "\"" + key + "\":";
+//         size_t keyPos = payload.find(searchKey);
+//         if (keyPos == std::string::npos) return 0;
+//         size_t valueStart = keyPos + searchKey.length();
+//         size_t valueEnd = payload.find_first_of(",}", valueStart);
+//         if (valueEnd == std::string::npos) return 0;
+//         std::string valueStr = payload.substr(valueStart, valueEnd - valueStart);
+//         try {
+//             return static_cast<uint32_t>(std::stoul(valueStr));
+//         } catch (...) {
+//             return 0;
+//         }
+//     };
 
-        if (std::holds_alternative<DisconnectEvent>(ev.payload)) {
-            statusText_.setString("Disconnected: " + std::get<DisconnectEvent>(ev.payload).reason);
-            continue;
-        }
+//     while (auto opt = ctx_.eventQueue.tryPop()) {
+//         NetworkEvent& ev = *opt;
 
-        if (std::holds_alternative<RawMessageEvent>(ev.payload)) {
-            Message& msg = std::get<RawMessageEvent>(ev.payload).message;
-            MessageType type = static_cast<MessageType>(msg.header.messageType);
+//         if (std::holds_alternative<DisconnectEvent>(ev.payload)) {
+//             statusText_.setString("Disconnected: " + std::get<DisconnectEvent>(ev.payload).reason);
+//             continue;
+//         }
 
-            if (type == MessageType::SIGNUP_RESPONSE) {
-                bool success = msg.payload.find("\"success\":true") != std::string::npos;
-                uint32_t userId = parseUint32Field(msg.payload, "userId");
-                std::string serverMsg = parseField(msg.payload, "message");
-                showDisplayName_ = false;
+//         if (std::holds_alternative<RawMessageEvent>(ev.payload)) {
+//             Message& msg = std::get<RawMessageEvent>(ev.payload).message;
+//             MessageType type = static_cast<MessageType>(msg.header.messageType);
 
-                if (success && userId > 0) {
-                    std::cout << "[LoginState] SIGNUP_RESPONSE success; userId=" << userId << "\n";
-                    statusText_.setString("Signup successful! Logging you in...");
-                    statusText_.setFillColor(sf::Color::Green);
+//             if (type == MessageType::SIGNUP_RESPONSE) {
+//                 bool success = msg.payload.find("\"success\":true") != std::string::npos;
+//                 uint32_t userId = parseUint32Field(msg.payload, "userId");
+//                 std::string serverMsg = parseField(msg.payload, "message");
+//                 showDisplayName_ = false;
 
-                    if (pendingSignupUsername_.empty()) {
-                        pendingSignupUsername_ = usernameInput_.value();
-                    }
-                    if (pendingSignupPassword_.empty()) {
-                        pendingSignupPassword_ = passwordInput_.value();
-                    }
+//                 if (success && userId > 0) {
+//                     std::cout << "[LoginState] SIGNUP_RESPONSE success; userId=" << userId << "\n";
+//                     statusText_.setString("Signup successful! Logging you in...");
+//                     statusText_.setFillColor(sf::Color::Green);
 
-                    if (pendingSignupUsername_.empty() || pendingSignupPassword_.empty()) {
-                        std::cout << "[LoginState] Missing cached signup credentials; cannot auto-login\n";
-                        statusText_.setString("Signup succeeded but missing credentials to login.");
-                        statusText_.setFillColor(sf::Color::Red);
-                        continue;
-                    }
+//                     if (pendingSignupUsername_.empty()) {
+//                         pendingSignupUsername_ = usernameInput_.value();
+//                     }
+//                     if (pendingSignupPassword_.empty()) {
+//                         pendingSignupPassword_ = passwordInput_.value();
+//                     }
 
-                    // Use the returned userId as the sender identity before logging in
-                    std::cout << "[LoginState] Auto-login with cached credentials\n";
-                    ctx_.network.authSender().updateIdentity(userId, "");
-                    ctx_.network.authSender().sendLogin(pendingSignupUsername_, pendingSignupPassword_);
-                } else {
-                    std::cout << "[LoginState] SIGNUP_RESPONSE failure: " << serverMsg << "\n";
-                    std::string statusMsg = success ? "Signup successful, but missing user id" : ("Signup failed: " + serverMsg);
-                    statusText_.setString(statusMsg);
-                    statusText_.setFillColor(sf::Color::Red);
-                }
-            } else if (type == MessageType::LOGIN_RESPONSE) {
-                bool success = msg.payload.find("\"success\":true") != std::string::npos;
-                if (success) {
-                    std::cout << "[LoginState] LOGIN_RESPONSE success\n";
-                    authHandler.onLoginResponse(msg);
+//                     if (pendingSignupUsername_.empty() || pendingSignupPassword_.empty()) {
+//                         std::cout << "[LoginState] Missing cached signup credentials; cannot auto-login\n";
+//                         statusText_.setString("Signup succeeded but missing credentials to login.");
+//                         statusText_.setFillColor(sf::Color::Red);
+//                         continue;
+//                     }
+
+//                     // Use the returned userId as the sender identity before logging in
+//                     std::cout << "[LoginState] Auto-login with cached credentials\n";
+//                     ctx_.network.authSender().updateIdentity(userId, "");
+//                     ctx_.network.authSender().sendLogin(pendingSignupUsername_, pendingSignupPassword_);
+//                 } else {
+//                     std::cout << "[LoginState] SIGNUP_RESPONSE failure: " << serverMsg << "\n";
+//                     std::string statusMsg = success ? "Signup successful, but missing user id" : ("Signup failed: " + serverMsg);
+//                     statusText_.setString(statusMsg);
+//                     statusText_.setFillColor(sf::Color::Red);
+//                 }
+//             } else if (type == MessageType::LOGIN_RESPONSE) {
+//                 bool success = msg.payload.find("\"success\":true") != std::string::npos;
+//                 if (success) {
+//                     std::cout << "[LoginState] LOGIN_RESPONSE success\n";
+//                     authHandler.onLoginResponse(msg);
                     
-                    // Update all senders with new identity
-                    uint32_t userId = ctx_.session.userId();
-                    std::string token = ctx_.session.token();
-                    ctx_.network.authSender().updateIdentity(userId, token);
-                    ctx_.network.chatSender().updateIdentity(userId, token);
-                    ctx_.network.challengeSender().updateIdentity(userId, token);
-                    pendingSignupUsername_.clear();
-                    pendingSignupPassword_.clear();
+//                     // Update all senders with new identity
+//                     uint32_t userId = ctx_.session.userId();
+//                     std::string token = ctx_.session.token();
+//                     ctx_.network.authSender().updateIdentity(userId, token);
+//                     ctx_.network.chatSender().updateIdentity(userId, token);
+//                     ctx_.network.challengeSender().updateIdentity(userId, token);
+//                     pendingSignupUsername_.clear();
+//                     pendingSignupPassword_.clear();
                     
-                    ctx_.requestTransition(GameStateType::Lobby);
-                } else {
-                    std::cout << "[LoginState] LOGIN_RESPONSE failure\n";
-                    std::string serverMsg = parseField(msg.payload, "message");
-                    statusText_.setString("Login failed: " + serverMsg);
-                    statusText_.setFillColor(sf::Color::Red);
-                }
-            }
-        }
-    }
-}
+//                     ctx_.requestTransition(GameStateType::Lobby);
+//                 } else {
+//                     std::cout << "[LoginState] LOGIN_RESPONSE failure\n";
+//                     std::string serverMsg = parseField(msg.payload, "message");
+//                     statusText_.setString("Login failed: " + serverMsg);
+//                     statusText_.setFillColor(sf::Color::Red);
+//                 }
+//             }
+//         }
+//     }
+// }

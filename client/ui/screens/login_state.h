@@ -20,7 +20,6 @@ public:
 private:
     void onLoginClicked();
     void onSignupClicked();
-    void consumeNetworkEvents();
 
     StateContext& ctx_;
     TextInput usernameInput_;

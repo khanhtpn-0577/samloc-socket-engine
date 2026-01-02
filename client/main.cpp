@@ -120,6 +120,9 @@ int main(){
             gameManager.handleEvent(event, mousePos);
         }
 
+        // Process network events
+        consumeNetworkEvents(eventQueue, connHandler);
+
         float dt = clock.restart().asSeconds();
         gameManager.update(dt);
 
