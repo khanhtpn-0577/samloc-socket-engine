@@ -6,6 +6,7 @@
 #include "../core/network_event.h"
 #include "../handlers/session/client_session.h"
 #include "../handlers/chat/chat_handler.h"
+#include "../handlers/auth/auth_handler.h"
 #include <memory>
 #include <functional>
 
@@ -25,8 +26,9 @@ public:
     ChatHandler& chatHandler;
     ThreadSafeQueue<NetworkEvent>& eventQueue;
     StateTransitionCallback requestTransition;
+    AuthHandler& auth_handler;
     sf::Font& font;
 
-    StateContext(NetworkClient& net, ClientSession& sess, ChatHandler& chat_handler, ThreadSafeQueue<NetworkEvent>& eq, sf::Font& f)
-        : network(net), session(sess), chatHandler(chat_handler), eventQueue(eq), font(f) {}
+    StateContext(NetworkClient& net, ClientSession& sess, ChatHandler& chat_handler, ThreadSafeQueue<NetworkEvent>& eq, AuthHandler& auth_handler, sf::Font& f)
+        : network(net), session(sess), chatHandler(chat_handler), eventQueue(eq), auth_handler(auth_handler), font(f) {}
 };

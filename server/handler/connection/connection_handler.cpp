@@ -153,6 +153,9 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming){
 
     case MessageType::SIGNUP:
         response = authHandler.handleSignup(incoming);
+        std::cout << "[Server] Sending SIGNUP_RESPONSE to fd=" << clientFd 
+                  << " with payload: " << response.payload << std::endl;
+        needRespond = true;
         break;
 
     case MessageType::LOGIN:
@@ -185,12 +188,12 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming){
     }
 
     if (needRespond) {
-        std::cout << "[Server] Sending response type=" << response.header.messageType 
-                  << " to fd=" << clientFd << "with payload: " << response.payload << std::endl;
-        
         if (!sendMessage(response)) {
             std::cerr << "[Server] Failed to send response to fd=" << clientFd << std::endl;
         }
+        std::cout << "[Server] Sent response of type "
+                  << response.header.messageType
+                  << " to fd=" << clientFd << std::endl;
     }
 }
 
