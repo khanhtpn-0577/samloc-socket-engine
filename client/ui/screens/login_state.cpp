@@ -185,6 +185,8 @@ void LoginState::consumeNetworkEvents() {
         if (std::holds_alternative<RawMessageEvent>(ev.payload)) {
             Message& msg = std::get<RawMessageEvent>(ev.payload).message;
             MessageType type = static_cast<MessageType>(msg.header.messageType);
+            std::cout << "[LoginState] Received message type=" << static_cast<int>(type)
+                      << " payloadLen=" << msg.payload.size() << "\n";
 
             if (type == MessageType::SIGNUP_RESPONSE) {
                 bool success = msg.payload.find("\"success\":true") != std::string::npos;
@@ -226,16 +228,22 @@ void LoginState::consumeNetworkEvents() {
                 if (success) {
                     std::cout << "[LoginState] LOGIN_RESPONSE success\n";
                     authHandler.onLoginResponse(msg);
-                    
-                    // Update all senders with new identity
-                    uint32_t userId = ctx_.session.userId();
-                    std::string token = ctx_.session.token();
+
+                    const uint32_t userId = ctx_.session.userId();
+                    const std::string token = ctx_.session.token();
+                    const std::string tokenPreview = token.size() > 8 ? token.substr(0, 8) + "..." : token;
+                    std::cout << "[LoginState] Session updated userId=" << userId
+                              << " tokenPreview=" << tokenPreview << "\n";
+
                     ctx_.network.authSender().updateIdentity(userId, token);
                     ctx_.network.chatSender().updateIdentity(userId, token);
                     ctx_.network.challengeSender().updateIdentity(userId, token);
                     pendingSignupUsername_.clear();
                     pendingSignupPassword_.clear();
-                    
+
+                    statusText_.setString("Login successful. Entering lobby...");
+                    statusText_.setFillColor(sf::Color::Green);
+                    std::cout << "[LoginState] Requesting transition to Lobby\n";
                     ctx_.requestTransition(GameStateType::Lobby);
                 } else {
                     std::cout << "[LoginState] LOGIN_RESPONSE failure\n";
