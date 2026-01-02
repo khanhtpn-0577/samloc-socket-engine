@@ -1,42 +1,53 @@
 #include "connection_handler.h"
-
 #include "../chat/chat_handler.h"
 #include "../auth/auth_handler.h"
 #include "../challenge/challenge_handler.h"
+#include "../game/game_handler.h"
 #include "../../logic/chat/chat_logic.h"
 #include "../../logic/auth/auth_logic.h"
 #include "../../logic/challenge/challenge_logic.h"
 #include "../session/session_manager.h"
 #include "../../db/database.h"
-
 #include <sys/socket.h>
 #include <unistd.h>
 #include <iostream>
+#include <iomanip>
+#include <sstream>
+#include <algorithm>
+#include <cerrno>
+#include <cstring>
 
-ConnectionHandler::ConnectionHandler(int fd)
-    : clientFd(fd), boundUserId(0) {
-        inputBuffer.reserve(4096);
+static std::string toHex(const uint8_t* data, size_t len) {
+    std::stringstream ss;
+    ss << std::hex;
+    for (size_t i = 0; i < len; ++i) {
+        ss << std::setw(2) << std::setfill('0') << static_cast<int>(data[i]) << " ";
     }
+    return ss.str();
+}
 
-int ConnectionHandler::getFd() const {
-    return clientFd;
+ConnectionHandler::ConnectionHandler(int fd, Database& dbRef)
+    : clientFd(fd), boundUserId(0), db(dbRef) {
+    inputBuffer.reserve(4096);
 }
 
 bool ConnectionHandler::sendAll(const char* data, size_t size) {
     size_t sent = 0;
     while (sent < size) {
-        ssize_t s = send(clientFd, data + sent, size - sent, 0);
+        #ifdef MSG_NOSIGNAL
+            ssize_t s = send(clientFd, data + sent, size - sent, MSG_NOSIGNAL);
+        #else
+            ssize_t s = send(clientFd, data + sent, size - sent, 0);
+        #endif
+
         if (s < 0) {
             if (errno == EINTR) continue;
-            std::cerr << "[Server] send error fd=" << clientFd
+            std::cerr << "[SEND ERROR] fd=" << clientFd
                       << " errno=" << errno
                       << " (" << strerror(errno) << ")\n";
             return false;
         }
-        if (s == 0) {
-            std::cerr << "[Server] send returned 0 fd=" << clientFd << "\n";
-            return false;
-        }
+        if (s == 0) return false;
         sent += static_cast<size_t>(s);
     }
     return true;
@@ -44,149 +55,128 @@ bool ConnectionHandler::sendAll(const char* data, size_t size) {
 
 
 bool ConnectionHandler::sendMessage(const Message& msg) {
-    std::string bytes = msg.serialize();
-    return sendAll(bytes.data(), bytes.size());
+    Message safeMsg = msg;
+    safeMsg.header.payloadLength = static_cast<uint32_t>(safeMsg.payload.size());
+    std::string bytes = safeMsg.serialize();
+    bool ok = sendAll(bytes.data(), bytes.size());
+    std::cout << "[SEND] fd=" << clientFd << " bytes=" << bytes.size() << " type=0x" << std::hex << safeMsg.header.messageType << std::dec << "\n";
+    return ok;
 }
 
-
-/**
- * Xử lý 1 event READ
- * return false => client disconnect
- */
 bool ConnectionHandler::onReadable() {
-    char tempBuf[4096];
-    ssize_t bytesRead = recv(clientFd, tempBuf, sizeof(tempBuf), 0);
-
-    if(bytesRead > 0){
-        inputBuffer.insert(inputBuffer.end(), tempBuf, tempBuf + bytesRead);
-    } else if (bytesRead ==0){
-        //client close connection
+    char temp[4096];
+    ssize_t n = recv(clientFd, temp, sizeof(temp), 0);
+    if (n > 0) {
+        inputBuffer.insert(inputBuffer.end(), temp, temp + n);
+        size_t showLen = std::min<size_t>(50, inputBuffer.size());
+        std::cout << "[DEBUG HEX] fd=" << clientFd << " bytes=" << inputBuffer.size() << " data=" << toHex(reinterpret_cast<const uint8_t*>(inputBuffer.data()), showLen) << (inputBuffer.size() > showLen ? " ..." : "") << "\n";
+    } else if (n == 0) {
+        std::cout << "[DISCONNECT] fd=" << clientFd << "\n";
         return false;
-    }else{
-        //bytesRead<0: kiem tra loi
-        if(errno == EAGAIN || errno ==EWOULDBLOCK){
-            //khong co du lieu, giu connection, cho lan poll sau
-            return true;
-        }
-
-        // Lỗi thật sự
-        std::cerr << "[Server] recv error fd=" << clientFd
-                  << " errno=" << errno << " (" << strerror(errno) << ")\n";
+    } else {
+        if (errno == EAGAIN || errno == EWOULDBLOCK) return true;
+        std::cerr << "[RECV ERROR] fd=" << clientFd << " errno=" << errno << " (" << strerror(errno) << ")\n";
         return false;
-
     }
 
-    //Parse message va handle
-    while(true){
-        //check header
-        if (inputBuffer.size() < sizeof(MessageHeader)){
-            break; //Chưa đủ header -> thoát, chờ lần đọc sau
+    while (true) {
+        if (inputBuffer.size() < sizeof(MessageHeader)) break;
+        MessageHeader header;
+        std::memcpy(&header, inputBuffer.data(), sizeof(MessageHeader));
+        constexpr uint32_t MAX_PAYLOAD = 1024 * 1024;
+        if (header.payloadLength > MAX_PAYLOAD) {
+            std::cerr << "[INVALID PAYLOAD] too large: " << header.payloadLength << "\n";
+            return false;
         }
-
-        //doc header
-        MessageHeader* header = reinterpret_cast<MessageHeader*>(inputBuffer.data());
-        
-        size_t totalMsgSize = sizeof(MessageHeader) + header->payloadLength;
-
-        //Kiem tra da du payload chua
-        if (inputBuffer.size() < totalMsgSize) {
-            break; // Đã có header, biết cần bao nhiêu byte nữa, nhưng chưa đủ -> chờ
-        }
-
-        //da co du 1 goi tin hoan chinh --> trich xuat
-        std::string payload;
-
-        if(header->payloadLength > 0){
-            payload.assign(inputBuffer.begin() + sizeof(MessageHeader), inputBuffer.begin() + totalMsgSize); //payload.assign(first, last)-->sao chep du lieu tu first toi last
-        }
-
+        size_t totalSize = sizeof(MessageHeader) + header.payloadLength;
+        if (inputBuffer.size() < totalSize) break;
         Message msg;
-        msg.header = *header;
-        msg.payload = payload;
-
+        msg.header = header;
+        if (header.payloadLength > 0) {
+            msg.payload.assign(inputBuffer.begin() + sizeof(MessageHeader), inputBuffer.begin() + totalSize);
+        }
+        std::cout << "[PARSE] fd=" << clientFd << " type=0x" << std::hex << msg.header.messageType << std::dec << " sender=" << msg.header.senderId << " payload_len=" << msg.header.payloadLength << "\n";
         processIncomingMessage(msg);
-
-        //Xóa gói tin đã xử lý khỏi buffer để trượt sang gói tiếp theo
-        inputBuffer.erase(inputBuffer.begin(), inputBuffer.begin() + totalMsgSize);
+        inputBuffer.erase(inputBuffer.begin(), inputBuffer.begin() + totalSize);
     }
+
     return true;
 }
 
-void ConnectionHandler::processIncomingMessage(const Message& incoming){
-    //bind session lan dau neu chua co
-    if(boundUserId == 0 && incoming.header.senderId!=0){
+void ConnectionHandler::processIncomingMessage(const Message& incoming) {
+    if (boundUserId == 0 && incoming.header.senderId != 0) {
         boundUserId = incoming.header.senderId;
         SessionManager::instance().add(boundUserId, this);
-        std::cout<< "[Server] User " << boundUserId << " bound to fd " << clientFd << std::endl;
-
+        std::cout << "[BIND USER] uid=" << boundUserId << " fd=" << clientFd << "\n";
     }
 
-    // Create logic and handler instances
+    GameHandler::instance().init(db);
     ChatLogic chatLogic;
     AuthLogic authLogic(db);
     ChallengeLogic challengeLogic(db);
-    
     ChatHandler chatHandler(chatLogic);
     AuthHandler authHandler(authLogic);
     ChallengeHandler challengeHandler(challengeLogic);
 
     Message response;
     bool needRespond = false;
+    uint16_t typeVal = incoming.header.messageType;
 
-    switch (static_cast<MessageType>(header.messageType)) {
-    case MessageType::CHAT_DIRECT:
-        response = chatHandler.handleChatDirect(incoming);
-        needRespond = true;
-        break;
-
-    case MessageType::SIGNUP:
-        response = authHandler.handleSignup(incoming);
-        break;
-
-    case MessageType::LOGIN:
-        response = authHandler.handleLogin(incoming);
-        break;
-
-    case MessageType::LOGOUT:
-        response = authHandler.handleLogout(incoming);
-        break;
-
-    case MessageType::SEND_CHALLENGE:
-        response = challengeHandler.handleSendChallenge(incoming);
-        break;
-
-    case MessageType::ACCEPT_CHALLENGE:
-        response = challengeHandler.handleAcceptChallenge(incoming);
-        break;
-
-    case MessageType::REJECT_CHALLENGE:
-        response = challengeHandler.handleRejectChallenge(incoming);
-        break;
-
-    case MessageType::CANCEL_CHALLENGE:
-        response = challengeHandler.handleCancelChallenge(incoming);
-        break;
-
-    default:
-        std::cerr << "[Server] Unsupported message type: "
-                  << header.messageType << std::endl;
-        return true;
+    if (typeVal >= 0x2000 && typeVal <= 0x30FF) {
+        response = GameHandler::instance().handleMessage(incoming, incoming.header.senderId);
+        if (response.header.messageType != 0) needRespond = true;
+    } else {
+        switch (static_cast<MessageType>(typeVal)) {
+            case MessageType::CHAT_DIRECT:
+                response = chatHandler.handleChatDirect(incoming);
+                needRespond = true;
+                break;
+            case MessageType::SIGNUP:
+                response = authHandler.handleSignup(incoming);
+                needRespond = true;
+                break;
+            case MessageType::LOGIN:
+                response = authHandler.handleLogin(incoming);
+                needRespond = true;
+                break;
+            case MessageType::LOGOUT:
+                response = authHandler.handleLogout(incoming);
+                needRespond = true;
+                break;
+            case MessageType::SEND_CHALLENGE:
+                response = challengeHandler.handleSendChallenge(incoming);
+                needRespond = true;
+                break;
+            case MessageType::ACCEPT_CHALLENGE:
+                response = challengeHandler.handleAcceptChallenge(incoming);
+                needRespond = true;
+                break;
+            case MessageType::REJECT_CHALLENGE:
+                response = challengeHandler.handleRejectChallenge(incoming);
+                needRespond = true;
+                break;
+            case MessageType::CANCEL_CHALLENGE:
+                response = challengeHandler.handleCancelChallenge(incoming);
+                needRespond = true;
+                break;
+            default:
+                std::cerr << "[UNKNOWN TYPE] " << typeVal << "\n";
+                break;
+        }
     }
 
     if (needRespond) {
-        std::cout << "[Server] Sending response type=" << response.header.messageType 
-                  << " to fd=" << clientFd << std::endl;
-        
         if (!sendMessage(response)) {
-            std::cerr << "[Server] Failed to send response to fd=" << clientFd << std::endl;
+            std::cerr << "[SEND FAIL] fd=" << clientFd << "\n";
         }
     }
 }
 
 void ConnectionHandler::closeConnection() {
     if (boundUserId != 0) {
+        GameHandler::instance().onClientDisconnect(boundUserId);
         SessionManager::instance().remove(boundUserId);
-        std::cout << "[Server] User " << boundUserId << " unbound\n";
+        std::cout << "[USER OFFLINE] uid=" << boundUserId << "\n";
     }
     close(clientFd);
 }

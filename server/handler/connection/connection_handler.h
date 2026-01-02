@@ -26,6 +26,7 @@ private:
 private:
     int clientFd;
     uint32_t boundUserId;
+    Database& db;
 
     //buffer luu du lieu doc duoc tu tcp stream
     std::vector<char> inputBuffer;

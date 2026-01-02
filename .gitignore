@@ -34,3 +34,4 @@ third_party/bin/
 Thumbs.db
 *.tmp
 *.bak
+_deps/
