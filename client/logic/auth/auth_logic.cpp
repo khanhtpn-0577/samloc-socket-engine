@@ -14,5 +14,12 @@ void AuthLogic::onSignupSender(
         authSender.sendSignup(username, password, displayName);
 }
 
+void AuthLogic::onLoginSender(
+    const std::string& username,
+    const std::string& password) {
+        std::cout << "[AuthLogic] onLoginSender called for username: " << username << std::endl;
+        authSender.sendLogin(username, password);
+}
+
 
 

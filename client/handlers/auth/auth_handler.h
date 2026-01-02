@@ -16,8 +16,9 @@ class AuthHandler {
 public:
     AuthHandler(AuthLogic& logic, ClientSession& session);
 
-    // TODO: thêm đoạn giữa sender và GUI 
     void onSignupSender(const std::string& username, const std::string& password, const std::string& displayName);
+
+    void onLoginSender(const std::string& username, const std::string& password);
 
     // Handle SIGNUP_RESPONSE
     void onSignupResponse(const Message& message);
@@ -38,6 +39,16 @@ public:
 
     void setSignupCallback(SignupCallback cb);
 
+    using LoginCallback = std::function<void(
+        bool success,
+        uint32_t userId,
+        const std::string& token,
+        const std::string& message
+    )>;
+
+    void setLoginCallback(LoginCallback cb);
+
+
 private:
     // Parse simple JSON-like payload
     std::string parseField(const std::string& payload, const std::string& key);
@@ -49,4 +60,6 @@ private:
     ClientSession& session_;
 
     SignupCallback signupCallback_;
+    LoginCallback loginCallback_;
+
 };

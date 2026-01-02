@@ -6,10 +6,11 @@
 #include <mutex>
 #include "../protocol.h"
 #include "../client_socket.h"
+#include "../../handlers/session/client_session.h"
 
 class MessageSender {
 public:
-    MessageSender(ClientSocket& socket, uint32_t userId, const std::string& token);
+    MessageSender(ClientSocket& socket, ClientSession& session);
     
     // Send direct message
     bool sendDirectMessage(uint32_t receiverId, const std::string& messageContent);
@@ -27,8 +28,7 @@ public:
 
 private:
     ClientSocket& socket;
-    uint32_t userId;
-    std::string token;
+    ClientSession& session;
     
     // Create base message with header
     Message createMessage(MessageType type, const std::string& payload);

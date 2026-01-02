@@ -21,6 +21,11 @@ public:
         const std::string& displayName
     );
 
+    void onLoginSender(
+        const std::string& username,
+        const std::string& password
+    );
+
 private:
     AuthSender& authSender;
 };

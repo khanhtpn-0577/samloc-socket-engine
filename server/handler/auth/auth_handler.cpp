@@ -25,6 +25,26 @@ std::string AuthHandler::parseField(const std::string& payload, const std::strin
     return payload.substr(valueStart, valueEnd - valueStart);
 }
 
+uint32_t AuthHandler::parseUint32Field(const std::string& payload, const std::string& key) {
+    // Parse numeric field: {"key":123}
+    std::string searchKey = "\"" + key + "\":";
+    size_t keyPos = payload.find(searchKey);
+    
+    if (keyPos == std::string::npos) {
+        return 0;
+    }
+    
+    size_t valueStart = keyPos + searchKey.length();
+    size_t valueEnd = payload.find_first_of(",}", valueStart);
+    
+    if (valueEnd == std::string::npos) {
+        return 0;
+    }
+    
+    std::string valueStr = payload.substr(valueStart, valueEnd - valueStart);
+    return std::stoul(valueStr);
+}
+
 std::string AuthHandler::buildPayload(
     bool success,
     const std::string& message,

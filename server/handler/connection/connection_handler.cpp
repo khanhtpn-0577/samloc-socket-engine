@@ -133,6 +133,9 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming){
     Message response;
     bool needRespond = false;
 
+    std::cout << "[Server] Processing message from fd=" << clientFd 
+              << " of type " << incoming.header.messageType <<" with senderId=" << incoming.header.senderId << std::endl << " with payload: " << incoming.payload << std::endl;
+
     switch (static_cast<MessageType>(incoming.header.messageType)) {
     case MessageType::CHAT_DIRECT:
         response = chatHandler.handleChatDirect(incoming);
@@ -158,10 +161,31 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming){
         needRespond = true;
         break;
 
-    case MessageType::LOGIN:
+    case MessageType::LOGIN: {
         response = authHandler.handleLogin(incoming);
+
+        bool success =
+            response.payload.find("\"success\":true") != std::string::npos;
+
+        if (success && boundUserId == 0) {
+            uint32_t userId =
+                authHandler.parseUint32Field(response.payload, "userId");
+
+            boundUserId = userId;
+            SessionManager::instance().add(boundUserId, this);
+
+            std::cout << "[Server] User " << boundUserId
+                    << " bound to fd " << clientFd
+                    << " after LOGIN\n";
+        }
+
+        std::cout << "[Server] Sending LOGIN_RESPONSE to fd=" << clientFd
+                << " with payload: " << response.payload << std::endl;
+
         needRespond = true;
         break;
+    }
+
 
     case MessageType::LOGOUT:
         response = authHandler.handleLogout(incoming);
