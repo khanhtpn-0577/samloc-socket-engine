@@ -160,6 +160,7 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming){
 
     case MessageType::LOGIN:
         response = authHandler.handleLogin(incoming);
+        needRespond = true;
         break;
 
     case MessageType::LOGOUT:
