@@ -36,6 +36,7 @@ void ClientConnectionHandler::handleMessage(const Message& message){
             break;
 
         case MessageType::LOGIN_RESPONSE:
+            std::cout << "[ClientConnectionHandler] Received LOGIN_RESPONSE with payload: " << message.payload << "\n";
             authHandler_.onLoginResponse(message);
             break;
 

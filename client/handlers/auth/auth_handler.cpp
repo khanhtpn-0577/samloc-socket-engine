@@ -88,26 +88,32 @@ void AuthHandler::onSignupResponse(const Message& message) {
 
 void AuthHandler::onLoginResponse(const Message& message) {
     std::cout << "[AuthHandler] Received LOGIN_RESPONSE\n";
-    
+
+    // 1. Parse đúng payload server gửi
     bool success = parseBoolField(message.payload, "success");
-    std::string msg = parseField(message.payload, "message");
+    std::string serverMsg = parseField(message.payload, "message");
     uint32_t userId = parseUint32Field(message.payload, "userId");
     std::string token = parseField(message.payload, "token");
-    
-    std::cout << "Login: " << (success ? "SUCCESS" : "FAILED") << " - " << msg << "\n";
-    
-    if (success) {
-        // Update session
+
+    // 2. Nếu login thành công → update session
+    if (success && userId > 0 && !token.empty()) {
         session_.setLoggedIn(true);
         session_.setUserId(userId);
         session_.setToken(token);
         session_.setState(ClientState::LOGGED_IN);
-        
-        std::cout << "User ID: " << userId << "\n";
-        std::cout << "Session token: " << token.substr(0, 16) << "...\n";
-        std::cout << "You are now logged in!\n";
+    }
+
+    // 3. Gọi callback cho GUI
+    if (loginCallback_) {
+        loginCallback_(
+            success,
+            userId,
+            token,
+            serverMsg
+        );
     }
 }
+
 
 void AuthHandler::onLogoutResponse(const Message& message) {
     std::cout << "[AuthHandler] Received LOGOUT_RESPONSE\n";
@@ -133,6 +139,16 @@ void AuthHandler::onSignupSender(const std::string& username, const std::string&
     authLogic_.onSignupSender(username, password, displayName);
 }
 
+void AuthHandler::onLoginSender(const std::string& username, const std::string& password) {
+    std::cout << "[AuthHandler] Login request: username=" << username << "\n";
+    authLogic_.onLoginSender(username, password);
+}
+
 void AuthHandler::setSignupCallback(SignupCallback cb) {
     signupCallback_ = std::move(cb);
 }
+
+void AuthHandler::setLoginCallback(LoginCallback cb) {
+    loginCallback_ = std::move(cb);
+}
+

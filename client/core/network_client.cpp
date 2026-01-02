@@ -1,12 +1,17 @@
 #include "network_client.h"
 #include <iostream>
 
-NetworkClient::NetworkClient(const NetworkConfig& cfg, ThreadSafeQueue<NetworkEvent>& queue)
+NetworkClient::NetworkClient(
+    const NetworkConfig& cfg,
+    ThreadSafeQueue<NetworkEvent>& queue,
+    ClientSession& session
+)
     : config_(cfg),
       queue_(queue),
       socket_(cfg.serverIp, cfg.serverPort),
-      chatSender_(socket_, 0, ""),
-      authSender_(socket_, 0, ""),
+      session_(session),                       //dùng session bên ngoài
+      chatSender_(socket_, session_),          
+      authSender_(socket_, 0, ""),          
       challengeSender_(socket_, 0, ""),
       running_(false) {}
 
@@ -61,12 +66,15 @@ void NetworkClient::run() {
             running_ = false;
             break;
         }
+
         Message msg = socket_.receiveMessage();
+
         if (!socket_.isConnected()) {
             pushDisconnect("Server disconnected");
             running_ = false;
             break;
         }
+
         NetworkEvent ev;
         ev.payload = RawMessageEvent{msg};
         queue_.push(std::move(ev));

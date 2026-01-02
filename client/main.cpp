@@ -57,6 +57,9 @@ int main(){
         // Continue anyway; SFML will use a default font
     }
 
+    // ===== Session =====
+    ClientSession session;
+
     // ===== Network =====
     ThreadSafeQueue<NetworkEvent> eventQueue;
 
@@ -65,14 +68,11 @@ int main(){
         .serverPort = 5000
     };
 
-    NetworkClient network(cfg, eventQueue);
+    NetworkClient network(cfg, eventQueue, session);
     if (!network.start()) {
         std::cerr << "Failed to start network client\n";
         return 1;
     }
-
-    // ===== Session =====
-    ClientSession session;
 
     MessageSender& chatSender = network.chatSender();
     ChatLogic chatLogic(chatSender);

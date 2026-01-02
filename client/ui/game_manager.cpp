@@ -20,33 +20,39 @@
 //     currentState_->onEnter();
 // }
 
-//Game manager to test private chat state
 GameManager::GameManager(StateContext& ctx)
     : ctx_(ctx),
-      currentStateType_(GameStateType::PrivateChat) {
+      currentStateType_(GameStateType::Login) {
 
     ctx_.requestTransition = [this](GameStateType newState) {
+        std::cout << "[GameManager] Transition requested from "
+                  << static_cast<int>(currentStateType_)
+                  << " to " << static_cast<int>(newState) << "\n";
         transitionTo(newState);
     };
 
-    //KHỞI TẠO TRỰC TIẾP PRIVATE CHAT
-    currentState_ = std::make_unique<PrivateChatState>(ctx_);
+    std::cout << "[GameManager] Initializing Login state\n";
+    currentState_ = std::make_unique<LoginState>(ctx_);
     currentState_->onEnter();
 }
 
 void GameManager::transitionTo(GameStateType newState) {
     if (currentStateType_ == newState) {
+        std::cout << "[GameManager] Ignoring transition to same state "
+                  << static_cast<int>(newState) << "\n";
         return;
     }
-    
-    std::cout << "[GameManager] Transition to state " << static_cast<int>(newState) << "\n";
-    
+
+    std::cout << "[GameManager] Transitioning from "
+              << static_cast<int>(currentStateType_)
+              << " to " << static_cast<int>(newState) << "\n";
+
     if (currentState_) {
         currentState_->onExit();
     }
-    
+
     currentStateType_ = newState;
-    
+
     switch (newState) {
         case GameStateType::Login:
             currentState_ = std::make_unique<LoginState>(ctx_);
@@ -62,10 +68,16 @@ void GameManager::transitionTo(GameStateType newState) {
             std::cerr << "[GameManager] InGame state not implemented yet\n";
             break;
     }
-    
-    if (currentState_) {
-        currentState_->onEnter();
+
+    if (!currentState_) {
+        std::cerr << "[GameManager] Failed to create state "
+                  << static_cast<int>(newState) << "\n";
+        return;
     }
+
+    currentState_->onEnter();
+    std::cout << "[GameManager] Entered state "
+              << static_cast<int>(newState) << "\n";
 }
 
 void GameManager::handleEvent(const sf::Event& event, const sf::Vector2f& mousePos) {
