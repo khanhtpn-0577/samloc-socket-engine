@@ -54,16 +54,42 @@ PrivateChatState::PrivateChatState(StateContext& ctx)
             std::cout << "[UI] No friend selected\n";
             return;
         }
+
+        std::string message = messageInput_.value();
+        if (message.empty()) {
+            std::cout << "[UI] Empty message, ignore\n";
+            return;
+        }
+
         std::cout << "[UI] Send message to user "
-                  << selectedFriendId_ << "\n";
+                << selectedFriendId_
+                << ": " << message << "\n";
+
+        ctx_.chatHandler.onSendPrivateChat(
+            selectedFriendId_,
+            message
+        );
+
+        ChatBubble bubble;
+        bubble.senderId = ctx_.session.userId();
+
+        bubble.text.setFont(ctx_.font);
+        bubble.text.setCharacterSize(16);
+        bubble.text.setFillColor(sf::Color::Green);
+        bubble.text.setString(message);
+
+        chatBubbles_.push_back(std::move(bubble));
+        rebuildChatLayout();
+
         messageInput_.clear();
     });
+
 }
 
 void PrivateChatState::onEnter() {
     std::cout << "[PrivateChatState] Entered\n";
 
-    // 1. Register callback nhận friend list
+    //Register callback nhận friend list
     ctx_.chatHandler.setFriendListCallback(
         [this](const std::vector<FriendInfo>& friends) {
             std::cout << "[UI] Friend list received: "
@@ -72,7 +98,36 @@ void PrivateChatState::onEnter() {
         }
     );
 
-    // 2. Request friend list từ server
+    // Chat history callback
+    ctx_.chatHandler.setChatHistoryCallback(
+        [this](const std::vector<ChatHistoryItem>& history) {
+            buildChatHistory(history);
+        }
+    );
+
+    ctx_.chatHandler.setIncomingMessageCallback(
+        [this](uint32_t senderId, const std::string& content) {
+
+            // Chỉ render nếu đang chat với người này
+            if (senderId != selectedFriendId_) {
+                std::cout << "[UI] Message from other user, ignore\n";
+                return;
+            }
+
+            ChatBubble bubble;
+            bubble.senderId = senderId;
+            bubble.text.setFont(ctx_.font);
+            bubble.text.setString(content);
+            bubble.text.setCharacterSize(16);
+            bubble.text.setFillColor(sf::Color::White);
+
+            chatBubbles_.push_back(std::move(bubble));
+            rebuildChatLayout();
+        }
+    );
+
+
+    //Request friend list từ server
     requestFriendList();
 }
 
@@ -92,6 +147,9 @@ void PrivateChatState::handleEvent(const sf::Event& event, const sf::Vector2f &m
             if (f.selectButton.isClicked(mousePos)) {
                 selectedFriendId_ = f.userId;
                 chatTitle_.setString("Chat with " + f.username);
+
+                ctx_.chatHandler.requestPrivateChatHistory(selectedFriendId_);
+
                 std::cout << "[UI] Selected friend: "
                           << f.username << "\n";
             }
@@ -115,34 +173,12 @@ void PrivateChatState::draw(sf::RenderWindow& window) {
         f.selectButton.draw(window);
     }
 
+    for (const auto& bubble : chatBubbles_) {
+        window.draw(bubble.text);
+    }
+
     messageInput_.draw(window);
     sendButton_.draw(window);
-}
-
-
-void PrivateChatState::buildDummyFriendList(){
-    friends_.clear();
-
-    for (uint32_t i = 1; i<=5; ++i){
-        FriendItem f;
-        f.userId = i;
-        f.username = "Friend" + std::to_string(i);
-        f.nameText.setFont(ctx_.font);  
-        f.nameText.setString(f.username);
-        f.nameText.setCharacterSize(18);
-        f.nameText.setFillColor(sf::Color::White);
-
-        f.selectButton.setFont(ctx_.font);
-        f.selectButton.setText("Open", 14);
-        f.selectButton.setSize({70.f, 28.f});
-        f.selectButton.setColors(
-            sf::Color(80, 80, 80),
-            sf::Color::White,
-            sf::Color::White
-        );
-
-        friends_.push_back(std::move(f));//chuyen f vao vector
-    }
 }
 
 void PrivateChatState::rebuildFriendListLayout(){
@@ -189,5 +225,48 @@ void PrivateChatState::buildFriendListFromData(
     rebuildFriendListLayout();
 }
 
+void PrivateChatState::buildChatHistory(
+    const std::vector<ChatHistoryItem>& history
+) {
+    chatBubbles_.clear();
+
+    float y = 80.f;
+
+    for (const auto& item : history) {
+        ChatBubble bubble;
+        bubble.senderId = item.senderId;
+
+        bubble.text.setFont(ctx_.font);
+        bubble.text.setCharacterSize(16);
+        bubble.text.setFillColor(
+            item.senderId == ctx_.session.userId()
+                ? sf::Color::Green
+                : sf::Color::White
+        );
+
+        bubble.text.setString(item.content);
+
+        float x =
+            item.senderId == ctx_.session.userId()
+                ? 720.f
+                : 330.f;
+
+        bubble.text.setPosition(x, y);
+        y += 26.f;
+
+        chatBubbles_.push_back(std::move(bubble));
+    }
+}
+
+void PrivateChatState::rebuildChatLayout() {
+    float y = 80.f;
+    for (auto& bubble : chatBubbles_) {
+        float x = (bubble.senderId == ctx_.session.userId())
+                ? 950.f - bubble.text.getLocalBounds().width
+                : 330.f;
+        bubble.text.setPosition(x, y);
+        y += 30.f;
+    }
+}
 
 

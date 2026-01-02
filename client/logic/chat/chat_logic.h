@@ -22,6 +22,10 @@ public:
 
     void requestFriendList(uint32_t userId);
 
+    void requestPrivateChatHistory(uint32_t friendId);
+
+    std::string normalizeChatContent(const std::string& raw) const;
+
 private:
     bool isValidMessage(const std::string& message) const;
 

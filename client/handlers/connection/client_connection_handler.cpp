@@ -69,6 +69,10 @@ void ClientConnectionHandler::handleMessage(const Message& message){
         case MessageType::FRIEND_LIST_RESPONSE:
             chatHandler_.onServerDeliverFriendList(message);
             break;
+        
+        case MessageType::PRIVATE_CHAT_HISTORY_RESPONSE:
+            chatHandler_.onServerDeliverPrivateChatHistory(message);
+            break;
 
         default:
             std::cerr << "[ClientConnectionHandler] "

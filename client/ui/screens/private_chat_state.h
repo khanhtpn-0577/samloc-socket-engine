@@ -31,7 +31,12 @@ class PrivateChatState: public GameState{
             sf::Text nameText;
             Button selectButton;
         };
-        
+
+        struct ChatBubble {
+            uint32_t senderId;
+            sf::Text text;
+        };
+                
         StateContext& ctx_;
 
         // ===== Layout =====
@@ -43,15 +48,20 @@ class PrivateChatState: public GameState{
         std::vector<FriendItem> friends_;
         uint32_t selectedFriendId_;
 
+        // ==== Chat bubbles =====
+        std::vector<ChatBubble> chatBubbles_;
+
         // ===== Chat UI =====
         sf::Text chatTitle_;
         TextInput messageInput_;
         Button sendButton_;
     
     private:
-        void buildDummyFriendList();
         void rebuildFriendListLayout();
+        void rebuildChatLayout();
         void requestFriendList();
         void buildFriendListFromData(const std::vector<FriendInfo>& friends);
-
+        void buildChatHistory(
+        const std::vector<ChatHistoryItem>& history
+    );
 };

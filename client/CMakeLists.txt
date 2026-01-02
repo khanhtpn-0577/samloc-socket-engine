@@ -22,7 +22,6 @@ set(CLIENT_SOURCES
     handlers/connection/client_connection_handler.cpp
     handlers/session/client_session.cpp
 
-    gui/src/ChatScreen.cpp
     handlers/auth/auth_handler.cpp
     handlers/challenge/challenge_handler.cpp
 
@@ -50,7 +49,6 @@ set(CLIENT_HEADERS
     handlers/connection/client_connection_handler.h
     handlers/session/client_session.h
 
-    gui/include/ChatScreen.h
     handlers/auth/auth_handler.h
     handlers/challenge/challenge_handler.h
 

@@ -12,6 +12,8 @@ public:
 
     Message handleFriendListRequest(const Message& incomingMsg);
 
+    Message handlePrivateChatHistoryRequest(const Message& incomingMsg);
+
 private:
     ChatLogic& chatLogic;
 };

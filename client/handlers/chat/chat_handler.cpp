@@ -49,20 +49,15 @@ void ChatHandler::onServerACK(const Message& ackMsg){
     // TODO: update UI → sent
 }
 
-void ChatHandler::onServerDeliverMessage(const Message& msg){
+void ChatHandler::onServerDeliverMessage(const Message& msg) {
     uint32_t senderId = msg.header.senderId;
+    std::string content = chatLogic_.normalizeChatContent(msg.payload);
 
-    // ===== Parse message content =====
-    const std::string& message = msg.payload;
-
-    // ===== Route to GUI (console for now) =====
-    std::cout << "\n[Private Chat]\n";
-    std::cout << "From user: " << senderId << "\n";
-    std::cout << "Message  : " << message << "\n";
-    std::cout << "--------------------------\n";
-
-    std::cout << "[ChatHandler] New message delivered\n";
+    if (incomingMessageCallback_) {
+        incomingMessageCallback_(senderId, content);
+    }
 }
+
 
 void ChatHandler::startAckTimer(){
     stopAckTimer();
@@ -161,6 +156,85 @@ void ChatHandler::onServerDeliverFriendList(const Message& message) {
 void ChatHandler::setFriendListCallback(FriendListCallback callback) {
     friendListCallback_ = callback;
 }
+
+void ChatHandler::requestPrivateChatHistory(uint32_t peerId) {
+    chatLogic_.requestPrivateChatHistory(peerId);
+}
+
+void ChatHandler::onServerDeliverPrivateChatHistory(
+    const Message& message
+) {
+    const std::string& payload = message.payload;
+
+    std::vector<ChatHistoryItem> history;
+
+    // Tìm "messages"
+    size_t pos = payload.find("\"messages\"");
+    if (pos == std::string::npos) {
+        std::cerr << "[ChatHandler] Invalid history payload\n";
+        return;
+    }
+
+    pos = payload.find("[", pos);
+    if (pos == std::string::npos) return;
+    ++pos; // skip '['
+
+    while (true) {
+        size_t senderPos = payload.find("\"senderId\":", pos);
+        if (senderPos == std::string::npos) break;
+
+        size_t senderStart = senderPos + 11;
+        size_t senderEnd = payload.find(",", senderStart);
+        uint32_t senderId =
+            static_cast<uint32_t>(
+                std::stoul(payload.substr(senderStart, senderEnd - senderStart))
+            );
+
+        size_t contentPos = payload.find("\"content\":\"", senderEnd);
+        if (contentPos == std::string::npos) break;
+
+        size_t contentStart = contentPos + 11;
+        size_t contentEnd = payload.find("\"", contentStart);
+        std::string content =
+            payload.substr(contentStart, contentEnd - contentStart);
+
+        size_t timePos = payload.find("\"sentAt\":\"", contentEnd);
+        if (timePos == std::string::npos) break;
+
+        size_t timeStart = timePos + 10;
+        size_t timeEnd = payload.find("\"", timeStart);
+        std::string sentAt =
+            payload.substr(timeStart, timeEnd - timeStart);
+
+        history.push_back({
+            senderId,
+            content,
+            sentAt
+        });
+
+        pos = timeEnd;
+    }
+
+    std::cout << "[ChatHandler] Received "
+              << history.size()
+              << " chat history messages\n";
+
+    // Notify UI
+    if (chatHistoryCallback_) {
+        chatHistoryCallback_(history);
+    }
+}
+
+void ChatHandler::setChatHistoryCallback(ChatHistoryCallback cb) {
+    chatHistoryCallback_ = cb;
+}
+
+void ChatHandler::setIncomingMessageCallback(IncomingMessageCallback cb) {
+    incomingMessageCallback_ = cb;
+}
+
+
+
 
 
 
