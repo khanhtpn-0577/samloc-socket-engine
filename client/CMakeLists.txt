@@ -17,12 +17,12 @@ set(CLIENT_SOURCES
     core/network_client.cpp
 
     logic/chat/chat_logic.cpp
+    logic/auth/auth_logic.cpp
     
     handlers/chat/chat_handler.cpp
     handlers/connection/client_connection_handler.cpp
     handlers/session/client_session.cpp
 
-    gui/src/ChatScreen.cpp
     handlers/auth/auth_handler.cpp
     handlers/challenge/challenge_handler.cpp
 
@@ -30,6 +30,7 @@ set(CLIENT_SOURCES
     ui/components/text_input.cpp
     ui/screens/login_state.cpp
     ui/screens/lobby_state.cpp
+    ui/screens/private_chat_state.cpp
     ui/game_manager.cpp
 )
 
@@ -44,12 +45,12 @@ set(CLIENT_HEADERS
     core/network_client.h
 
     logic/chat/chat_logic.h
+    logic/auth/auth_logic.h
     
     handlers/chat/chat_handler.h
     handlers/connection/client_connection_handler.h
     handlers/session/client_session.h
 
-    gui/include/ChatScreen.h
     handlers/auth/auth_handler.h
     handlers/challenge/challenge_handler.h
 
@@ -59,6 +60,7 @@ set(CLIENT_HEADERS
     ui/components/text_input.h
     ui/screens/login_state.h
     ui/screens/lobby_state.h
+    ui/screens/private_chat_state.h
     ui/game_manager.h
 )
 
@@ -99,17 +101,14 @@ target_include_directories(samloc_client PRIVATE
 # Threads
 # =========================
 find_package(Threads REQUIRED)
+# FetchContent_MakeAvailable already provides SFML, no need for find_package
+target_link_libraries(samloc_client PRIVATE sfml-graphics sfml-window sfml-system sfml-network)
 
 # =========================
 # Link libraries (CHỈ LINK 1 LẦN)
 # =========================
-target_link_libraries(samloc_client PRIVATE
-    sfml-graphics
-    sfml-window
-    sfml-system
-    sfml-network
-    Threads::Threads
-)
+find_package(Threads REQUIRED)
+target_link_libraries(samloc_client PRIVATE Threads::Threads)
 
 # =========================
 # Compiler warnings

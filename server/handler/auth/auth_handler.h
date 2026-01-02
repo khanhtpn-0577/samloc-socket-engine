@@ -23,6 +23,9 @@ public:
     // Handle LOGOUT message
     Message handleLogout(const Message& incomingMsg);
 
+    // Parse uint32 field from JSON-like payload
+    uint32_t parseUint32Field(const std::string& payload, const std::string& key);
+
 private:
     // Create response message
     Message createResponse(
@@ -35,6 +38,7 @@ private:
 
     // Parse simple JSON-like payload
     std::string parseField(const std::string& payload, const std::string& key);
+    
 
     // Build simple JSON-like payload
     std::string buildPayload(

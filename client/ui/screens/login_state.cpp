@@ -1,9 +1,11 @@
 #include "login_state.h"
 #include "../../handlers/auth/auth_handler.h"
+#include "../../logic/auth/auth_logic.h"
 #include <iostream>
+#include <cstdint>
 
 LoginState::LoginState(StateContext& ctx)
-    : ctx_(ctx), showDisplayName_(false) {
+    : ctx_(ctx), showDisplayName_(false), pendingSignupUsername_(), pendingSignupPassword_() {
     
     // Title
     titleText_.setFont(ctx_.font);
@@ -68,6 +70,8 @@ void LoginState::onEnter() {
     displayNameInput_.clear();
     statusText_.setString("");
     showDisplayName_ = false;
+    pendingSignupUsername_.clear();
+    pendingSignupPassword_.clear();
 }
 
 void LoginState::onExit() {
@@ -86,7 +90,6 @@ void LoginState::handleEvent(const sf::Event& event, const sf::Vector2f& mousePo
 
 void LoginState::update(float dt) {
     (void)dt;
-    consumeNetworkEvents();
 }
 
 void LoginState::draw(sf::RenderWindow& window) {
@@ -102,19 +105,6 @@ void LoginState::draw(sf::RenderWindow& window) {
     window.draw(statusText_);
 }
 
-void LoginState::onLoginClicked() {
-    std::string username = usernameInput_.value();
-    std::string password = passwordInput_.value();
-
-    if (username.empty() || password.empty()) {
-        statusText_.setString("Username and password required");
-        return;
-    }
-
-    statusText_.setString("Logging in...");
-    ctx_.network.authSender().sendLogin(username, password);
-}
-
 void LoginState::onSignupClicked() {
     std::string username = usernameInput_.value();
     std::string password = passwordInput_.value();
@@ -122,74 +112,88 @@ void LoginState::onSignupClicked() {
 
     if (username.empty() || password.empty()) {
         statusText_.setString("Username and password required");
+        statusText_.setFillColor(sf::Color::Red);
         return;
     }
 
+    // Signup lần 1 → hiện display name
     if (!showDisplayName_) {
         showDisplayName_ = true;
         statusText_.setString("Enter display name and click Signup again");
+        statusText_.setFillColor(sf::Color::White);
         return;
     }
 
+    // Signup lần 2
     if (displayName.empty()) {
         displayName = username;
     }
 
+    pendingSignupUsername_ = username;
+    pendingSignupPassword_ = password;
+
     statusText_.setString("Signing up...");
-    ctx_.network.authSender().sendSignup(username, password, displayName);
-}
+    statusText_.setFillColor(sf::Color::White);
 
-void LoginState::consumeNetworkEvents() {
-    AuthHandler authHandler(ctx_.session);
+    // CALLBACK
+    ctx_.auth_handler.setSignupCallback(
+        [this](bool success,
+               uint32_t userId,
+               const std::string&,
+               const std::string&,
+               const std::string& message) {
 
-    auto parseField = [](const std::string& payload, const std::string& key) {
-        std::string searchKey = "\"" + key + "\":\"";
-        size_t keyPos = payload.find(searchKey);
-        if (keyPos == std::string::npos) return std::string();
-        size_t valueStart = keyPos + searchKey.length();
-        size_t valueEnd = payload.find("\"", valueStart);
-        if (valueEnd == std::string::npos) return std::string();
-        return payload.substr(valueStart, valueEnd - valueStart);
-    };
+            showDisplayName_ = false;
 
-    while (auto opt = ctx_.eventQueue.tryPop()) {
-        NetworkEvent& ev = *opt;
-
-        if (std::holds_alternative<DisconnectEvent>(ev.payload)) {
-            statusText_.setString("Disconnected: " + std::get<DisconnectEvent>(ev.payload).reason);
-            continue;
-        }
-
-        if (std::holds_alternative<RawMessageEvent>(ev.payload)) {
-            Message& msg = std::get<RawMessageEvent>(ev.payload).message;
-            MessageType type = static_cast<MessageType>(msg.header.messageType);
-
-            if (type == MessageType::SIGNUP_RESPONSE) {
-                bool success = msg.payload.find("\"success\":true") != std::string::npos;
-                std::string serverMsg = parseField(msg.payload, "message");
-                std::string statusMsg = success ? "Signup successful! You can now login." : ("Signup failed: " + serverMsg);
-                statusText_.setString(statusMsg);
-                statusText_.setFillColor(success ? sf::Color::Green : sf::Color::Red);
-                showDisplayName_ = false;
-            } else if (type == MessageType::LOGIN_RESPONSE) {
-                bool success = msg.payload.find("\"success\":true") != std::string::npos;
-                if (success) {
-                    authHandler.onLoginResponse(msg);
-                    
-                    // Update all senders with new identity
-                    uint32_t userId = ctx_.session.userId();
-                    std::string token = ctx_.session.token();
-                    ctx_.network.authSender().updateIdentity(userId, token);
-                    ctx_.network.chatSender().updateIdentity(userId, token);
-                    ctx_.network.challengeSender().updateIdentity(userId, token);
-                    
-                    ctx_.requestTransition(GameStateType::Lobby);
-                } else {
-                    std::string serverMsg = parseField(msg.payload, "message");
-                    statusText_.setString("Login failed: " + serverMsg);
-                    statusText_.setFillColor(sf::Color::Red);
-                }
+            if (success) {
+                std::cout << "[LoginState] Signup success. Transition to Lobby\n";
+                //ctx_.requestTransition(GameStateType::Lobby);
+                statusText_.setString("Signup successful! You can now login.");
+            } else {
+                statusText_.setString("Signup failed: " + message);
+                statusText_.setFillColor(sf::Color::Red);
             }
         }
+    );
+
+    // Gửi signup
+    ctx_.auth_handler.onSignupSender(username, password, displayName);
+}
+
+
+void LoginState::onLoginClicked() {
+    std::string username = usernameInput_.value();
+    std::string password = passwordInput_.value();
+
+    if (username.empty() || password.empty()) {
+        statusText_.setString("Username and password required");
+        statusText_.setFillColor(sf::Color::Red);
+        return;
     }
+
+    statusText_.setString("Logging in...");
+    statusText_.setFillColor(sf::Color::White);
+
+    ctx_.auth_handler.setLoginCallback(
+        [this, username](bool success,
+                         uint32_t userId,
+                         const std::string& token,
+                         const std::string& message) {
+
+            if (!success) {
+                statusText_.setString("Login failed: " + message);
+                statusText_.setFillColor(sf::Color::Red);
+                return;
+            }
+
+            // Optional nhưng nên có
+            ctx_.session.setUsername(username);
+
+            std::cout << "[LoginState] Login success. Transition to Lobby\n";
+            ctx_.requestTransition(GameStateType::Lobby);
+        }
+    );
+
+    // Gửi login request
+    ctx_.auth_handler.onLoginSender(username, password);
 }

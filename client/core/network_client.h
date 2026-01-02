@@ -9,6 +9,7 @@
 #include "../net/chat/message_sender.h"
 #include "../net/auth/auth_sender.h"
 #include "../net/challenge/challenge_sender.h"
+#include "../handlers/session/client_session.h"
 
 struct NetworkConfig {
     std::string serverIp;
@@ -17,7 +18,7 @@ struct NetworkConfig {
 
 class NetworkClient {
 public:
-    NetworkClient(const NetworkConfig& cfg, ThreadSafeQueue<NetworkEvent>& queue);
+    NetworkClient(const NetworkConfig& cfg, ThreadSafeQueue<NetworkEvent>& queue, ClientSession& session);
     ~NetworkClient();
 
     bool start();
@@ -35,6 +36,7 @@ private:
     NetworkConfig config_;
     ThreadSafeQueue<NetworkEvent>& queue_;
     ClientSocket socket_;
+    ClientSession& session_;
     MessageSender chatSender_;
     AuthSender authSender_;
     ChallengeSender challengeSender_;

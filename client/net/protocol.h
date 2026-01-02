@@ -15,6 +15,12 @@ enum class MessageType : uint16_t {
     PASS_ROUND = 0x0021,
     DECLARE_SAM = 0x0022,
     SPIN_WHEEL = 0x0030,
+
+    FRIEND_LIST_REQUEST = 0x0040,
+    FRIEND_LIST_RESPONSE = 0x0041,
+    PRIVATE_CHAT_HISTORY_REQUEST = 0x0042,
+    PRIVATE_CHAT_HISTORY_RESPONSE = 0x0043,
+
     
     // Auth messages
     SIGNUP = 0x0100,
@@ -108,3 +114,14 @@ inline void setToken(MessageHeader& header, const std::string& token) {
 inline std::string getToken(const MessageHeader& header) {
     return std::string(reinterpret_cast<const char*>(header.token), 32);
 }
+
+struct FriendInfo {
+    uint32_t userId;
+    std::string username;
+};
+
+struct ChatHistoryItem {
+    uint32_t senderId;
+    std::string content;
+    std::string sentAt;
+};

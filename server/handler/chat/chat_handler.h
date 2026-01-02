@@ -10,6 +10,10 @@ public:
     // entry point cho CHAT_DIRECT
     Message handleChatDirect(const Message& incomingMsg);
 
+    Message handleFriendListRequest(const Message& incomingMsg);
+
+    Message handlePrivateChatHistoryRequest(const Message& incomingMsg);
+
 private:
     ChatLogic& chatLogic;
 };

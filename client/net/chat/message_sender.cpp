@@ -9,9 +9,8 @@
     #include <arpa/inet.h> // Dành cho Linux/WSL
 #endif
 // Constructor
-MessageSender::MessageSender(ClientSocket& socket, uint32_t userId, const std::string& token)
-    : socket(socket), userId(userId), token(token) {
-}
+MessageSender::MessageSender(ClientSocket& socket, ClientSession& session)
+    : socket(socket), session(session) {}
 
 // Get current timestamp (milliseconds since epoch)
 uint64_t MessageSender::getCurrentTimestamp() {
@@ -25,22 +24,25 @@ Message MessageSender::createMessage(MessageType type, const std::string& payloa
     Message msg;
     
     msg.header.messageType = static_cast<uint16_t>(type);
-    msg.header.senderId = userId;
+    msg.header.senderId = session.userId();
     msg.header.timestamp = getCurrentTimestamp();
     msg.header.payloadLength = payload.size();
     
     // Set token
-    setToken(msg.header, token);
+    setToken(msg.header, session.token());
     
     msg.payload = payload;
+
+    std::cout << "[Client: message_sender: Creating message] type=0x"
+              << std::hex << msg.header.messageType
+              << std::dec << ", senderId=" << msg.header.senderId
+              << ", timestamp=" << msg.header.timestamp
+              << ", payloadLength=" << msg.header.payloadLength
+              << ", payload=" << msg.payload << "\n";
     
     return msg;
 }
 
-void MessageSender::updateIdentity(uint32_t newUserId, const std::string& newToken) {
-    userId = newUserId;
-    token = newToken;
-}
 
 // Send direct message
 bool MessageSender::sendDirectMessage(uint32_t receiverId, const std::string& messageContent) {

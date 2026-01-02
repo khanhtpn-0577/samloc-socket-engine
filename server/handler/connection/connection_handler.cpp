@@ -169,6 +169,9 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
         if (!sendMessage(response)) {
             std::cerr << "[SEND FAIL] fd=" << clientFd << "\n";
         }
+        std::cout << "[Server] Sent response of type "
+                  << response.header.messageType
+                  << " to fd=" << clientFd << std::endl;
     }
 }
 

@@ -31,10 +31,12 @@ void ClientConnectionHandler::handleMessage(const Message& message){
             break;
 
         case MessageType::SIGNUP_RESPONSE:
+            std::cout << "[ClientConnectionHandler] Received SIGNUP_RESPONSE with payload: " << message.payload << "\n";
             authHandler_.onSignupResponse(message);
             break;
 
         case MessageType::LOGIN_RESPONSE:
+            std::cout << "[ClientConnectionHandler] Received LOGIN_RESPONSE with payload: " << message.payload << "\n";
             authHandler_.onLoginResponse(message);
             break;
 
@@ -64,6 +66,14 @@ void ClientConnectionHandler::handleMessage(const Message& message){
 
         case MessageType::CHALLENGE_EXPIRED:
             challengeHandler_.onChallengeExpired(message);
+            break;
+
+        case MessageType::FRIEND_LIST_RESPONSE:
+            chatHandler_.onServerDeliverFriendList(message);
+            break;
+        
+        case MessageType::PRIVATE_CHAT_HISTORY_RESPONSE:
+            chatHandler_.onServerDeliverPrivateChatHistory(message);
             break;
 
         default:

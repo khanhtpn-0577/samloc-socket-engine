@@ -13,7 +13,7 @@
 
 int main(){
     signal(SIGPIPE, SIG_IGN);
-    const std::string dbPath = "samloc.db";
+    const std::string dbPath = "../../samloc.db";
     Database db(dbPath);
     std::cout << "[Server] Database initialized: " << dbPath << "\n";
 

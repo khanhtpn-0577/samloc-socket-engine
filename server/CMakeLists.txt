@@ -78,17 +78,22 @@ target_include_directories(samloc_server PRIVATE
 # --- Link thư viện ---
 # Chuẩn bị sẵn cho thread per client
 find_package(Threads REQUIRED)
-find_package(OpenSSL REQUIRED)
+find_package(OpenSSL)
 
-# Add database subdirectory
-add_subdirectory(db)
+if(NOT OPENSSL_FOUND)
+    message(WARNING "OpenSSL not found - some features may not work")
+endif()
 
 target_link_libraries(samloc_server PRIVATE
     Threads::Threads
-    OpenSSL::SSL
-    OpenSSL::Crypto
-    samloc_db
 )
+
+if(OPENSSL_FOUND)
+    target_link_libraries(samloc_server PRIVATE
+        OpenSSL::SSL
+        OpenSSL::Crypto
+    )
+endif()
 
 # --- Cấu hình Warnings ---
 if (MSVC)

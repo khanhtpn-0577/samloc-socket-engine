@@ -69,13 +69,18 @@ SignupResult AuthLogic::signup(
     }
     
     // Check if username already exists
+    std::cout << "[AuthLogic] Checking if username already exists: " << username << std::endl;
+    
     QueryResult checkResult = db.queryPrepared(
         "SELECT player_id FROM players WHERE username = ?;",
         {username}
     );
+
+    std::cout << "[AuthLogic] Query result size: " << checkResult.size() << std::endl;
     
     if (!checkResult.empty()) {
         result.message = "Username already exists";
+        std::cout << "[AuthLogic] Username already exists: " << username << std::endl;
         return result;
     }
     
@@ -84,6 +89,8 @@ SignupResult AuthLogic::signup(
     std::string passwordHash = hashPassword(password, salt);
     std::string storedHash = salt + ":" + passwordHash;
     
+    std::cout << "[AuthLogic] Inserting new user: " << username << std::endl;
+
     // Insert user (set legacy plaintext `password` to empty string to satisfy NOT NULL)
     bool inserted = db.executePrepared(
         "INSERT INTO players (username, password, password_hash, display_name, balance, status) "
@@ -95,6 +102,8 @@ SignupResult AuthLogic::signup(
         result.message = "Database error during signup";
         return result;
     }
+
+    std::cout << "[AuthLogic] User inserted successfully: " << username << std::endl;
     
     // Get the inserted user ID
     int64_t userId = db.getLastInsertId();

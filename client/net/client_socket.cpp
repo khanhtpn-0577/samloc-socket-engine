@@ -156,6 +156,10 @@ bool ClientSocket::receive(void* buffer, size_t size) {
 
 // Send message (serialized)
 bool ClientSocket::sendMessage(const Message& message) {
+    std::cout << "[client_socket] Sending message type="
+              << message.header.messageType
+              << "userId=" << message.header.senderId
+              << " payloadLength=" << message.header.payloadLength << "\n";
     std::string serialized = message.serialize();
     return send(serialized);
 }
