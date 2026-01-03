@@ -76,15 +76,11 @@ add_executable(samloc_client
 # SFML via FetchContent
 # =========================
 include(FetchContent)
-set(SFML_STATIC_LIBRARIES FALSE)
+
 set(SFML_BUILD_AUDIO FALSE)
 set(SFML_BUILD_EXAMPLES FALSE)
-set(SFML_BUILD_NETWORK TRUE)
-set(SFML_BUILD_GRAPHICS TRUE)
-set(SFML_BUILD_WINDOW TRUE)
 set(SFML_BUILD_DOC FALSE)
 set(SFML_BUILD_TEST_SUITE FALSE)
-set(SFML_USE_STATIC_STD_LIBS FALSE)
 
 FetchContent_Declare(
     SFML
@@ -102,13 +98,14 @@ target_include_directories(samloc_client PRIVATE
 )
 
 # =========================
-# Link SFML library
+# Threads
 # =========================
+find_package(Threads REQUIRED)
 # FetchContent_MakeAvailable already provides SFML, no need for find_package
 target_link_libraries(samloc_client PRIVATE sfml-graphics sfml-window sfml-system sfml-network)
 
 # =========================
-# Threads (Linux / Windows)
+# Link libraries (CHỈ LINK 1 LẦN)
 # =========================
 find_package(Threads REQUIRED)
 target_link_libraries(samloc_client PRIVATE Threads::Threads)

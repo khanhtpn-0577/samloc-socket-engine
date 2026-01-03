@@ -44,6 +44,7 @@ endif()
 add_library(samloc_db
     database.cpp
     ../../third_party/sqlite3.c
+    ../../third_party/sqlite3.c
 )
 
 target_include_directories(samloc_db
