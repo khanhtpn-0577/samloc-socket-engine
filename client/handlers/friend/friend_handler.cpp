@@ -124,7 +124,7 @@ void FriendHandler::setFriendListCallback(FriendListCallback cb) {
     friendListCallback_ = std::move(cb);
 }
 
-// === Response handlers with callbacks ===
+// === Respons handlers with callbacks ===
 void FriendHandler::onSendFriendRequestResponse(const Message& message) {
     std::cout << "[FriendHandler] onSendFriendRequestResponse\n";
 
