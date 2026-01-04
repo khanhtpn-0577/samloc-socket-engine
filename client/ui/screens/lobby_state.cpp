@@ -21,6 +21,13 @@ LobbyState::LobbyState(StateContext& ctx)
     sessionText_.setFillColor(sf::Color::White);
     sessionText_.setPosition(40.f, 80.f);
 
+    // ===== Balance Info =====
+    balanceText_.setFont(ctx_.font);
+    balanceText_.setCharacterSize(20);
+    balanceText_.setFillColor(sf::Color(255, 215, 0)); // vàng cho tiền
+    balanceText_.setPosition(40.f, 110.f);
+
+
     // ===== Logout Button =====
     logoutButton_.setFont(ctx_.font);
     logoutButton_.setText("Logout", 20);
@@ -56,6 +63,11 @@ void LobbyState::onEnter() {
         std::to_string(ctx_.session.userId()) +
         ")"
     );
+
+    balanceText_.setString(
+        "Balance: " +
+        std::to_string(static_cast<long long>(ctx_.session.balance()))
+    );
 }
 
 void LobbyState::onExit() {
@@ -77,6 +89,7 @@ void LobbyState::draw(sf::RenderWindow& window) {
     window.draw(background_);
     window.draw(titleText_);
     window.draw(sessionText_);
+    window.draw(balanceText_);
 
     logoutButton_.draw(window);
     chatButton_.draw(window);

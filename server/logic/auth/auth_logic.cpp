@@ -94,7 +94,7 @@ SignupResult AuthLogic::signup(
     // Insert user (set legacy plaintext `password` to empty string to satisfy NOT NULL)
     bool inserted = db.executePrepared(
         "INSERT INTO players (username, password, password_hash, display_name, balance, status) "
-        "VALUES (?, '', ?, ?, 0, 'online');",
+        "VALUES (?, '', ?, ?, 500000, 'online');",
         {username, storedHash, displayName.empty() ? username : displayName}
     );
     
@@ -122,7 +122,7 @@ LoginResult AuthLogic::login(
     const std::string& username,
     const std::string& password
 ) {
-    LoginResult result{false, "", 0, ""};
+    LoginResult result{false, "", 0, "", 0.0};
     
     if (username.empty() || password.empty()) {
         result.message = "Username and password required";
@@ -131,7 +131,7 @@ LoginResult AuthLogic::login(
     
     // Get user from database
     QueryResult userResult = db.queryPrepared(
-        "SELECT player_id, password_hash FROM players WHERE username = ?;",
+        "SELECT player_id, password_hash, balance FROM players WHERE username = ?;",
         {username}
     );
     
@@ -177,14 +177,16 @@ LoginResult AuthLogic::login(
         result.message = "Failed to create session";
         return result;
     }
+    double balance = std::stod(userResult[0]["balance"]);
     
     result.success = true;
     result.userId = userId;
     result.token = token;
     result.message = "Login successful";
+    result.balance = balance;
     
     std::cout << "[AuthLogic] User logged in: " << username
-              << " (id=" << userId << ", token=" << token.substr(0, 8) << "...)\n";
+              << " (id=" << userId << ", token=" << token.substr(0, 8) << "...), balance=" << balance << "\n";
     
     return result;
 }

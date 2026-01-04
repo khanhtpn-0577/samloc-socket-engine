@@ -16,6 +16,7 @@ struct LoginResult {
     std::string message;
     uint32_t userId;
     std::string token;
+    double balance;
 };
 
 struct SessionInfo {

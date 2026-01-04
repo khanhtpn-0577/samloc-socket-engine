@@ -131,6 +131,18 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
                 response = chatHandler.handleChatDirect(incoming);
                 needRespond = true;
                 break;
+            
+            case MessageType::FRIEND_LIST_REQUEST:
+                std::cout <<"[Server] Handling FRIEND_LIST_REQUEST\n";
+                response = chatHandler.handleFriendListRequest(incoming);
+                needRespond = true;
+                break;
+
+            case MessageType::PRIVATE_CHAT_HISTORY_REQUEST:
+                std::cout <<"[Server] Handling PRIVATE_CHAT_HISTORY_REQUEST\n";
+                response = chatHandler.handlePrivateChatHistoryRequest(incoming);
+                needRespond = true;
+                break;
             case MessageType::SIGNUP:
                 response = authHandler.handleSignup(incoming);
                 needRespond = true;

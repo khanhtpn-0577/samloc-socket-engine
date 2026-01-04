@@ -55,6 +55,9 @@ class ClientSession{
 
         void setChatState(ChatState state);
 
+        double balance() const;
+        void setBalance(double bal);
+
         bool canSendChat() const; 
     
     private:
@@ -65,6 +68,7 @@ class ClientSession{
         uint32_t userId_;
         std::string token_;
         std::string username_;
+        double balance_;
 
         ChatState chatState_;
 };

@@ -7,6 +7,7 @@ ClientSession::ClientSession():
     userId_(0),
     token_(""),
     username_(""),
+    balance_(0.0),
     chatState_(ChatState::CHAT_IDLE){}
 
 //getter
@@ -58,6 +59,14 @@ ChatState ClientSession::chatState() const {
 
 void ClientSession::setChatState(ChatState state){
     chatState_ = state;
+}
+
+double ClientSession::balance() const {
+    return balance_;
+}
+
+void ClientSession::setBalance(double bal) {
+    balance_ = bal;
 }
 
 bool ClientSession::canSendChat() const {

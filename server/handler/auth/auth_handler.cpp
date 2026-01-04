@@ -49,30 +49,34 @@ std::string AuthHandler::buildPayload(
     bool success,
     const std::string& message,
     uint32_t userId,
-    const std::string& token
+    const std::string& token,
+    double balance
 ) {
     std::stringstream ss;
     ss << "{\"success\":" << (success ? "true" : "false")
        << ",\"message\":\"" << message << "\"";
-    
-    if (userId > 0) {
+
+    if (success) {
         ss << ",\"userId\":" << userId;
+        ss << ",\"balance\":" << balance;
+
+        if (!token.empty()) {
+            ss << ",\"token\":\"" << token << "\"";
+        }
     }
-    
-    if (!token.empty()) {
-        ss << ",\"token\":\"" << token << "\"";
-    }
-    
+
     ss << "}";
     return ss.str();
 }
+
 
 Message AuthHandler::createResponse(
     MessageType type,
     bool success,
     const std::string& message,
     uint32_t userId,
-    const std::string& token
+    const std::string& token,
+    double balance
 ) {
     Message response;
     response.header.messageType = static_cast<uint16_t>(type);
@@ -81,7 +85,7 @@ Message AuthHandler::createResponse(
         std::chrono::system_clock::now().time_since_epoch()
     ).count();
     
-    response.payload = buildPayload(success, message, userId, token);
+    response.payload = buildPayload(success, message, userId, token, balance);
     response.header.payloadLength = response.payload.size();
     std::memset(response.header.token, 0, 32);
     
@@ -129,7 +133,8 @@ Message AuthHandler::handleLogin(const Message& incomingMsg) {
         result.success,
         result.message,
         result.userId,
-        result.token
+        result.token,
+        result.balance
     );
 }
 

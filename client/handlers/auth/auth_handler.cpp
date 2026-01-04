@@ -60,6 +60,9 @@ bool AuthHandler::parseBoolField(const std::string& payload, const std::string& 
     return payload.substr(valueStart, 4) == "true";
 }
 
+
+
+
 void AuthHandler::onSignupResponse(const Message& message) {
     std::cout << "[AuthHandler] Received SIGNUP_RESPONSE\n";
 
@@ -94,12 +97,23 @@ void AuthHandler::onLoginResponse(const Message& message) {
     std::string serverMsg = parseField(message.payload, "message");
     uint32_t userId = parseUint32Field(message.payload, "userId");
     std::string token = parseField(message.payload, "token");
+    double balance = static_cast<double>(
+        parseUint32Field(message.payload, "balance")
+    );
+    std::cout << "Login: " << (success ? "SUCCESS" : "FAILED")
+              << ", UserId=" << userId
+              << ", Token=" << token.substr(0, 8) << "..."
+              << ", Balance=" << balance
+              << ", Message=" << serverMsg << "\n";
 
     // 2. Nếu login thành công → update session
     if (success && userId > 0 && !token.empty()) {
         session_.setLoggedIn(true);
         session_.setUserId(userId);
         session_.setToken(token);
+        session_.setBalance(balance);
+        std::cout << "[AuthHandler] Login successful. UserId=" << userId
+                  << ", Token=" << token.substr(0, 8) << "..., Balance=" << balance << "\n";
         session_.setState(ClientState::LOGGED_IN);
     }
 
