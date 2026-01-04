@@ -10,6 +10,7 @@
 #include "../net/auth/auth_sender.h"
 #include "../net/challenge/challenge_sender.h"
 #include "../handlers/session/client_session.h"
+#include "../net/rank/rank_sender.h"
 
 struct NetworkConfig {
     std::string serverIp;
@@ -27,6 +28,7 @@ public:
     MessageSender& chatSender();
     AuthSender& authSender();
     ChallengeSender& challengeSender();
+    RankSender& rankSender();
     ClientSocket& socket();
 
 private:
@@ -40,6 +42,7 @@ private:
     MessageSender chatSender_;
     AuthSender authSender_;
     ChallengeSender challengeSender_;
+    RankSender rankSender_;
     std::atomic<bool> running_;
     std::thread worker_;
 };

@@ -51,6 +51,21 @@ LobbyState::LobbyState(StateContext& ctx)
         sf::Color::White
     );
     chatButton_.setCallback([this]() { onChatClicked(); });
+
+    // ===== Ranking Button =====
+    rankingButton_.setFont(ctx_.font);
+    rankingButton_.setText("Friends Ranking", 22);
+    rankingButton_.setSize({300.f, 60.f});
+    rankingButton_.setPosition({490.f, 400.f});
+    rankingButton_.setColors(
+        sf::Color(120, 80, 160),
+        sf::Color::White,
+        sf::Color::White
+    );
+    rankingButton_.setCallback([this]() {
+        ctx_.requestTransition(GameStateType::Ranking);
+    });
+
 }
 
 void LobbyState::onEnter() {
@@ -78,6 +93,7 @@ void LobbyState::handleEvent(const sf::Event& event,
                              const sf::Vector2f& mousePos) {
     logoutButton_.handleEvent(event, mousePos);
     chatButton_.handleEvent(event, mousePos);
+    rankingButton_.handleEvent(event, mousePos);
 }
 
 void LobbyState::update(float dt) {
@@ -93,6 +109,7 @@ void LobbyState::draw(sf::RenderWindow& window) {
 
     logoutButton_.draw(window);
     chatButton_.draw(window);
+    rankingButton_.draw(window);
 }
 
 void LobbyState::onLogoutClicked() {

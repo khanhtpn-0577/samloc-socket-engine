@@ -1,6 +1,5 @@
 #include "game_manager.h"
 #include <iostream>
-#include "screens/private_chat_state.h"
 
 
 
@@ -62,6 +61,9 @@ void GameManager::transitionTo(GameStateType newState) {
             break;
         case GameStateType::PrivateChat:
             currentState_ = std::make_unique<PrivateChatState>(ctx_);
+            break;
+        case GameStateType::Ranking:
+            currentState_ = std::make_unique<RankingState>(ctx_);
             break;
         case GameStateType::InGame:
             // TODO: implement InGameState

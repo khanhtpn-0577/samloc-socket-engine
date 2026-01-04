@@ -19,8 +19,8 @@ set(SERVER_SOURCES
     handler/chat/chat_handler.cpp
     handler/auth/auth_handler.cpp
     handler/challenge/challenge_handler.cpp
-    handler/game/game_handler.cpp 
-    logic/chat/chat_logic.cpp
+    handler/game/game_handler.cpp
+    handler/rank/rank_handler.cpp
 
     db/database.cpp
     db/repository/private_chat_repository.cpp
@@ -28,7 +28,10 @@ set(SERVER_SOURCES
     db/repository/player_repository.cpp  
     db/repository/card_repository.cpp    
     db/repository/game_repository.cpp   
+    db/repository/rank_repository.cpp
 
+    logic/chat/chat_logic.cpp
+    logic/rank/rank_logic.cpp
     logic/auth/auth_logic.cpp
     logic/challenge/challenge_logic.cpp
     logic/game/sam_loc_game.cpp 
@@ -46,20 +49,25 @@ set(SERVER_HEADERS
     handler/auth/auth_handler.h
     handler/challenge/challenge_handler.h
     handler/game/game_handler.h  
+    handler/rank/rank_handler.h
+
     logic/chat/chat_logic.h
     utils/logger.h
 
     db/database.h
     db/repository/private_chat_repository.h
-    db/repository/room_repository.h   # [NEW]
-    db/repository/player_repository.h # [NEW]
-    db/repository/card_repository.h   # [NEW]
+    db/repository/room_repository.h  
+    db/repository/player_repository.h 
+    db/repository/card_repository.h  
     db/repository/game_repository.h  
+    db/repository/rank_repository.h
+
 
     logic/auth/auth_logic.h
     logic/challenge/challenge_logic.h
     logic/game/sam_loc_game.h  
     logic/game/game_config.h  
+    logic/rank/rank_logic.h
 )
 
 # --- Tạo executable cho Server ---

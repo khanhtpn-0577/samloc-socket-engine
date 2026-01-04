@@ -2,18 +2,21 @@
 #include "../chat/chat_handler.h"
 #include "../auth/auth_handler.h"
 #include "../challenge/challenge_handler.h"
+#include "../rank/rank_handler.h"
 #include <iostream>
 
 //constructor
 ClientConnectionHandler::ClientConnectionHandler(
     ChatHandler& chatHandler,
     AuthHandler& authHandler,
-    ChallengeHandler& challengeHandler
+    ChallengeHandler& challengeHandler,
+    RankHandler& rankHandler
 ):
     chatHandler_(chatHandler),
     authHandler_(authHandler),
-    challengeHandler_(challengeHandler){}
-
+    challengeHandler_(challengeHandler),
+    rankHandler_(rankHandler)
+{}
 void ClientConnectionHandler::handleMessage(const Message& message){
     MessageType type = static_cast<MessageType>(message.header.messageType);
     std::cout << "[ClientConnectionHandler] Received message. "
@@ -74,6 +77,10 @@ void ClientConnectionHandler::handleMessage(const Message& message){
         
         case MessageType::PRIVATE_CHAT_HISTORY_RESPONSE:
             chatHandler_.onServerDeliverPrivateChatHistory(message);
+            break;
+        case MessageType::FRIEND_RANK_RESPONSE:
+            rankHandler_.onFriendRankResponse(message);
+            std::cout << "[ClientConnectionHandler] Received FRIEND_RANK_RESPONSE with payload: " << message.payload << "\n";
             break;
 
         default:

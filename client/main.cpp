@@ -83,10 +83,16 @@ int main(){
     AuthHandler authHandler(authLogic, session);
     
     ChallengeHandler challengeHandler(session);
+
+    RankSender& rankSender = network.rankSender();
+    RankLogic rankLogic(rankSender);
+    RankHandler rankHandler(rankLogic, session);
+
     ClientConnectionHandler connHandler(
         chatHandler,
         authHandler,
-        challengeHandler
+        challengeHandler,
+        rankHandler
     );
 
 
@@ -95,6 +101,7 @@ int main(){
         network,
         session,
         chatHandler,
+        rankHandler,
         eventQueue,
         authHandler,
         font

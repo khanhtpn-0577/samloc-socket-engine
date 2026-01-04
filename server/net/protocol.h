@@ -15,10 +15,15 @@ enum class MessageType : uint16_t {
     DECLARE_SAM = 0x0022,
     SPIN_WHEEL = 0x0030,
 
+    // Chat messages
     FRIEND_LIST_REQUEST = 0x0040,
     FRIEND_LIST_RESPONSE = 0x0041,
     PRIVATE_CHAT_HISTORY_REQUEST = 0x0042,
     PRIVATE_CHAT_HISTORY_RESPONSE = 0x0043,
+
+    //Rank messages
+    FRIEND_RANK_REQUEST = 0x0050,
+    FRIEND_RANK_RESPONSE = 0x0051,
 
     
     // Auth messages
