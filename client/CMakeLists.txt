@@ -14,10 +14,12 @@ set(CLIENT_SOURCES
     net/chat/message_sender.cpp
     net/auth/auth_sender.cpp
     net/challenge/challenge_sender.cpp
+    net/rank/rank_sender.cpp
     core/network_client.cpp
 
     logic/chat/chat_logic.cpp
     logic/auth/auth_logic.cpp
+    logic/rank/rank_logic.cpp
     
     handlers/chat/chat_handler.cpp
     handlers/connection/client_connection_handler.cpp
@@ -25,12 +27,14 @@ set(CLIENT_SOURCES
 
     handlers/auth/auth_handler.cpp
     handlers/challenge/challenge_handler.cpp
+    handlers/rank/rank_handler.cpp
 
     ui/components/button.cpp
     ui/components/text_input.cpp
     ui/screens/login_state.cpp
     ui/screens/lobby_state.cpp
     ui/screens/private_chat_state.cpp
+    ui/screens/ranking_state.cpp
     ui/game_manager.cpp
 )
 
@@ -40,12 +44,14 @@ set(CLIENT_HEADERS
     net/chat/message_sender.h
     net/auth/auth_sender.h
     net/challenge/challenge_sender.h
+    net/rank/rank_sender.h
     core/thread_safe_queue.h
     core/network_event.h
     core/network_client.h
 
     logic/chat/chat_logic.h
     logic/auth/auth_logic.h
+    logic/rank/rank_logic.h
     
     handlers/chat/chat_handler.h
     handlers/connection/client_connection_handler.h
@@ -53,6 +59,7 @@ set(CLIENT_HEADERS
 
     handlers/auth/auth_handler.h
     handlers/challenge/challenge_handler.h
+    handlers/rank/rank_handler.h
 
     ui/game_state.h
     ui/state_context.h
@@ -61,6 +68,7 @@ set(CLIENT_HEADERS
     ui/screens/login_state.h
     ui/screens/lobby_state.h
     ui/screens/private_chat_state.h
+    ui/screens/ranking_state.h
     ui/game_manager.h
 )
 

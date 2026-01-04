@@ -30,4 +30,6 @@ private:
 
     Button logoutButton_;
     Button chatButton_;
+    Button rankingButton_;
+
 };

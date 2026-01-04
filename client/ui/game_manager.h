@@ -4,6 +4,8 @@
 #include "state_context.h"
 #include "screens/login_state.h"
 #include "screens/lobby_state.h"
+#include "screens/private_chat_state.h"
+#include "screens/ranking_state.h"
 #include <memory>
 #include <map>
 

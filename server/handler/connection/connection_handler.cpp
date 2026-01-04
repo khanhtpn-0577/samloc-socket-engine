@@ -1,11 +1,13 @@
 #include "connection_handler.h"
 #include "../chat/chat_handler.h"
 #include "../auth/auth_handler.h"
+#include "../rank/rank_handler.h"
 #include "../challenge/challenge_handler.h"
 #include "../game/game_handler.h"
 #include "../../logic/chat/chat_logic.h"
 #include "../../logic/auth/auth_logic.h"
 #include "../../logic/challenge/challenge_logic.h"
+#include "../../logic/rank/rank_logic.h"
 #include "../session/session_manager.h"
 #include "../../db/database.h"
 #include <sys/socket.h>
@@ -114,9 +116,11 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
     ChatLogic chatLogic;
     AuthLogic authLogic(db);
     ChallengeLogic challengeLogic(db);
+    RankLogic rankLogic(db);
     ChatHandler chatHandler(chatLogic);
     AuthHandler authHandler(authLogic);
     ChallengeHandler challengeHandler(challengeLogic);
+    RankHandler rankHandler(rankLogic);
 
     Message response;
     bool needRespond = false;
@@ -171,6 +175,11 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
                 response = challengeHandler.handleCancelChallenge(incoming);
                 needRespond = true;
                 break;
+            case MessageType::FRIEND_RANK_REQUEST:
+                std::cout <<"[Connection handler] Handling FRIEND_RANK_REQUEST\n";
+                response = rankHandler.handleFriendRankRequest(incoming);
+                needRespond = true;
+                break;
             default:
                 std::cerr << "[UNKNOWN TYPE] " << typeVal << "\n";
                 break;
@@ -181,9 +190,9 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
         if (!sendMessage(response)) {
             std::cerr << "[SEND FAIL] fd=" << clientFd << "\n";
         }
-        std::cout << "[Server] Sent response of type "
+        std::cout << "[Connection handler] Sent response of type "
                   << response.header.messageType
-                  << " to fd=" << clientFd << std::endl;
+                  << " to fd=" << clientFd << "with payload: " << response.payload << "\n";
     }
 }
 

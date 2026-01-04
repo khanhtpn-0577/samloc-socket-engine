@@ -7,6 +7,7 @@
 #include "../handlers/session/client_session.h"
 #include "../handlers/chat/chat_handler.h"
 #include "../handlers/auth/auth_handler.h"
+#include "../handlers/rank/rank_handler.h"
 #include <memory>
 #include <functional>
 
@@ -14,7 +15,8 @@ enum class GameStateType {
     Login,
     Lobby,
     PrivateChat,
-    InGame
+    InGame,
+    Ranking
 };
 
 using StateTransitionCallback = std::function<void(GameStateType)>;
@@ -24,11 +26,12 @@ public:
     NetworkClient& network;
     ClientSession& session;
     ChatHandler& chatHandler;
+    RankHandler& rankHandler;
     ThreadSafeQueue<NetworkEvent>& eventQueue;
     StateTransitionCallback requestTransition;
     AuthHandler& auth_handler;
     sf::Font& font;
 
-    StateContext(NetworkClient& net, ClientSession& sess, ChatHandler& chat_handler, ThreadSafeQueue<NetworkEvent>& eq, AuthHandler& auth_handler, sf::Font& f)
-        : network(net), session(sess), chatHandler(chat_handler), eventQueue(eq), auth_handler(auth_handler), font(f) {}
+    StateContext(NetworkClient& net, ClientSession& sess, ChatHandler& chat_handler, RankHandler& rank_handler, ThreadSafeQueue<NetworkEvent>& eq, AuthHandler& auth_handler, sf::Font& f)
+        : network(net), session(sess), chatHandler(chat_handler), rankHandler(rank_handler), eventQueue(eq), auth_handler(auth_handler), font(f) {}
 };
