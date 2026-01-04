@@ -14,9 +14,11 @@
 #include "handlers/connection/client_connection_handler.h"
 #include "handlers/auth/auth_handler.h"
 #include "handlers/challenge/challenge_handler.h"
+#include "handlers/friend/friend_handler.h"
 
 #include "logic/auth/auth_logic.h"
 #include "logic/chat/chat_logic.h"
+#include "logic/friend/friend_logic.h"
 
 
 // Hàm xử lý các sự kiện den client
@@ -82,17 +84,23 @@ int main(){
     AuthLogic authLogic(authSender);
     AuthHandler authHandler(authLogic, session);
     
+    FriendSender& friendSender = network.friendSender();
+    FriendLogic friendLogic(friendSender);
+    FriendHandler friendHandler(friendLogic);
+    
     ChallengeHandler challengeHandler(session);
 
     RankSender& rankSender = network.rankSender();
     RankLogic rankLogic(rankSender);
     RankHandler rankHandler(rankLogic, session);
 
+    
     ClientConnectionHandler connHandler(
         chatHandler,
         authHandler,
         challengeHandler,
         rankHandler
+        friendHandler
     );
 
 
@@ -104,6 +112,7 @@ int main(){
         rankHandler,
         eventQueue,
         authHandler,
+        friendHandler,
         font
     );
 

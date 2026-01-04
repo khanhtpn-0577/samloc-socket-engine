@@ -1,5 +1,7 @@
 #include "game_manager.h"
 #include <iostream>
+#include "screens/private_chat_state.h"
+#include "screens/friends_state.h"
 
 
 
@@ -64,6 +66,8 @@ void GameManager::transitionTo(GameStateType newState) {
             break;
         case GameStateType::Ranking:
             currentState_ = std::make_unique<RankingState>(ctx_);
+        case GameStateType::Friends:
+            currentState_ = std::make_unique<FriendsState>(ctx_);
             break;
         case GameStateType::InGame:
             // TODO: implement InGameState

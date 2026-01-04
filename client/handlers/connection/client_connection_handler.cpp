@@ -3,6 +3,7 @@
 #include "../auth/auth_handler.h"
 #include "../challenge/challenge_handler.h"
 #include "../rank/rank_handler.h"
+#include "../friend/friend_handler.h"
 #include <iostream>
 
 //constructor
@@ -11,12 +12,14 @@ ClientConnectionHandler::ClientConnectionHandler(
     AuthHandler& authHandler,
     ChallengeHandler& challengeHandler,
     RankHandler& rankHandler
+    FriendHandler& friendHandler
 ):
     chatHandler_(chatHandler),
     authHandler_(authHandler),
     challengeHandler_(challengeHandler),
-    rankHandler_(rankHandler)
-{}
+    rankHandler_(rankHandler),
+    friendHandler_(friendHandler){}
+
 void ClientConnectionHandler::handleMessage(const Message& message){
     MessageType type = static_cast<MessageType>(message.header.messageType);
     std::cout << "[ClientConnectionHandler] Received message. "
@@ -81,6 +84,47 @@ void ClientConnectionHandler::handleMessage(const Message& message){
         case MessageType::FRIEND_RANK_RESPONSE:
             rankHandler_.onFriendRankResponse(message);
             std::cout << "[ClientConnectionHandler] Received FRIEND_RANK_RESPONSE with payload: " << message.payload << "\n";
+            break;
+
+        // Friend-related messages
+        case MessageType::SEND_FRIEND_REQUEST_RESPONSE:
+            std::cout << "[ClientConnectionHandler] SEND_FRIEND_REQUEST_RESPONSE\n";
+            friendHandler_.onSendFriendRequestResponse(message);
+            break;
+
+        case MessageType::GET_PENDING_REQUESTS_RESPONSE:
+            std::cout << "[ClientConnectionHandler] GET_PENDING_REQUESTS_RESPONSE\n";
+            friendHandler_.onGetPendingRequestsResponse(message);
+            break;
+
+        case MessageType::ACCEPT_FRIEND_REQUEST_RESPONSE:
+            std::cout << "[ClientConnectionHandler] ACCEPT_FRIEND_REQUEST_RESPONSE\n";
+            friendHandler_.onAcceptFriendRequestResponse(message);
+            break;
+
+        case MessageType::DECLINE_FRIEND_REQUEST_RESPONSE:
+            std::cout << "[ClientConnectionHandler] DECLINE_FRIEND_REQUEST_RESPONSE\n";
+            friendHandler_.onDeclineFriendRequestResponse(message);
+            break;
+
+        case MessageType::REMOVE_FRIEND_RESPONSE:
+            std::cout << "[ClientConnectionHandler] REMOVE_FRIEND_RESPONSE\n";
+            friendHandler_.onRemoveFriendResponse(message);
+            break;
+
+        case MessageType::FRIEND_REQUEST_RECEIVED_NOTIFICATION:
+            std::cout << "[ClientConnectionHandler] FRIEND_REQUEST_RECEIVED_NOTIFICATION\n";
+            friendHandler_.onFriendRequestReceivedNotification(message);
+            break;
+
+        case MessageType::FRIEND_REQUEST_ACCEPTED_NOTIFICATION:
+            std::cout << "[ClientConnectionHandler] FRIEND_REQUEST_ACCEPTED_NOTIFICATION\n";
+            friendHandler_.onFriendRequestAcceptedNotification(message);
+            break;
+
+        case MessageType::GET_FRIEND_LIST_RESPONSE:
+            std::cout << "[ClientConnectionHandler] GET_FRIEND_LIST_RESPONSE\n";
+            friendHandler_.onGetFriendListResponse(message);
             break;
 
         default:

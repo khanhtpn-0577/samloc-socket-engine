@@ -3,11 +3,13 @@
 #include "../auth/auth_handler.h"
 #include "../rank/rank_handler.h"
 #include "../challenge/challenge_handler.h"
+#include "../friend/friend_handler.h"
 #include "../game/game_handler.h"
 #include "../../logic/chat/chat_logic.h"
 #include "../../logic/auth/auth_logic.h"
 #include "../../logic/challenge/challenge_logic.h"
 #include "../../logic/rank/rank_logic.h"
+#include "../../logic/friend/friend_logic.h"
 #include "../session/session_manager.h"
 #include "../../db/database.h"
 #include <sys/socket.h>
@@ -117,11 +119,13 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
     AuthLogic authLogic(db);
     ChallengeLogic challengeLogic(db);
     RankLogic rankLogic(db);
+    FriendLogic friendLogic(db);
     ChatHandler chatHandler(chatLogic);
+    FriendHandler friendHandler(friendLogic);
     AuthHandler authHandler(authLogic);
     ChallengeHandler challengeHandler(challengeLogic);
     RankHandler rankHandler(rankLogic);
-
+    
     Message response;
     bool needRespond = false;
     uint16_t typeVal = incoming.header.messageType;
@@ -178,6 +182,28 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
             case MessageType::FRIEND_RANK_REQUEST:
                 std::cout <<"[Connection handler] Handling FRIEND_RANK_REQUEST\n";
                 response = rankHandler.handleFriendRankRequest(incoming);
+            case MessageType::SEND_FRIEND_REQUEST:
+                response = friendHandler.handleSendFriendRequest(incoming);
+                needRespond = true;
+                break;
+            case MessageType::ACCEPT_FRIEND_REQUEST:
+                response = friendHandler.handleAcceptFriendRequest(incoming);
+                needRespond = true;
+                break;
+            case MessageType::DECLINE_FRIEND_REQUEST:
+                response = friendHandler.handleDeclineFriendRequest(incoming);
+                needRespond = true;
+                break;
+            case MessageType::REMOVE_FRIEND:
+                response = friendHandler.handleRemoveFriend(incoming);
+                needRespond = true;
+                break;
+            case MessageType::GET_PENDING_REQUESTS:
+                response = friendHandler.handleGetPendingRequests(incoming);
+                needRespond = true;
+                break;
+            case MessageType::GET_FRIEND_LIST:
+                response = friendHandler.handleGetFriendList(incoming);
                 needRespond = true;
                 break;
             default:

@@ -19,6 +19,7 @@ public:
 private:
     void onLogoutClicked();
     void onChatClicked();
+    void onFriendsClicked();
 
     StateContext& ctx_;
 
@@ -31,5 +32,5 @@ private:
     Button logoutButton_;
     Button chatButton_;
     Button rankingButton_;
-
+    Button friendsButton_;
 };

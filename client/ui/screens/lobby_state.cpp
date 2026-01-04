@@ -1,4 +1,5 @@
 #include "lobby_state.h"
+#include "friends_state.h"
 #include <iostream>
 
 LobbyState::LobbyState(StateContext& ctx)
@@ -30,7 +31,7 @@ LobbyState::LobbyState(StateContext& ctx)
 
     // ===== Logout Button =====
     logoutButton_.setFont(ctx_.font);
-    logoutButton_.setText("Logout", 20);
+    logoutButton_.setText("Log out", 20);
     logoutButton_.setSize({150.f, 40.f});
     logoutButton_.setPosition({1100.f, 30.f});
     logoutButton_.setColors(
@@ -39,6 +40,18 @@ LobbyState::LobbyState(StateContext& ctx)
         sf::Color::White
     );
     logoutButton_.setCallback([this]() { onLogoutClicked(); });
+
+    // ===== Friends Button =====
+    friendsButton_.setFont(ctx_.font);
+    friendsButton_.setText("Friends", 20);
+    friendsButton_.setSize({150.f, 50.f});
+    friendsButton_.setPosition({40.f, 150.f});
+    friendsButton_.setColors(
+        sf::Color(0, 100, 160),
+        sf::Color::White,
+        sf::Color::White
+    );
+    friendsButton_.setCallback([this]() { onFriendsClicked(); });
 
     // ===== Chat Button =====
     chatButton_.setFont(ctx_.font);
@@ -94,6 +107,7 @@ void LobbyState::handleEvent(const sf::Event& event,
     logoutButton_.handleEvent(event, mousePos);
     chatButton_.handleEvent(event, mousePos);
     rankingButton_.handleEvent(event, mousePos);
+    friendsButton_.handleEvent(event, mousePos);
 }
 
 void LobbyState::update(float dt) {
@@ -108,6 +122,7 @@ void LobbyState::draw(sf::RenderWindow& window) {
     window.draw(balanceText_);
 
     logoutButton_.draw(window);
+    friendsButton_.draw(window);
     chatButton_.draw(window);
     rankingButton_.draw(window);
 }
@@ -123,4 +138,9 @@ void LobbyState::onLogoutClicked() {
 void LobbyState::onChatClicked() {
     std::cout << "[LobbyState] Go to PrivateChatState\n";
     ctx_.requestTransition(GameStateType::PrivateChat);
+}
+
+void LobbyState::onFriendsClicked() {
+    std::cout << "[LobbyState] Go to FriendsState\n";
+    ctx_.requestTransition(GameStateType::Friends);
 }
