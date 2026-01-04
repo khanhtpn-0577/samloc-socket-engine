@@ -33,7 +33,8 @@ private:
         bool success,
         const std::string& message,
         uint32_t userId = 0,
-        const std::string& token = ""
+        const std::string& token = "",
+        double balance = 0.0
     );
 
     // Parse simple JSON-like payload
@@ -45,7 +46,8 @@ private:
         bool success,
         const std::string& message,
         uint32_t userId = 0,
-        const std::string& token = ""
+        const std::string& token = "",
+        double balance = 0.0
     );
 
 private:

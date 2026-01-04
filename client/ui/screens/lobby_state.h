@@ -25,6 +25,8 @@ private:
     sf::RectangleShape background_;
     sf::Text titleText_;
     sf::Text sessionText_;
+    sf::Text balanceText_;
+
 
     Button logoutButton_;
     Button chatButton_;
