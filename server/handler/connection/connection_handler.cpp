@@ -188,6 +188,8 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
             case MessageType::FRIEND_RANK_REQUEST:
                 std::cout <<"[Connection handler] Handling FRIEND_RANK_REQUEST\n";
                 response = rankHandler.handleFriendRankRequest(incoming);
+                needRespond = true;
+                break;
             case MessageType::SEND_FRIEND_REQUEST:
                 response = friendHandler.handleSendFriendRequest(incoming);
                 needRespond = true;

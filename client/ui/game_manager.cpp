@@ -69,6 +69,7 @@ void GameManager::transitionTo(GameStateType newState) {
             break;
         case GameStateType::Friends:
             currentState_ = std::make_unique<FriendsState>(ctx_);
+            break;
         case GameStateType::LuckyWheel:
             currentState_ = std::make_unique<LuckyWheelState>(ctx_);
             break;

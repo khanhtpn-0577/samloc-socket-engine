@@ -21,13 +21,10 @@ set(SERVER_SOURCES
     handler/challenge/challenge_handler.cpp
     handler/game/game_handler.cpp
     handler/rank/rank_handler.cpp
-<<<<<<< HEAD
     handler/friend/friend_handler.cpp
     handler/game/game_handler.cpp 
     logic/chat/chat_logic.cpp
-=======
     handler/lucky_wheel/lucky_wheel_handler.cpp
->>>>>>> 32f9668 (add pipeline lucky wheel)
 
     db/database.cpp
     db/repository/private_chat_repository.cpp
@@ -35,12 +32,9 @@ set(SERVER_SOURCES
     db/repository/player_repository.cpp  
     db/repository/card_repository.cpp    
     db/repository/rank_repository.cpp
-<<<<<<< HEAD
     db/repository/game_repository.cpp
     db/repository/friend_repository.cpp
-=======
     db/repository/lucky_wheel_repository.cpp
->>>>>>> 32f9668 (add pipeline lucky wheel)
 
     logic/chat/chat_logic.cpp
     logic/rank/rank_logic.cpp
