@@ -41,13 +41,13 @@ LobbyState::LobbyState(StateContext& ctx)
     );
     logoutButton_.setCallback([this]() { onLogoutClicked(); });
 
-    // ===== Friends Button =====
+    // ===== Friends Button (aligned with chat/ranking buttons) =====
     friendsButton_.setFont(ctx_.font);
-    friendsButton_.setText("Friends", 20);
-    friendsButton_.setSize({150.f, 50.f});
-    friendsButton_.setPosition({40.f, 150.f});
+    friendsButton_.setText("Friends", 22);
+    friendsButton_.setSize({300.f, 60.f});
+    friendsButton_.setPosition({490.f, 240.f});
     friendsButton_.setColors(
-        sf::Color(0, 100, 160),
+        sf::Color(180, 140, 20), // dark yellow fill
         sf::Color::White,
         sf::Color::White
     );
@@ -122,9 +122,9 @@ void LobbyState::draw(sf::RenderWindow& window) {
     window.draw(balanceText_);
 
     logoutButton_.draw(window);
-    friendsButton_.draw(window);
     chatButton_.draw(window);
     rankingButton_.draw(window);
+    friendsButton_.draw(window);
 }
 
 void LobbyState::onLogoutClicked() {
