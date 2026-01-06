@@ -15,6 +15,10 @@ enum class MessageType : uint16_t {
     DECLARE_SAM = 0x0022,
     SPIN_WHEEL = 0x0030,
 
+    //Lucky Wheel messages
+    LUCKY_WHEEL_SPIN_REQUEST = 0x0060,
+    LUCKY_WHEEL_SPIN_RESPONSE = 0x0061,
+
     // Chat messages
     FRIEND_LIST_REQUEST = 0x0040,
     FRIEND_LIST_RESPONSE = 0x0041,

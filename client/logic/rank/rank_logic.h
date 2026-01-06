@@ -1,5 +1,6 @@
 #pragma once
 #include "../../net/rank/rank_sender.h"
+#include "../../net/protocol.h"
 
 class RankLogic {
 public:

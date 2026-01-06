@@ -21,9 +21,13 @@ set(SERVER_SOURCES
     handler/challenge/challenge_handler.cpp
     handler/game/game_handler.cpp
     handler/rank/rank_handler.cpp
+<<<<<<< HEAD
     handler/friend/friend_handler.cpp
     handler/game/game_handler.cpp 
     logic/chat/chat_logic.cpp
+=======
+    handler/lucky_wheel/lucky_wheel_handler.cpp
+>>>>>>> 32f9668 (add pipeline lucky wheel)
 
     db/database.cpp
     db/repository/private_chat_repository.cpp
@@ -31,8 +35,12 @@ set(SERVER_SOURCES
     db/repository/player_repository.cpp  
     db/repository/card_repository.cpp    
     db/repository/rank_repository.cpp
+<<<<<<< HEAD
     db/repository/game_repository.cpp
     db/repository/friend_repository.cpp
+=======
+    db/repository/lucky_wheel_repository.cpp
+>>>>>>> 32f9668 (add pipeline lucky wheel)
 
     logic/chat/chat_logic.cpp
     logic/rank/rank_logic.cpp
@@ -40,6 +48,7 @@ set(SERVER_SOURCES
     logic/challenge/challenge_logic.cpp
     logic/friend/friend_logic.cpp
     logic/game/sam_loc_game.cpp 
+    logic/lucky_wheel/lucky_wheel_logic.cpp
 )
 
 set(SERVER_HEADERS
@@ -56,6 +65,7 @@ set(SERVER_HEADERS
     handler/friend/friend_handler.h
     handler/game/game_handler.h  
     handler/rank/rank_handler.h
+    handler/lucky_wheel/lucky_wheel_handler.h
 
     logic/chat/chat_logic.h
     utils/logger.h
@@ -68,6 +78,8 @@ set(SERVER_HEADERS
     db/repository/game_repository.h  
     db/repository/rank_repository.h
     db/repository/friend_repository.h
+    db/repository/lucky_wheel_repository.h
+
 
     logic/auth/auth_logic.h
     logic/challenge/challenge_logic.h
@@ -75,6 +87,7 @@ set(SERVER_HEADERS
     logic/game/sam_loc_game.h  
     logic/game/game_config.h  
     logic/rank/rank_logic.h
+    logic/lucky_wheel/lucky_wheel_logic.h
 )
 
 # --- Tạo executable cho Server ---

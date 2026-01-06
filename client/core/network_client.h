@@ -12,6 +12,7 @@
 #include "../net/friend/friend_sender.h"
 #include "../handlers/session/client_session.h"
 #include "../net/rank/rank_sender.h"
+#include "../net/lucky_wheel/lucky_wheel_sender.h"
 
 struct NetworkConfig {
     std::string serverIp;
@@ -31,6 +32,7 @@ public:
     ChallengeSender& challengeSender();
     RankSender& rankSender();
     FriendSender& friendSender();
+    LuckyWheelSender& luckyWheelSender();
     ClientSocket& socket();
 
 private:
@@ -46,6 +48,7 @@ private:
     ChallengeSender challengeSender_;
     RankSender rankSender_;
     FriendSender friendSender_;
+    LuckyWheelSender luckyWheelSender_;
     std::atomic<bool> running_;
     std::thread worker_;
 };

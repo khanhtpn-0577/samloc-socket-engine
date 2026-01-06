@@ -4,6 +4,7 @@
 #include "../challenge/challenge_handler.h"
 #include "../rank/rank_handler.h"
 #include "../friend/friend_handler.h"
+#include "../lucky_wheel/lucky_wheel_handler.h"
 #include <iostream>
 
 //constructor
@@ -12,14 +13,16 @@ ClientConnectionHandler::ClientConnectionHandler(
     AuthHandler& authHandler,
     ChallengeHandler& challengeHandler,
     RankHandler& rankHandler,
-    FriendHandler& friendHandler
+    FriendHandler& friendHandler,
+    LuckyWheelHandler& luckyWheelHandler
 ):
     chatHandler_(chatHandler),
     authHandler_(authHandler),
     challengeHandler_(challengeHandler),
     rankHandler_(rankHandler),
-    friendHandler_(friendHandler){}
-
+    friendHandler_(friendHandler),
+    luckyWheelHandler_(luckyWheelHandler)
+{}
 void ClientConnectionHandler::handleMessage(const Message& message){
     MessageType type = static_cast<MessageType>(message.header.messageType);
     std::cout << "[ClientConnectionHandler] Received message. "
@@ -84,6 +87,10 @@ void ClientConnectionHandler::handleMessage(const Message& message){
         case MessageType::FRIEND_RANK_RESPONSE:
             rankHandler_.onFriendRankResponse(message);
             std::cout << "[ClientConnectionHandler] Received FRIEND_RANK_RESPONSE with payload: " << message.payload << "\n";
+            break;
+        case MessageType::LUCKY_WHEEL_SPIN_RESPONSE:
+            luckyWheelHandler_.onSpinResponse(message);
+            std::cout << "[ClientConnectionHandler] Received LUCKY_WHEEL_SPIN_RESPONSE with payload: " << message.payload << "\n";
             break;
 
         // Friend-related messages

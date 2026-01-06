@@ -94,12 +94,17 @@ int main(){
     RankHandler rankHandler(rankLogic, session);
 
     
+    LuckyWheelSender& luckyWheelSender = network.luckyWheelSender();
+    LuckyWheelLogic luckyWheelLogic(luckyWheelSender);
+    LuckyWheelHandler luckyWheelHandler(luckyWheelLogic, session);
+
     ClientConnectionHandler connHandler(
         chatHandler,
         authHandler,
         challengeHandler,
         rankHandler,
-        friendHandler
+        friendHandler,
+        luckyWheelHandler
     );
 
 
@@ -109,6 +114,7 @@ int main(){
         session,
         chatHandler,
         rankHandler,
+        luckyWheelHandler,
         eventQueue,
         authHandler,
         friendHandler,

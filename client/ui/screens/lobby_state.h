@@ -33,4 +33,7 @@ private:
     Button chatButton_;
     Button rankingButton_;
     Button friendsButton_;
+    Button luckyWheelButton_;
+
+
 };
