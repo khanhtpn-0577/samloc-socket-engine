@@ -31,5 +31,5 @@ private:
     Button logoutButton_;
     Button chatButton_;
     Button rankingButton_;
-
+    Button btnPlayGame_;
 };

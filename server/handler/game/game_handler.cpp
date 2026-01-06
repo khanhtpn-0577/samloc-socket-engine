@@ -5,29 +5,39 @@
 #include <nlohmann/json.hpp>
 #include <algorithm>
 #include <iostream>
+#include <sstream>
+#include <iomanip>
 
 using json = nlohmann::json;
 
-// Map quản lý người chơi: UserId -> RoomId
 std::unordered_map<int, int> GameHandler::userRoomMap;
 
+std::string GameHandler::intToHex(uint16_t n) {
+    std::stringstream ss;
+    ss << std::hex << std::uppercase << std::setw(4) << std::setfill('0') << n;
+    return ss.str();
+}
+
 void GameHandler::init(Database& db) {
-    Logger::log(LogLevel::INFO, "INIT", "Initializing GameHandler components...");
+    static bool initialized = false;
+    if (initialized) return; 
+    
+    Logger::log(LogLevel::INFO, "INIT", "Initializing GameHandler...");
     try {
         roomRepo = new RoomRepository(db);
         playerRepo = new PlayerRepository(db);
         cardRepo = new CardRepository(db);
         gameRepo = new GameRepository(db);
         globalDeck = cardRepo->getAllCards();
-        Logger::log(LogLevel::INFO, "INIT", "GameHandler Init SUCCESS. Global Deck size: " + std::to_string(globalDeck.size()));
+        initialized = true;
+        Logger::log(LogLevel::INFO, "INIT", "GameHandler initialized. Deck size: " + std::to_string(globalDeck.size()));
     } catch (const std::exception& e) {
-        Logger::log(LogLevel::ERROR, "INIT", "GameHandler Init FAILED: " + std::string(e.what()));
+        Logger::log(LogLevel::ERROR, "INIT", "Initialization failed: " + std::string(e.what()));
     }
 }
 
-void GameHandler::clientDisconnected(int userId) { 
-    Logger::log(LogLevel::INFO, "CONN", "ClientDisconnected callback triggered for User " + std::to_string(userId));
-    onClientDisconnect(userId); 
+void GameHandler::clientDisconnected(int userId) {
+    onClientDisconnect(userId);
 }
 
 Message GameHandler::handleMessage(const Message& msg, int senderId) {
@@ -35,302 +45,99 @@ Message GameHandler::handleMessage(const Message& msg, int senderId) {
     std::string payload = msg.payload;
     std::vector<GameEvent> events;
 
-    // [LOG ENTRY]
-    Logger::log(LogLevel::DEBUG, "HANDLER", "================================================================");
-    Logger::log(LogLevel::DEBUG, "HANDLER", "RECV MSG | User: " + std::to_string(senderId) + " | Type: " + std::to_string((int)type) + " (0x" + std::to_string((int)type) + ")");
-    Logger::log(LogLevel::DEBUG, "HANDLER", "PAYLOAD: " + (payload.empty() ? "[Empty]" : payload));
+    Logger::log(LogLevel::DEBUG, "HANDLER", "Received message | User: " + std::to_string(senderId) + " | Type: 0x" + intToHex((uint16_t)type));
 
     json jPayload;
     if (!payload.empty()) {
-        try { 
-            jPayload = json::parse(payload); 
-        } catch (const std::exception& e) { 
-            Logger::log(LogLevel::ERROR, "JSON", "Parse Error: " + std::string(e.what()));
-            if (type != MessageType::C_GET_ROOM_LIST) {
-                Logger::log(LogLevel::WARNING, "HANDLER", "Aborting processing due to JSON error.");
-                return Message(); 
-            }
-        }
+        try { jPayload = json::parse(payload); } catch (...) { if (type != MessageType::C_GET_ROOM_LIST) return Message(); }
     }
 
-    /**
-     * [DOCS] C_GET_ROOM_LIST
-     * Input: {}
-     * Output: S_ROOM_LIST {"rooms": [...]}
-     */
     if (type == MessageType::C_GET_ROOM_LIST) {
-        Logger::log(LogLevel::INFO, "ROOM_LIST", "User " + std::to_string(senderId) + " requested room list.");
-        
         std::vector<DBRoom> allRooms = roomRepo->getAllRooms();
-        Logger::log(LogLevel::DEBUG, "ROOM_LIST", "Found " + std::to_string(allRooms.size()) + " rooms in DB.");
-
         json jRooms = json::array();
         for (auto& r : allRooms) {
-            int currentPlayers = 0; 
+            int curr = 0;
             std::string status = "waiting";
-            
             if (games.find(r.id) != games.end()) {
-                currentPlayers = games[r.id]->getCurrentPlayerCount();
+                curr = games[r.id]->getCurrentPlayerCount();
                 if (!games[r.id]->isJoinAllowed()) status = "playing";
             }
-            
-            json roomObj;
-            roomObj["id"] = r.id; 
-            roomObj["name"] = r.roomName; 
-            roomObj["type"] = r.type;
-            roomObj["bet"] = (long long)r.betAmount; 
-            roomObj["max"] = r.maxPlayers;
-            roomObj["curr"] = currentPlayers; 
-            roomObj["status"] = status;
-            jRooms.push_back(roomObj);
+            jRooms.push_back({
+                {"id", r.id}, {"name", r.roomName}, {"type", r.type},
+                {"bet", (long long)r.betAmount}, {"max", r.maxPlayers},
+                {"curr", curr}, {"status", status}
+            });
         }
-
-        json jResp; jResp["rooms"] = jRooms;
-        Message resp; 
+        Message resp;
         resp.header.messageType = (uint16_t)MessageType::S_ROOM_LIST;
-        resp.payload = jResp.dump(); 
+        resp.payload = json({{"rooms", jRooms}}).dump();
         resp.header.payloadLength = resp.payload.size();
-        
-        Logger::log(LogLevel::INFO, "ROOM_LIST", "Sending list to User " + std::to_string(senderId) + ". Payload size: " + std::to_string(resp.header.payloadLength));
         return resp;
     }
 
-    int roomId = jPayload.value("roomId", 0);
-
-    /**
-     * [DOCS] C_JOIN_ROOM
-     * Input: { "roomId": <int> }
-     */
     if (type == MessageType::C_JOIN_ROOM) {
-        Logger::log(LogLevel::INFO, "JOIN", "User " + std::to_string(senderId) + " requesting to JOIN Room " + std::to_string(roomId));
-
-        // --- BYPASS LOGIC START ---
-        if (userRoomMap.find(senderId) != userRoomMap.end()) {
+        int roomId = jPayload.value("roomId", 0);
+        if (userRoomMap.count(senderId) && userRoomMap[senderId] != roomId) {
             int oldRid = userRoomMap[senderId];
-            Logger::log(LogLevel::WARNING, "JOIN_BYPASS", "User " + std::to_string(senderId) + " is already in Room " + std::to_string(oldRid));
-
-            if (oldRid != roomId) {
-                if (games.find(oldRid) != games.end()) {
-                    auto oldGame = games[oldRid];
-                    if (oldGame->getState() == GameState::WAITING) {
-                        Logger::log(LogLevel::INFO, "JOIN_BYPASS", "Old Room " + std::to_string(oldRid) + " is WAITING. Executing Auto-Leave...");
-                        
-                        // Logic Remove
-                        auto leaveEvents = oldGame->removePlayer(senderId);
-                        Logger::log(LogLevel::DEBUG, "JOIN_BYPASS", "Generated " + std::to_string(leaveEvents.size()) + " leave events for Room " + std::to_string(oldRid));
-                        dispatchEvents(leaveEvents); 
-                        
-                        try { roomRepo->removePlayerFromRoom(oldRid, senderId); } catch(...) {}
-                        userRoomMap.erase(senderId);
-                        Logger::log(LogLevel::INFO, "JOIN_BYPASS", "Removed User " + std::to_string(senderId) + " from DB/Map of Room " + std::to_string(oldRid));
-
-                        if (oldGame->getCurrentPlayerCount() == 0) {
-                            Logger::log(LogLevel::INFO, "JOIN_BYPASS", "Old Room " + std::to_string(oldRid) + " is empty. Deleting game instance.");
-                            games.erase(oldRid);
-                        }
-                    } else {
-                        Logger::log(LogLevel::WARNING, "JOIN_BYPASS", "Old Room " + std::to_string(oldRid) + " is PLAYING. Deny Join.");
-                        Message err; err.header.messageType = (uint16_t)MessageType::ERROR_MESSAGE;
-                        err.payload = "{\"code\":423,\"msg\":\"Playing elsewhere\"}";
-                        err.header.payloadLength = err.payload.size(); return err;
-                    }
-                } else {
-                    Logger::log(LogLevel::WARNING, "JOIN_BYPASS", "Old Room " + std::to_string(oldRid) + " game instance not found. Cleaning map.");
-                    userRoomMap.erase(senderId);
-                }
-            } else {
-                Logger::log(LogLevel::INFO, "JOIN", "User re-joining same room " + std::to_string(roomId) + " (Reconnect logic).");
+            if (games.count(oldRid) && games[oldRid]->getState() == GameState::WAITING) {
+                dispatchEvents(games[oldRid]->removePlayer(senderId));
+                userRoomMap.erase(senderId);
             }
         }
-        // --- BYPASS LOGIC END ---
-
         DBRoom roomInfo;
-        if (!roomRepo->getRoom(roomId, roomInfo)) {
-            Logger::log(LogLevel::WARNING, "JOIN", "Room ID " + std::to_string(roomId) + " not found in DB.");
-            Message err; err.header.messageType = (uint16_t)MessageType::ERROR_MESSAGE;
-            err.payload = "{\"code\":404,\"msg\":\"Room not found\"}";
-            err.header.payloadLength = err.payload.size(); return err;
-        }
+        if (!roomRepo->getRoom(roomId, roomInfo)) return Message();
 
         if (games.find(roomId) == games.end()) {
-            Logger::log(LogLevel::INFO, "JOIN", "Creating new SamLocGame instance for Room " + std::to_string(roomId));
             games[roomId] = std::make_shared<SamLocGame>(roomId, roomInfo, globalDeck, *playerRepo, *gameRepo);
         }
-        
         auto game = games[roomId];
-        bool isReconnect = game->isPlayerInGame(senderId);
-        Logger::log(LogLevel::DEBUG, "JOIN", "Reconnect check: " + std::string(isReconnect ? "TRUE" : "FALSE"));
-        
-        if (!isReconnect) {
-            if (game->getCurrentPlayerCount() >= roomInfo.maxPlayers) {
-                 Logger::log(LogLevel::WARNING, "JOIN", "Room " + std::to_string(roomId) + " is FULL.");
-                 Message err; err.header.messageType = (uint16_t)MessageType::ERROR_MESSAGE;
-                 err.payload = "{\"code\":423,\"msg\":\"Room Full\"}"; err.header.payloadLength = err.payload.size(); return err;
-            }
-            if (!game->isJoinAllowed()) {
-                 Logger::log(LogLevel::WARNING, "JOIN", "Room " + std::to_string(roomId) + " is PLAYING/LOCKED.");
-                 Message err; err.header.messageType = (uint16_t)MessageType::ERROR_MESSAGE;
-                 err.payload = "{\"code\":423,\"msg\":\"Game Playing\"}"; err.header.payloadLength = err.payload.size(); return err;
-            }
+        if (!game->isPlayerInGame(senderId)) {
+            if (game->getCurrentPlayerCount() >= roomInfo.maxPlayers || !game->isJoinAllowed()) return Message();
+            events = game->addPlayer(senderId);
         }
-
-        Logger::log(LogLevel::INFO, "JOIN", "Adding User " + std::to_string(senderId) + " to DB Room " + std::to_string(roomId));
-        roomRepo->addPlayerToRoom(roomId, senderId);
         userRoomMap[senderId] = roomId;
+        try { roomRepo->addPlayerToRoom(roomId, senderId); } catch(...) {}
 
-        if (!isReconnect) {
-            Logger::log(LogLevel::INFO, "JOIN", "Calling game->addPlayer for User " + std::to_string(senderId));
-            events = game->addPlayer(senderId, "Player " + std::to_string(senderId));
-        } else {
-            Logger::log(LogLevel::INFO, "JOIN", "User " + std::to_string(senderId) + " reconnected. Syncing state.");
-        }
+        Message ack;
+        ack.header.messageType = (uint16_t)MessageType::S_JOIN_ROOM_SUCCESS;
+        ack.payload = json({{"roomId", roomId}, {"msg", "joined"}}).dump();
+        if (auto* c = SessionManager::instance().get(senderId)) c->sendMessage(ack);
 
-        // Send Existing Players
-        std::string exPlayers = game->getPlayersStateJson();
-        Logger::log(LogLevel::DEBUG, "JOIN", "Sending S_EXISTING_PLAYERS to " + std::to_string(senderId) + ": " + exPlayers);
-        
         Message msgEx;
         msgEx.header.messageType = (uint16_t)MessageType::S_EXISTING_PLAYERS;
-        msgEx.payload = exPlayers;
-        msgEx.header.payloadLength = msgEx.payload.size();
-        auto* conn = SessionManager::instance().get(senderId);
-        if (conn) conn->sendMessage(msgEx);
-    } 
-    // ================== IN-GAME ACTIONS ==================
-    else if (userRoomMap.find(senderId) != userRoomMap.end()) {
+        msgEx.payload = game->getPlayersStateJsonFor(senderId);
+        if (auto* c = SessionManager::instance().get(senderId)) c->sendMessage(msgEx);
+
+        if (!events.empty()) dispatchEvents(events);
+        return Message();
+    }
+
+    if (userRoomMap.count(senderId)) {
         int rId = userRoomMap[senderId];
-        Logger::log(LogLevel::DEBUG, "ACTION", "User " + std::to_string(senderId) + " mapped to Room " + std::to_string(rId));
-
-        if (games.find(rId) != games.end()) {
+        if (games.count(rId)) {
             auto game = games[rId];
-            try {
-                switch (type) {
-                    case MessageType::C_READY: {
-                        bool r = jPayload.value("isReady", false);
-                        Logger::log(LogLevel::INFO, "ACTION", "C_READY: User " + std::to_string(senderId) + " set " + (r?"TRUE":"FALSE"));
-                        events = game->setPlayerReady(senderId, r); 
-                        break;
-                    }
-                    case MessageType::C_BAO_SAM: {
-                        bool w = jPayload.value("wantSam", false);
-                        Logger::log(LogLevel::INFO, "ACTION", "C_BAO_SAM: User " + std::to_string(senderId) + " wants " + (w?"YES":"NO"));
-                        events = game->handleBaoSam(senderId, w); 
-                        break;
-                    }
-                    case MessageType::C_PLAY_CARD: {
-                        std::vector<int> cards;
-                        if (jPayload.contains("cards")) cards = jPayload["cards"].get<std::vector<int>>();
-                        
-                        std::string cardStr = "["; 
-                        for(int c : cards) cardStr += std::to_string(c) + ","; 
-                        cardStr += "]";
-                        Logger::log(LogLevel::INFO, "ACTION", "C_PLAY_CARD: User " + std::to_string(senderId) + " played " + cardStr);
-                        
-                        events = game->playCards(senderId, cards);
-                        break;
-                    }
-                    case MessageType::C_PASS_TURN: 
-                        Logger::log(LogLevel::INFO, "ACTION", "C_PASS_TURN: User " + std::to_string(senderId) + " passed.");
-                        events = game->passTurn(senderId); 
-                        break;
-                    
-                    case MessageType::LEAVE_ROOM: 
-                        Logger::log(LogLevel::INFO, "ACTION", "C_LEAVE_ROOM: User " + std::to_string(senderId) + " leaving.");
-                        events = onClientDisconnect(senderId); 
-                        break;
-                    
-                    default: 
-                        Logger::log(LogLevel::WARNING, "ACTION", "Unknown/Unhandled MessageType in Game context: " + std::to_string((int)type));
-                        break;
-                }
-            } catch (const std::exception& e) {
-                Logger::log(LogLevel::ERROR, "ACTION", "Logic Exception processing action for " + std::to_string(senderId) + ": " + e.what());
+            switch (type) {
+                case MessageType::C_READY:
+                    events = game->setPlayerReady(senderId, jPayload.value("ready", jPayload.value("isReady", false)));
+                    break;
+                case MessageType::C_PLAY_CARD:
+                    events = game->playCards(senderId, jPayload.value("cards", std::vector<int>{}));
+                    break;
+                case MessageType::C_PASS_TURN:
+                    events = game->passTurn(senderId);
+                    break;
+                case MessageType::C_LEAVE_ROOM:
+                    events = game->removePlayer(senderId); 
+                    userRoomMap.erase(senderId);
+                    try { roomRepo->removePlayerFromRoom(rId, senderId); } catch(...) {}
+                    if (game->getCurrentPlayerCount() == 0) games.erase(rId);
+                    break;
+                default: break;
             }
-        } else {
-            Logger::log(LogLevel::ERROR, "ACTION", "Game instance not found for Room " + std::to_string(rId) + ". Removing stale map.");
-            userRoomMap.erase(senderId);
         }
-    } else {
-        Logger::log(LogLevel::WARNING, "HANDLER", "User " + std::to_string(senderId) + " sent Game Action but is NOT in any room map.");
     }
-
-    if (!events.empty()) {
-        Logger::log(LogLevel::INFO, "HANDLER", "Dispatching " + std::to_string(events.size()) + " events from action.");
-        dispatchEvents(events);
-    }
-    
+    if (!events.empty()) dispatchEvents(events);
     return Message();
-}
-
-std::vector<GameEvent> GameHandler::onClientDisconnect(int userId) {
-    std::vector<GameEvent> allEvents;
-    if (userId == 0) return allEvents;
-
-    if (userRoomMap.find(userId) == userRoomMap.end()) {
-        Logger::log(LogLevel::DEBUG, "DISCONNECT", "User " + std::to_string(userId) + " disconnected but not in any room.");
-        return allEvents;
-    }
-
-    int rId = userRoomMap[userId];
-    Logger::log(LogLevel::INFO, "DISCONNECT", "Processing disconnect for User " + std::to_string(userId) + " from Room " + std::to_string(rId));
-    
-    userRoomMap.erase(userId);
-
-    if (games.find(rId) != games.end()) {
-        auto game = games[rId];
-        
-        // Logic Game
-        auto evs = game->onPlayerDisconnect(userId);
-        if (!evs.empty()) {
-            Logger::log(LogLevel::DEBUG, "DISCONNECT", "Game logic generated " + std::to_string(evs.size()) + " events.");
-            for (auto &e : evs) if (e.roomId == 0) e.roomId = rId;
-            allEvents.insert(allEvents.end(), evs.begin(), evs.end());
-        }
-
-        // DB Cleanup
-        try { 
-            roomRepo->removePlayerFromRoom(rId, userId); 
-            Logger::log(LogLevel::DEBUG, "DISCONNECT", "Removed User " + std::to_string(userId) + " from DB Room " + std::to_string(rId));
-        } catch (const std::exception& e) {
-            Logger::log(LogLevel::ERROR, "DISCONNECT", "DB Remove Failed: " + std::string(e.what()));
-        }
-
-        // Empty Room Cleanup
-        if (game->getCurrentPlayerCount() == 0) {
-            Logger::log(LogLevel::INFO, "DISCONNECT", "Room " + std::to_string(rId) + " is now EMPTY. Destroying Game Instance.");
-            games.erase(rId); 
-        } else {
-            Logger::log(LogLevel::DEBUG, "DISCONNECT", "Room " + std::to_string(rId) + " still has " + std::to_string(game->getCurrentPlayerCount()) + " active players.");
-        }
-    } else {
-        Logger::log(LogLevel::WARNING, "DISCONNECT", "Game instance for Room " + std::to_string(rId) + " not found!");
-    }
-
-    if (!allEvents.empty()) {
-        dispatchEvents(allEvents);
-    }
-    return allEvents;
-}
-
-void GameHandler::updateLoop() {
-    // Loop này chạy rất nhanh nên hạn chế log trừ khi có sự kiện
-    for (auto it = games.begin(); it != games.end(); ) {
-        int rid = it->first;
-        auto game = it->second;
-        
-        if (game) {
-            auto evs = game->update();
-            if (!evs.empty()) {
-                Logger::log(LogLevel::DEBUG, "UPDATE_LOOP", "Room " + std::to_string(rid) + " generated " + std::to_string(evs.size()) + " timed events.");
-                for (auto &e : evs) if (e.roomId == 0) e.roomId = rid;
-                dispatchEvents(evs);
-            }
-            ++it;
-        } else {
-            Logger::log(LogLevel::WARNING, "UPDATE_LOOP", "Null game pointer found for Room " + std::to_string(rid) + ". Removing.");
-            it = games.erase(it);
-        }
-    }
 }
 
 void GameHandler::dispatchEvents(const std::vector<GameEvent>& events) {
@@ -340,29 +147,57 @@ void GameHandler::dispatchEvents(const std::vector<GameEvent>& events) {
         resp.payload = ev.payload;
         resp.header.payloadLength = resp.payload.size();
 
-        // Logger::log(LogLevel::DEBUG, "DISPATCH", "Type: 0x" + std::to_string((int)ev.type) + " Payload: " + ev.payload);
+        std::vector<int> targets = ev.targetPlayerIds;
+        if (targets.empty() && games.count(ev.roomId)) {
+            targets = games[ev.roomId]->getAllPlayerIds();
+        }
 
-        if (ev.targetPlayerIds.empty()) {
-            if (games.find(ev.roomId) != games.end()) {
-                auto recipients = games[ev.roomId]->getAllPlayerIds();
-                // Logger::log(LogLevel::DEBUG, "DISPATCH", "Broadcasting to Room " + std::to_string(ev.roomId) + " (" + std::to_string(recipients.size()) + " users)");
-                for (int uid : recipients) {
-                    auto* conn = SessionManager::instance().get(uid);
-                    if (conn) conn->sendMessage(resp);
-                }
-            }
-        } else {
-            // Logger::log(LogLevel::DEBUG, "DISPATCH", "Sending to " + std::to_string(ev.targetPlayerIds.size()) + " targets.");
-            for (int uid : ev.targetPlayerIds) {
-                auto* conn = SessionManager::instance().get(uid);
-                if (conn) conn->sendMessage(resp);
-                // else Logger::log(LogLevel::WARNING, "DISPATCH", "Target User " + std::to_string(uid) + " not connected.");
+        for (int uid : targets) {
+            if (auto* conn = SessionManager::instance().get(uid)) {
+                conn->sendMessage(resp);
+                std::string typeHex = intToHex(resp.header.messageType);
+                Logger::log(LogLevel::DEBUG, "DISPATCH", 
+                    "[SEND] -> User: " + std::to_string(uid) + 
+                    " | Type: 0x" + typeHex + 
+                    " | Payload: " + resp.payload);
             }
         }
     }
 }
 
-// --- Helper Functions ---
-int GameHandler::parseIntFromJson(const std::string& jsonStr, const std::string& key) { try { return json::parse(jsonStr).value(key, 0); } catch(...) { return 0; } }
-bool GameHandler::parseBoolFromJson(const std::string& jsonStr, const std::string& key) { try { return json::parse(jsonStr).value(key, false); } catch(...) { return false; } }
-std::vector<int> GameHandler::parseCardsFromJson(const std::string& jsonStr) { try { return json::parse(jsonStr)["cards"].get<std::vector<int>>(); } catch(...) { return {}; } }
+std::vector<GameEvent> GameHandler::onClientDisconnect(int userId) {
+    std::vector<GameEvent> allEvents;
+    if (userRoomMap.find(userId) == userRoomMap.end()) return allEvents;
+
+    int rId = userRoomMap[userId];
+    userRoomMap.erase(userId);
+
+    if (games.count(rId)) {
+        auto game = games[rId];
+        allEvents = game->onPlayerDisconnect(userId);
+        
+        GameEvent syncEv;
+        syncEv.type = MessageType::S_ROOM_UPDATE;
+        syncEv.payload = game->getPlayersStateJsonFor(-1);
+        syncEv.roomId = rId;
+        syncEv.targetPlayerIds = game->getAllPlayerIds();
+        allEvents.push_back(syncEv);
+
+        try { roomRepo->removePlayerFromRoom(rId, userId); } catch(...) {}
+        if (game->getCurrentPlayerCount() == 0) games.erase(rId);
+    }
+
+    if (!allEvents.empty()) dispatchEvents(allEvents);
+    return allEvents;
+}
+
+void GameHandler::updateLoop() {
+    for (auto it = games.begin(); it != games.end();) {
+        auto game = it->second;
+        if (game) {
+            auto evs = game->update();
+            if (!evs.empty()) dispatchEvents(evs);
+            ++it;
+        } else it = games.erase(it);
+    }
+}

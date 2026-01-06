@@ -1,19 +1,22 @@
 #pragma once
 
-#include "../../net/protocol.h"
-#include "../session/client_session.h"
-
+#include "../../core/network_client.h"
 class ChatHandler;
 class AuthHandler;
 class ChallengeHandler;
 class RankHandler;
+class RoomHandler;
 
 class ClientConnectionHandler {
 public:
-    ClientConnectionHandler(ChatHandler& chatHandler, AuthHandler& authHandler, 
-                           ChallengeHandler& challengeHandler, RankHandler& rankHandler);
+    ClientConnectionHandler(
+        ChatHandler& chatHandler,
+        AuthHandler& authHandler,
+        ChallengeHandler& challengeHandler,
+        RankHandler& rankHandler,
+        RoomHandler& roomHandler
+    );
 
-    // gọi khi client nhận được message từ server
     void handleMessage(const Message& message);
 
 private:
@@ -21,4 +24,5 @@ private:
     AuthHandler& authHandler_;
     ChallengeHandler& challengeHandler_;
     RankHandler& rankHandler_;
+    RoomHandler& roomHandler_;
 };

@@ -1,4 +1,5 @@
 #include "network_client.h"
+
 #include <iostream>
 
 NetworkClient::NetworkClient(
@@ -14,6 +15,7 @@ NetworkClient::NetworkClient(
       authSender_(socket_, 0, ""),          
       challengeSender_(socket_, 0, ""),
       rankSender_(socket_, session_),
+      roomSender_(socket_, session_), 
       running_(false) {}
 
 NetworkClient::~NetworkClient() {
@@ -52,6 +54,10 @@ ChallengeSender& NetworkClient::challengeSender() {
 
 RankSender& NetworkClient::rankSender() {
     return rankSender_;
+}
+
+RoomSender& NetworkClient::roomSender() {
+    return roomSender_;
 }
 
 ClientSocket& NetworkClient::socket() {

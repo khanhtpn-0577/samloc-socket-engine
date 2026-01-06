@@ -10,7 +10,7 @@ public:
     bool getPlayer(int id, DBPlayer& outPlayer);
     bool updateBalance(int id, double amount);
     bool updateStatus(int id, const std::string& status);
-
+double getBalance(int id);
 private:
     Database& database;
 };

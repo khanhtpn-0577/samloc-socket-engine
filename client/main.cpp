@@ -14,6 +14,8 @@
 #include "handlers/connection/client_connection_handler.h"
 #include "handlers/auth/auth_handler.h"
 #include "handlers/challenge/challenge_handler.h"
+// Thêm include RoomHandler
+#include "handlers/room/room_handler.h" // <--- NEW
 
 #include "logic/auth/auth_logic.h"
 #include "logic/chat/chat_logic.h"
@@ -47,14 +49,13 @@ void consumeNetworkEvents(
 
 int main(){
     // ===== Window =====
-    sf::RenderWindow window(sf::VideoMode(1280, 720), "Samloc - Private Chat");
+    sf::RenderWindow window(sf::VideoMode(1280, 720), "Samloc - Client");
     window.setFramerateLimit(60);
 
     // Load font
     sf::Font font;
     if (!font.loadFromFile("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf")) {
         std::cerr << "Failed to load font. Using default (may not render).\n";
-        // Continue anyway; SFML will use a default font
     }
 
     // ===== Session =====
@@ -74,6 +75,8 @@ int main(){
         return 1;
     }
 
+    // --- Init Handlers ---
+
     MessageSender& chatSender = network.chatSender();
     ChatLogic chatLogic(chatSender);
     ChatHandler chatHandler(chatLogic, session);
@@ -88,15 +91,21 @@ int main(){
     RankLogic rankLogic(rankSender);
     RankHandler rankHandler(rankLogic, session);
 
+    // [NEW] Khởi tạo RoomHandler
+    RoomHandler roomHandler; // <--- NEW
+
+    // Truyền RoomHandler vào ConnectionHandler để định tuyến gói tin từ Server
     ClientConnectionHandler connHandler(
         chatHandler,
         authHandler,
         challengeHandler,
-        rankHandler
+        rankHandler,
+        roomHandler // <--- NEW
     );
 
 
     // ===== State Context =====
+    // Truyền RoomHandler vào Context để UI (RoomListState) sử dụng
     StateContext ctx(
         network,
         session,
@@ -104,6 +113,7 @@ int main(){
         rankHandler,
         eventQueue,
         authHandler,
+        roomHandler, // <--- NEW
         font
     );
 

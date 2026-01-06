@@ -2,19 +2,17 @@
 
 #include <vector>
 #include <string>
-#include <memory>
 #include <unordered_set>
 #include <chrono>
-#include <sstream>
-#include <algorithm>
 
-#include "../../model/game_event.h" 
-#include <nlohmann/json.hpp>
+#include "../../model/game_event.h"
 #include "game_config.h"
 
 #include "../../db/repository/player_repository.h"
 #include "../../db/repository/card_repository.h"
 #include "../../db/repository/game_repository.h"
+
+/* ================== GAME STATE ================== */
 
 enum class GameState {
     WAITING,
@@ -23,88 +21,105 @@ enum class GameState {
     FINISHED
 };
 
+/* ================== PLAYER ================== */
+
 struct Player {
-    int id;
+    int id = -1;
     std::string name;
-    bool isReady;
-    bool isDisconnected;
+    bool isReady = false;
+    bool isDisconnected = false;
     std::vector<DBCard> hand;
-    bool wantsSam;
-    bool hasPassed;
+    long long balance = 0;
+    bool hasPassed = false;
 };
 
-struct MoveInfo {
-    int type;
-    int highestRank;
-    int count; 
+/* ================== GAME ================== */
+enum HandType {
+    INVALID = 0,
+    SINGLE = 1,      // Cóc
+    PAIR = 2,        // Đôi
+    TRIPLE = 3,      // Sám
+    QUAD = 4,        // Tứ quý
+    SEQUENCE = 5     // Sảnh (3 lá trở lên)
+};
+
+struct HandInfo {
+    HandType type;
+    int power; // Giá trị orderValue cao nhất của bộ
+    int count; // Số lượng lá bài
 };
 
 class SamLocGame {
 public:
-    SamLocGame(int rId, const DBRoom& info, const std::vector<DBCard>& deck,
-               PlayerRepository& pRepo, GameRepository& gRepo)
-        : roomId(rId), roomInfo(info), masterDeck(deck), 
-          playerRepo(pRepo), gameRepo(gRepo) {
-        state = GameState::WAITING;
-        currentPlayerIndex = -1;
-        currentGameId = 0;
-        startingScheduled = false;
-        lockedForJoin = false;
-    }
+    SamLocGame(
+        int rId,
+        const DBRoom& info,
+        const std::vector<DBCard>& deck,
+        PlayerRepository& pRepo,
+        GameRepository& gRepo
+    );
 
-    // --- Core Actions ---
-    std::vector<GameEvent> addPlayer(int playerId, const std::string& name);
-    std::vector<GameEvent> removePlayer(int playerId); // Bypass Room
+    /* ---------- Core ---------- */
+    std::vector<GameEvent> addPlayer(int playerId);
+    std::vector<GameEvent> removePlayer(int playerId);
     std::vector<GameEvent> onPlayerDisconnect(int playerId);
-    
-    // --- User Actions ---
+
+    /* ---------- Player actions ---------- */
     std::vector<GameEvent> setPlayerReady(int playerId, bool ready);
-    std::vector<GameEvent> handleBaoSam(int playerId, bool wantSam);
     std::vector<GameEvent> playCards(int playerId, std::vector<int> cardIds);
     std::vector<GameEvent> passTurn(int playerId);
 
-    // --- Loop ---
+    /* ---------- Loop ---------- */
     std::vector<GameEvent> update();
 
-    // --- Getters ---
-    std::string getPlayersStateJson();
-    int getCurrentPlayerCount() const { return (int)players.size(); }
-    GameState getState() const { return state; } 
-
-    bool isJoinAllowed() const { return !lockedForJoin && state == GameState::WAITING; }
+    /* ---------- Getters ---------- */
+    std::string getPlayersStateJsonFor(int viewerId);
     std::vector<int> getAllPlayerIds();
     bool isPlayerInGame(int playerId);
 
+    int getCurrentPlayerCount() const { return (int)players.size(); }
+    GameState getState() const { return state; }
+    bool isJoinAllowed() const { return !lockedForJoin && state == GameState::WAITING; }
+    bool canBeat(const std::vector<DBCard>& cardsToPlay, std::string& err);
+    HandInfo analyzeHand(const std::vector<DBCard>& cards);
 private:
-    std::vector<GameEvent> startBiddingPhase();
-    std::vector<GameEvent> endBiddingPhase(int samWinnerId);
+    /* ---------- Internal game flow ---------- */
     std::vector<GameEvent> startPlayingPhase(int firstPlayerId);
-    std::vector<GameEvent> nextTurn();
     std::vector<GameEvent> handleWin(int winnerId, int reasonCode);
-    
-    int countActivePlayers();
-    std::string vecToString(const std::vector<int>& v);
-    bool isValidMove(const std::vector<DBCard>& cards, std::string& err);
-    MoveInfo analyzeHand(const std::vector<DBCard>& cards);
 
+    void nextTurnIndex();
+    int pickFirstPlayerId();
+    int countActivePlayers();
+
+    bool isValidMove(const std::vector<DBCard>& cards, std::string& err);
+
+    /* ---------- Helpers ---------- */
+    std::vector<GameEvent> broadcastMoveResult(
+        int actorId,
+        std::string action,
+        std::vector<int> cards
+    );
+
+    /* ---------- Data ---------- */
     int roomId;
     DBRoom roomInfo;
     std::vector<DBCard> masterDeck;
-    
+
     PlayerRepository& playerRepo;
     GameRepository& gameRepo;
 
     std::vector<Player> players;
-    GameState state;
-    int currentGameId;
-    int currentPlayerIndex;
-    
-    bool startingScheduled;
+    GameState state = GameState::WAITING;
+
+    int currentGameId = 0;
+    int currentPlayerIndex = -1;
+    int lastTurnOwnerId = -1;
+
+    std::vector<int> boardCards;
+
+    bool startingScheduled = false;
+    bool lockedForJoin = false;
+
     std::chrono::steady_clock::time_point scheduledStartTime;
     std::chrono::steady_clock::time_point phaseStartTime;
-    
-    bool lockedForJoin;
-    std::unordered_set<int> biddingPlayers;
-    int lastTurnOwnerId;
-    MoveInfo lastMove;
 };

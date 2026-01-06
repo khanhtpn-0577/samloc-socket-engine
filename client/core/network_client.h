@@ -9,8 +9,9 @@
 #include "../net/chat/message_sender.h"
 #include "../net/auth/auth_sender.h"
 #include "../net/challenge/challenge_sender.h"
-#include "../handlers/session/client_session.h"
 #include "../net/rank/rank_sender.h"
+#include "../handlers/room/room_sender.h" 
+#include "../handlers/session/client_session.h"
 
 struct NetworkConfig {
     std::string serverIp;
@@ -29,6 +30,9 @@ public:
     AuthSender& authSender();
     ChallengeSender& challengeSender();
     RankSender& rankSender();
+    
+    RoomSender& roomSender(); 
+
     ClientSocket& socket();
 
 private:
@@ -39,10 +43,14 @@ private:
     ThreadSafeQueue<NetworkEvent>& queue_;
     ClientSocket socket_;
     ClientSession& session_;
+
     MessageSender chatSender_;
     AuthSender authSender_;
     ChallengeSender challengeSender_;
     RankSender rankSender_;
+    
+    RoomSender roomSender_;
+
     std::atomic<bool> running_;
     std::thread worker_;
 };

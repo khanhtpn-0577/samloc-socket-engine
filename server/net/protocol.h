@@ -8,8 +8,7 @@
 enum class MessageType : uint16_t {
     CHAT_DIRECT = 0x0001,
     CHAT_ROOM = 0x0002,
-    JOIN_ROOM = 0x0010,
-    LEAVE_ROOM = 0x0011,
+
     PLAY_CARDS = 0x0020,
     PASS_ROUND = 0x0021,
     DECLARE_SAM = 0x0022,
@@ -53,18 +52,20 @@ enum class MessageType : uint16_t {
     C_READY = 0x2006,
     S_PLAYER_READY = 0x2007,
     S_ROOM_UPDATE = 0x2008,
+    S_EXISTING_PLAYERS = 0x2009,
+    S_JOIN_ROOM_FAIL = 0x200A,
+    S_GAME_START_COUNTDOWN = 0x200B,
+    C_LEAVE_ROOM = 0x200C,     
+
     S_GAME_START = 0x3001,
-    S_ASK_BAO_SAM = 0x3005,
-    C_BAO_SAM = 0x3006,
-    S_BAO_SAM_RESULT = 0x3007,
     S_TURN_INFO = 0x3010,
     C_PLAY_CARD = 0x3011,
     C_PASS_TURN = 0x3012,
     S_MOVE_RESULT = 0x3013,
     S_GAME_END = 0x3020,
+    
     ERROR_MESSAGE = 0x0090,
-    PLAYER_DISCONNECT_GAME = 0x0091,
-    S_EXISTING_PLAYERS = 0x2009  // Broadcast: danh sách người chơi hiện có trong phòng
+    PLAYER_DISCONNECT_GAME = 0x0091
 };
 
 #pragma pack(push, 1)

@@ -29,7 +29,6 @@ public:
     void updateLoop();
     void clientDisconnected(int userId); // public wrapper cho onClientDisconnect
     std::vector<GameEvent> onClientDisconnect(int userId);
-
 private:
     GameHandler() = default;
 
@@ -49,4 +48,5 @@ private:
     int parseIntFromJson(const std::string& json, const std::string& key);
     bool parseBoolFromJson(const std::string& json, const std::string& key);
     std::vector<int> parseCardsFromJson(const std::string& json);
+    static std::string intToHex(uint16_t n);
 };
