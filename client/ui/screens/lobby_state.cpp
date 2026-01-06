@@ -41,17 +41,7 @@ LobbyState::LobbyState(StateContext& ctx)
     );
     logoutButton_.setCallback([this]() { onLogoutClicked(); });
 
-    // ===== Friends Button (aligned with chat/ranking buttons) =====
-    friendsButton_.setFont(ctx_.font);
-    friendsButton_.setText("Friends", 22);
-    friendsButton_.setSize({300.f, 60.f});
-    friendsButton_.setPosition({490.f, 240.f});
-    friendsButton_.setColors(
-        sf::Color(180, 140, 20), // dark yellow fill
-        sf::Color::White,
-        sf::Color::White
-    );
-    friendsButton_.setCallback([this]() { onFriendsClicked(); });
+    
 
     // ===== Chat Button =====
     chatButton_.setFont(ctx_.font);
@@ -79,15 +69,29 @@ LobbyState::LobbyState(StateContext& ctx)
         ctx_.requestTransition(GameStateType::Ranking);
     });
 
+    // 1. ===== PLAY GAME Button (Y = 160) =====
+    // Đặt nút này lên cao nhất để nổi bật
     btnPlayGame_.setFont(ctx_.font);
     btnPlayGame_.setText("PLAY GAME", 24);
     btnPlayGame_.setSize({300.f, 60.f});
-    btnPlayGame_.setPosition({490.f, 240.f}); // Đặt ở vị trí Y=240 (trên nút Chat)
+    btnPlayGame_.setPosition({490.f, 160.f}); // <--- SỬA VỊ TRÍ TẠI ĐÂY
     btnPlayGame_.setColors(sf::Color(230, 126, 34), sf::Color::White, sf::Color::White); // Màu Cam
     btnPlayGame_.setCallback([this]() {
         // Chuyển sang màn hình danh sách phòng
         ctx_.requestTransition(GameStateType::RoomList);
     });
+
+    // 2. ===== Friends Button (Y = 240) =====
+    friendsButton_.setFont(ctx_.font);
+    friendsButton_.setText("Friends", 22);
+    friendsButton_.setSize({300.f, 60.f});
+    friendsButton_.setPosition({490.f, 240.f});
+    friendsButton_.setColors(
+        sf::Color(180, 140, 20), // dark yellow fill
+        sf::Color::White,
+        sf::Color::White
+    );
+    friendsButton_.setCallback([this]() { onFriendsClicked(); });
     // ===== Lucky Wheel Button =====
     luckyWheelButton_.setFont(ctx_.font);
     luckyWheelButton_.setText("Lucky Wheel", 22);

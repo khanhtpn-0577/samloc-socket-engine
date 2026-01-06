@@ -110,9 +110,9 @@ int main(){
         authHandler,
         challengeHandler,
         rankHandler,
-        roomHandler // <--- NEW
         friendHandler,
-        luckyWheelHandler
+        luckyWheelHandler,
+        roomHandler
     );
 
 
@@ -125,9 +125,9 @@ int main(){
         rankHandler,
         luckyWheelHandler,
         eventQueue,
-        authHandler,
-        roomHandler, // <--- NEW
+        authHandler, 
         friendHandler,
+        roomHandler,
         font
     );
 
