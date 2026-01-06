@@ -6,6 +6,7 @@
 #include "screens/lobby_state.h"
 #include "screens/private_chat_state.h"
 #include "screens/ranking_state.h"
+#include "screens/lucky_wheel_state.h"
 #include <memory>
 #include <map>
 

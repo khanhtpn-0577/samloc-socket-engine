@@ -41,7 +41,9 @@ enum class MessageType : uint16_t {
     GET_FRIEND_LIST = 0x005C,
     GET_FRIEND_LIST_RESPONSE = 0x005D,
 
-    
+    //Lucky Wheel messages
+    LUCKY_WHEEL_SPIN_REQUEST = 0x0060,
+    LUCKY_WHEEL_SPIN_RESPONSE = 0x0061,
     // Auth messages
     SIGNUP = 0x0100,
     SIGNUP_RESPONSE = 0x0101,

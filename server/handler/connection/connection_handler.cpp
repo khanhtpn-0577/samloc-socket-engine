@@ -5,6 +5,8 @@
 #include "../challenge/challenge_handler.h"
 #include "../friend/friend_handler.h"
 #include "../game/game_handler.h"
+#include "../../logic/lucky_wheel/lucky_wheel_logic.h"
+#include "../../handler/lucky_wheel/lucky_wheel_handler.h"
 #include "../../logic/chat/chat_logic.h"
 #include "../../logic/auth/auth_logic.h"
 #include "../../logic/challenge/challenge_logic.h"
@@ -120,12 +122,16 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
     ChallengeLogic challengeLogic(db);
     RankLogic rankLogic(db);
     FriendLogic friendLogic(db);
+    LuckyWheelLogic luckyWheelLogic(db);
+
     ChatHandler chatHandler(chatLogic);
     FriendHandler friendHandler(friendLogic);
     AuthHandler authHandler(authLogic);
     ChallengeHandler challengeHandler(challengeLogic);
     RankHandler rankHandler(rankLogic);
     
+    LuckyWheelHandler luckyWheelHandler(luckyWheelLogic);
+
     Message response;
     bool needRespond = false;
     uint16_t typeVal = incoming.header.messageType;
@@ -182,6 +188,8 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
             case MessageType::FRIEND_RANK_REQUEST:
                 std::cout <<"[Connection handler] Handling FRIEND_RANK_REQUEST\n";
                 response = rankHandler.handleFriendRankRequest(incoming);
+                needRespond = true;
+                break;
             case MessageType::SEND_FRIEND_REQUEST:
                 response = friendHandler.handleSendFriendRequest(incoming);
                 needRespond = true;
@@ -204,6 +212,11 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
                 break;
             case MessageType::GET_FRIEND_LIST:
                 response = friendHandler.handleGetFriendList(incoming);
+                needRespond = true;
+                break;
+            case MessageType::LUCKY_WHEEL_SPIN_REQUEST:
+                std::cout <<"[Connection handler] Handling LUCKY_WHEEL_SPIN_REQUEST\n";
+                response = luckyWheelHandler.handleSpinRequest(incoming);
                 needRespond = true;
                 break;
             default:

@@ -79,6 +79,21 @@ LobbyState::LobbyState(StateContext& ctx)
         ctx_.requestTransition(GameStateType::Ranking);
     });
 
+    // ===== Lucky Wheel Button =====
+    luckyWheelButton_.setFont(ctx_.font);
+    luckyWheelButton_.setText("Lucky Wheel", 22);
+    luckyWheelButton_.setSize({300.f, 60.f});
+    luckyWheelButton_.setPosition({490.f, 480.f});
+    luckyWheelButton_.setColors(
+        sf::Color(200, 120, 20),
+        sf::Color::White,
+        sf::Color::White
+    );
+    luckyWheelButton_.setCallback([this]() {
+        ctx_.requestTransition(GameStateType::LuckyWheel);
+    });
+
+
 }
 
 void LobbyState::onEnter() {
@@ -108,6 +123,7 @@ void LobbyState::handleEvent(const sf::Event& event,
     chatButton_.handleEvent(event, mousePos);
     rankingButton_.handleEvent(event, mousePos);
     friendsButton_.handleEvent(event, mousePos);
+    luckyWheelButton_.handleEvent(event, mousePos);
 }
 
 void LobbyState::update(float dt) {
@@ -125,6 +141,8 @@ void LobbyState::draw(sf::RenderWindow& window) {
     chatButton_.draw(window);
     rankingButton_.draw(window);
     friendsButton_.draw(window);
+    luckyWheelButton_.draw(window);
+
 }
 
 void LobbyState::onLogoutClicked() {

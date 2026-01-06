@@ -70,6 +70,9 @@ void GameManager::transitionTo(GameStateType newState) {
         case GameStateType::Friends:
             currentState_ = std::make_unique<FriendsState>(ctx_);
             break;
+        case GameStateType::LuckyWheel:
+            currentState_ = std::make_unique<LuckyWheelState>(ctx_);
+            break;
         case GameStateType::InGame:
             // TODO: implement InGameState
             std::cerr << "[GameManager] InGame state not implemented yet\n";
