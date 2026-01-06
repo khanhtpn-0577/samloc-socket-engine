@@ -14,17 +14,17 @@ ClientConnectionHandler::ClientConnectionHandler(
     AuthHandler& authHandler,
     ChallengeHandler& challengeHandler,
     RankHandler& rankHandler,
-    RoomHandler& roomHandler
     FriendHandler& friendHandler,
-    LuckyWheelHandler& luckyWheelHandler
+    LuckyWheelHandler& luckyWheelHandler,
+    RoomHandler& roomHandler
 ):
     chatHandler_(chatHandler),
     authHandler_(authHandler),
     challengeHandler_(challengeHandler),
     rankHandler_(rankHandler),
-    roomHandler_(roomHandler)
     friendHandler_(friendHandler),
-    luckyWheelHandler_(luckyWheelHandler)
+    luckyWheelHandler_(luckyWheelHandler),
+    roomHandler_(roomHandler)
 {}
 
 void ClientConnectionHandler::handleMessage(const Message& message) {
@@ -129,31 +129,10 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
                       << std::hex << (int)message.header.messageType << std::dec << "\n";
             // TODO: route to in-game state if required
             break;
-
-        // CLIENT -> SERVER messages: these are sent by client, not expected here
-        case MessageType::C_GET_ROOM_LIST:
-        case MessageType::C_JOIN_ROOM:
-        case MessageType::C_READY:
-        case MessageType::C_PLAY_CARD:
-        case MessageType::C_PASS_TURN:
-        case MessageType::SIGNUP:
-        case MessageType::LOGIN:
-        case MessageType::LOGOUT:
-        case MessageType::SEND_CHALLENGE:
-        case MessageType::ACCEPT_CHALLENGE:
-        case MessageType::REJECT_CHALLENGE:
-        case MessageType::CANCEL_CHALLENGE:
-        case MessageType::FRIEND_LIST_REQUEST:
-        case MessageType::PRIVATE_CHAT_HISTORY_REQUEST:
-        case MessageType::FRIEND_RANK_REQUEST:
-            // These are client-originated; nothing to do on client inbound path.
-            break;
         case MessageType::LUCKY_WHEEL_SPIN_RESPONSE:
             luckyWheelHandler_.onSpinResponse(message);
             std::cout << "[ClientConnectionHandler] Received LUCKY_WHEEL_SPIN_RESPONSE with payload: " << message.payload << "\n";
             break;
-
-        // Friend-related messages
         case MessageType::SEND_FRIEND_REQUEST_RESPONSE:
             std::cout << "[ClientConnectionHandler] SEND_FRIEND_REQUEST_RESPONSE\n";
             friendHandler_.onSendFriendRequestResponse(message);

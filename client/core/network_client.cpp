@@ -60,6 +60,8 @@ RankSender& NetworkClient::rankSender() {
 
 RoomSender& NetworkClient::roomSender() {
     return roomSender_;
+}
+
 FriendSender& NetworkClient::friendSender() {
     return friendSender_;
 }

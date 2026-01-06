@@ -4,6 +4,7 @@
 #include <string>
 #include <cstring>
 #include <vector>
+#include <chrono>
 
 enum class MessageType : uint16_t {
     CHAT_DIRECT = 0x0001,

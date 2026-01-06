@@ -57,6 +57,7 @@ void GameManager::transitionTo(GameStateType newState) {
             break;
         case GameStateType::GameStartingCountdown:
             currentState_ = std::make_unique<GameStartingCountdownState>(ctx_);
+            break;
         case GameStateType::Friends:
             currentState_ = std::make_unique<FriendsState>(ctx_);
             break;
