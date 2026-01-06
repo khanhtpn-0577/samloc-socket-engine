@@ -2,7 +2,6 @@
 #include <string>
 #include <cstdint>
 #include "../database.h"
-
 struct FriendInfo {
     uint32_t userId;
     std::string username;};

@@ -9,6 +9,9 @@
 #include "../net/chat/message_sender.h"
 #include "../net/auth/auth_sender.h"
 #include "../net/challenge/challenge_sender.h"
+#include "../net/rank/rank_sender.h"
+#include "../handlers/room/room_sender.h" 
+#include "../handlers/session/client_session.h"
 #include "../net/friend/friend_sender.h"
 #include "../handlers/session/client_session.h"
 #include "../net/rank/rank_sender.h"
@@ -31,6 +34,9 @@ public:
     AuthSender& authSender();
     ChallengeSender& challengeSender();
     RankSender& rankSender();
+    
+    RoomSender& roomSender(); 
+
     FriendSender& friendSender();
     LuckyWheelSender& luckyWheelSender();
     ClientSocket& socket();
@@ -43,10 +49,14 @@ private:
     ThreadSafeQueue<NetworkEvent>& queue_;
     ClientSocket socket_;
     ClientSession& session_;
+
     MessageSender chatSender_;
     AuthSender authSender_;
     ChallengeSender challengeSender_;
     RankSender rankSender_;
+    
+    RoomSender roomSender_;
+
     FriendSender friendSender_;
     LuckyWheelSender luckyWheelSender_;
     std::atomic<bool> running_;

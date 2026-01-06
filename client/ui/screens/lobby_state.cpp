@@ -79,6 +79,15 @@ LobbyState::LobbyState(StateContext& ctx)
         ctx_.requestTransition(GameStateType::Ranking);
     });
 
+    btnPlayGame_.setFont(ctx_.font);
+    btnPlayGame_.setText("PLAY GAME", 24);
+    btnPlayGame_.setSize({300.f, 60.f});
+    btnPlayGame_.setPosition({490.f, 240.f}); // Đặt ở vị trí Y=240 (trên nút Chat)
+    btnPlayGame_.setColors(sf::Color(230, 126, 34), sf::Color::White, sf::Color::White); // Màu Cam
+    btnPlayGame_.setCallback([this]() {
+        // Chuyển sang màn hình danh sách phòng
+        ctx_.requestTransition(GameStateType::RoomList);
+    });
     // ===== Lucky Wheel Button =====
     luckyWheelButton_.setFont(ctx_.font);
     luckyWheelButton_.setText("Lucky Wheel", 22);
@@ -122,6 +131,7 @@ void LobbyState::handleEvent(const sf::Event& event,
     logoutButton_.handleEvent(event, mousePos);
     chatButton_.handleEvent(event, mousePos);
     rankingButton_.handleEvent(event, mousePos);
+    btnPlayGame_.handleEvent(event, mousePos); 
     friendsButton_.handleEvent(event, mousePos);
     luckyWheelButton_.handleEvent(event, mousePos);
 }
@@ -140,6 +150,7 @@ void LobbyState::draw(sf::RenderWindow& window) {
     logoutButton_.draw(window);
     chatButton_.draw(window);
     rankingButton_.draw(window);
+    btnPlayGame_.draw(window); 
     friendsButton_.draw(window);
     luckyWheelButton_.draw(window);
 

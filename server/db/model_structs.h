@@ -4,7 +4,7 @@
 // Cấu trúc ánh xạ bảng 'players'
 struct DBPlayer {
     int id;
-    std::string username;
+    std::string displayName;
     double balance;
     std::string status;
 };

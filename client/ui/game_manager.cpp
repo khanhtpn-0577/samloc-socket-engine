@@ -3,50 +3,32 @@
 #include "screens/private_chat_state.h"
 #include "screens/friends_state.h"
 
-
-
-// GameManager::GameManager(StateContext& ctx)
-//     : ctx_(ctx), currentStateType_(GameStateType::Login) {
-    
-//     // Setup transition callback
-//     ctx_.requestTransition = [this](GameStateType newState) {
-//         transitionTo(newState);
-//     };
-    
-//     // Create initial state
-//     stateCache_[GameStateType::Login] = std::make_unique<LoginState>(ctx_);
-//     stateCache_[GameStateType::Lobby] = std::make_unique<LobbyState>(ctx_);
-    
-//     currentState_ = std::make_unique<LoginState>(ctx_);
-//     currentState_->onEnter();
-// }
+#include "screens/login_state.h"
+#include "screens/lobby_state.h"
+#include "screens/private_chat_state.h"
+#include "screens/ranking_state.h"
+#include "screens/room_list_state.h"
+#include "screens/waiting_room_state.h"
+#include "screens/game_starting_countdown_state.h"
+#include "screens/in_game_state.h"
 
 GameManager::GameManager(StateContext& ctx)
     : ctx_(ctx),
       currentStateType_(GameStateType::Login) {
 
     ctx_.requestTransition = [this](GameStateType newState) {
-        std::cout << "[GameManager] Transition requested from "
-                  << static_cast<int>(currentStateType_)
-                  << " to " << static_cast<int>(newState) << "\n";
+        std::cout << "[GameManager] Transition requested to " << static_cast<int>(newState) << "\n";
         transitionTo(newState);
     };
 
-    std::cout << "[GameManager] Initializing Login state\n";
     currentState_ = std::make_unique<LoginState>(ctx_);
     currentState_->onEnter();
 }
 
 void GameManager::transitionTo(GameStateType newState) {
-    if (currentStateType_ == newState) {
-        std::cout << "[GameManager] Ignoring transition to same state "
-                  << static_cast<int>(newState) << "\n";
+    if (currentStateType_ == newState && currentState_ != nullptr) {
         return;
     }
-
-    std::cout << "[GameManager] Transitioning from "
-              << static_cast<int>(currentStateType_)
-              << " to " << static_cast<int>(newState) << "\n";
 
     if (currentState_) {
         currentState_->onExit();
@@ -67,6 +49,14 @@ void GameManager::transitionTo(GameStateType newState) {
         case GameStateType::Ranking:
             currentState_ = std::make_unique<RankingState>(ctx_);
             break;
+        case GameStateType::RoomList:
+            currentState_ = std::make_unique<RoomListState>(ctx_);
+            break;
+        case GameStateType::WaitingRoom:
+            currentState_ = std::make_unique<WaitingRoomState>(ctx_);
+            break;
+        case GameStateType::GameStartingCountdown:
+            currentState_ = std::make_unique<GameStartingCountdownState>(ctx_);
         case GameStateType::Friends:
             currentState_ = std::make_unique<FriendsState>(ctx_);
             break;
@@ -74,20 +64,16 @@ void GameManager::transitionTo(GameStateType newState) {
             currentState_ = std::make_unique<LuckyWheelState>(ctx_);
             break;
         case GameStateType::InGame:
-            // TODO: implement InGameState
-            std::cerr << "[GameManager] InGame state not implemented yet\n";
+            currentState_ = std::make_unique<InGameState>(ctx_);
+            break;
+        default:
+            currentState_ = nullptr;
             break;
     }
 
-    if (!currentState_) {
-        std::cerr << "[GameManager] Failed to create state "
-                  << static_cast<int>(newState) << "\n";
-        return;
+    if (currentState_) {
+        currentState_->onEnter();
     }
-
-    currentState_->onEnter();
-    std::cout << "[GameManager] Entered state "
-              << static_cast<int>(newState) << "\n";
 }
 
 void GameManager::handleEvent(const sf::Event& event, const sf::Vector2f& mousePos) {

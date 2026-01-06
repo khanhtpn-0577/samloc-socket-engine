@@ -32,15 +32,28 @@ set(CLIENT_SOURCES
     handlers/auth/auth_handler.cpp
     handlers/challenge/challenge_handler.cpp
     handlers/rank/rank_handler.cpp
+    
+    # --- [NEW] Room Logic ---
+    handlers/room/room_handler.cpp
     handlers/friend/friend_handler.cpp
     handlers/lucky_wheel/lucky_wheel_handler.cpp
 
     ui/components/button.cpp
     ui/components/text_input.cpp
+    ui/components/card_ui.cpp
+
     ui/screens/login_state.cpp
     ui/screens/lobby_state.cpp
     ui/screens/private_chat_state.cpp
     ui/screens/ranking_state.cpp
+    ui/screens/waiting_room_state.cpp
+    ui/screens/in_game_state.cpp
+    
+    # --- [NEW] Room UI ---
+    ui/screens/room_list_state.cpp
+    ui/screens/in_game_state.cpp
+    ui/screens/game_starting_countdown_state.cpp
+
     ui/screens/friends_state.cpp
     ui/screens/lucky_wheel_state.cpp
     ui/game_manager.cpp
@@ -72,17 +85,32 @@ set(CLIENT_HEADERS
     handlers/auth/auth_handler.h
     handlers/challenge/challenge_handler.h
     handlers/rank/rank_handler.h
+    
+    # --- [NEW] Room Headers ---
+    handlers/room/room_handler.h
+    handlers/room/room_sender.h
+    handlers/room/room_structs.h
     handlers/friend/friend_handler.h
     handlers/lucky_wheel/lucky_wheel_handler.h
 
     ui/game_state.h
     ui/state_context.h
     ui/components/button.h
+    ui/components/card_ui.h
     ui/components/text_input.h
     ui/screens/login_state.h
     ui/screens/lobby_state.h
     ui/screens/private_chat_state.h
     ui/screens/ranking_state.h
+    ui/screens/in_game_state.h
+    
+    # --- [NEW] Room UI Headers ---
+    ui/screens/room_list_state.h
+    ui/screens/in_game_state.h
+    ui/components/card_ui.h
+    ui/screens/waiting_room_state.h
+    ui/screens/game_starting_countdown_state.h
+
     ui/screens/friends_state.h
     ui/screens/lucky_wheel_state.h
     ui/game_manager.h
@@ -97,42 +125,33 @@ add_executable(samloc_client
 )
 
 # =========================
-# SFML via FetchContent
+# 1. Tìm SFML cài sẵn trên Linux
 # =========================
-include(FetchContent)
-
-set(SFML_BUILD_AUDIO FALSE)
-set(SFML_BUILD_EXAMPLES FALSE)
-set(SFML_BUILD_DOC FALSE)
-set(SFML_BUILD_TEST_SUITE FALSE)
-
-FetchContent_Declare(
-    SFML
-    GIT_REPOSITORY https://github.com/SFML/SFML.git
-    GIT_TAG 2.6.1
-)
-
-FetchContent_MakeAvailable(SFML)
+find_package(SFML COMPONENTS graphics window system network REQUIRED)
 
 # =========================
 # Include directories
 # =========================
 target_include_directories(samloc_client PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${SFML_INCLUDE_DIRS} 
 )
 
 # =========================
 # Threads
 # =========================
 find_package(Threads REQUIRED)
-# FetchContent_MakeAvailable already provides SFML, no need for find_package
-target_link_libraries(samloc_client PRIVATE sfml-graphics sfml-window sfml-system sfml-network)
 
 # =========================
-# Link libraries (CHỈ LINK 1 LẦN)
+# Link libraries
 # =========================
-find_package(Threads REQUIRED)
-target_link_libraries(samloc_client PRIVATE Threads::Threads)
+target_link_libraries(samloc_client PRIVATE
+    sfml-graphics
+    sfml-window
+    sfml-system
+    sfml-network
+    Threads::Threads
+)
 
 # =========================
 # Compiler warnings
