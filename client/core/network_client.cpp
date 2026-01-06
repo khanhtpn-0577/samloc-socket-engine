@@ -14,6 +14,7 @@ NetworkClient::NetworkClient(
       authSender_(socket_, 0, ""),          
       challengeSender_(socket_, 0, ""),
       rankSender_(socket_, session_),
+      friendSender_(socket_),
       running_(false) {}
 
 NetworkClient::~NetworkClient() {
@@ -53,6 +54,11 @@ ChallengeSender& NetworkClient::challengeSender() {
 RankSender& NetworkClient::rankSender() {
     return rankSender_;
 }
+
+FriendSender& NetworkClient::friendSender() {
+    return friendSender_;
+}
+
 
 ClientSocket& NetworkClient::socket() {
     return socket_;

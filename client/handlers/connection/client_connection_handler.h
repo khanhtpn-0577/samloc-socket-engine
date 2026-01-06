@@ -7,11 +7,12 @@ class ChatHandler;
 class AuthHandler;
 class ChallengeHandler;
 class RankHandler;
+class FriendHandler;
 
 class ClientConnectionHandler {
 public:
     ClientConnectionHandler(ChatHandler& chatHandler, AuthHandler& authHandler, 
-                           ChallengeHandler& challengeHandler, RankHandler& rankHandler);
+                           ChallengeHandler& challengeHandler, RankHandler& rankHandler, FriendHandler& friendHandler);
 
     // gọi khi client nhận được message từ server
     void handleMessage(const Message& message);
@@ -21,4 +22,5 @@ private:
     AuthHandler& authHandler_;
     ChallengeHandler& challengeHandler_;
     RankHandler& rankHandler_;
+    FriendHandler& friendHandler_;
 };
