@@ -16,9 +16,11 @@
 #include "handlers/challenge/challenge_handler.h"
 // Thêm include RoomHandler
 #include "handlers/room/room_handler.h" // <--- NEW
+#include "handlers/friend/friend_handler.h"
 
 #include "logic/auth/auth_logic.h"
 #include "logic/chat/chat_logic.h"
+#include "logic/friend/friend_logic.h"
 
 
 // Hàm xử lý các sự kiện den client
@@ -29,7 +31,6 @@ void consumeNetworkEvents(
     while (true) {
         auto opt = eventQueue.tryPop();
         if (!opt.has_value()) break;
-
         NetworkEvent& ev = *opt;
 
         if (std::holds_alternative<RawMessageEvent>(ev.payload)) {
@@ -85,6 +86,10 @@ int main(){
     AuthLogic authLogic(authSender);
     AuthHandler authHandler(authLogic, session);
     
+    FriendSender& friendSender = network.friendSender();
+    FriendLogic friendLogic(friendSender);
+    FriendHandler friendHandler(friendLogic);
+    
     ChallengeHandler challengeHandler(session);
 
     RankSender& rankSender = network.rankSender();
@@ -95,12 +100,19 @@ int main(){
     RoomHandler roomHandler; // <--- NEW
 
     // Truyền RoomHandler vào ConnectionHandler để định tuyến gói tin từ Server
+    
+    LuckyWheelSender& luckyWheelSender = network.luckyWheelSender();
+    LuckyWheelLogic luckyWheelLogic(luckyWheelSender);
+    LuckyWheelHandler luckyWheelHandler(luckyWheelLogic, session);
+
     ClientConnectionHandler connHandler(
         chatHandler,
         authHandler,
         challengeHandler,
         rankHandler,
         roomHandler // <--- NEW
+        friendHandler,
+        luckyWheelHandler
     );
 
 
@@ -111,9 +123,11 @@ int main(){
         session,
         chatHandler,
         rankHandler,
+        luckyWheelHandler,
         eventQueue,
         authHandler,
         roomHandler, // <--- NEW
+        friendHandler,
         font
     );
 

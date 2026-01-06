@@ -55,6 +55,7 @@ class PrivateChatState: public GameState{
         sf::Text chatTitle_;
         TextInput messageInput_;
         Button sendButton_;
+        Button backButton_;
     
     private:
         void rebuildFriendListLayout();

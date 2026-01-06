@@ -1,5 +1,7 @@
 #include "game_manager.h"
 #include <iostream>
+#include "screens/private_chat_state.h"
+#include "screens/friends_state.h"
 
 #include "screens/login_state.h"
 #include "screens/lobby_state.h"
@@ -55,6 +57,11 @@ void GameManager::transitionTo(GameStateType newState) {
             break;
         case GameStateType::GameStartingCountdown:
             currentState_ = std::make_unique<GameStartingCountdownState>(ctx_);
+        case GameStateType::Friends:
+            currentState_ = std::make_unique<FriendsState>(ctx_);
+            break;
+        case GameStateType::LuckyWheel:
+            currentState_ = std::make_unique<LuckyWheelState>(ctx_);
             break;
         case GameStateType::InGame:
             currentState_ = std::make_unique<InGameState>(ctx_);

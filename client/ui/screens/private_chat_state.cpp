@@ -38,6 +38,22 @@ PrivateChatState::PrivateChatState(StateContext& ctx)
         sf::Color::Black
     );
 
+    // ===== Back Button =====
+    backButton_.setFont(ctx_.font);
+    backButton_.setText("Back to Lobby", 20);
+    backButton_.setSize({200.f, 45.f});
+    backButton_.setPosition({20.f, 660.f}); // góc trái dưới, phù hợp chat
+    backButton_.setColors(
+        sf::Color(80, 80, 120),
+        sf::Color::White,
+        sf::Color::White
+    );
+
+    backButton_.setCallback([this]() {
+        ctx_.requestTransition(GameStateType::Lobby);
+    });
+
+
     // ===== Send button =====
     sendButton_.setFont(ctx_.font);
     sendButton_.setText("Send", 18);
@@ -139,6 +155,7 @@ void PrivateChatState::handleEvent(const sf::Event& event, const sf::Vector2f &m
 
     messageInput_.handleEvent(event, mousePos);
     sendButton_.handleEvent(event, mousePos);
+    backButton_.handleEvent(event, mousePos);
 
     if (event.type == sf::Event::MouseButtonPressed &&
         event.mouseButton.button == sf::Mouse::Left) {
@@ -179,6 +196,7 @@ void PrivateChatState::draw(sf::RenderWindow& window) {
 
     messageInput_.draw(window);
     sendButton_.draw(window);
+    backButton_.draw(window);
 }
 
 void PrivateChatState::rebuildFriendListLayout(){

@@ -16,6 +16,13 @@ public:
         RankHandler& rankHandler,
         RoomHandler& roomHandler
     );
+class FriendHandler;
+class LuckyWheelHandler;
+
+class ClientConnectionHandler {
+public:
+    ClientConnectionHandler(ChatHandler& chatHandler, AuthHandler& authHandler, 
+                           ChallengeHandler& challengeHandler, RankHandler& rankHandler, FriendHandler& friendHandler, LuckyWheelHandler& luckyWheelHandler);
 
     void handleMessage(const Message& message);
 
@@ -25,4 +32,7 @@ private:
     ChallengeHandler& challengeHandler_;
     RankHandler& rankHandler_;
     RoomHandler& roomHandler_;
+};
+    FriendHandler& friendHandler_;
+    LuckyWheelHandler& luckyWheelHandler_;
 };

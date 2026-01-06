@@ -16,6 +16,8 @@ NetworkClient::NetworkClient(
       challengeSender_(socket_, 0, ""),
       rankSender_(socket_, session_),
       roomSender_(socket_, session_), 
+      friendSender_(socket_),
+      luckyWheelSender_(socket_, session_),
       running_(false) {}
 
 NetworkClient::~NetworkClient() {
@@ -58,6 +60,13 @@ RankSender& NetworkClient::rankSender() {
 
 RoomSender& NetworkClient::roomSender() {
     return roomSender_;
+FriendSender& NetworkClient::friendSender() {
+    return friendSender_;
+}
+
+
+LuckyWheelSender& NetworkClient::luckyWheelSender() {
+    return luckyWheelSender_;
 }
 
 ClientSocket& NetworkClient::socket() {

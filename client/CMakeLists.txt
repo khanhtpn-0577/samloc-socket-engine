@@ -15,11 +15,15 @@ set(CLIENT_SOURCES
     net/auth/auth_sender.cpp
     net/challenge/challenge_sender.cpp
     net/rank/rank_sender.cpp
+    net/friend/friend_sender.cpp
+    net/lucky_wheel/lucky_wheel_sender.cpp
     core/network_client.cpp
 
     logic/chat/chat_logic.cpp
     logic/auth/auth_logic.cpp
     logic/rank/rank_logic.cpp
+    logic/friend/friend_logic.cpp
+    logic/lucky_wheel/lucky_wheel_logic.cpp
     
     handlers/chat/chat_handler.cpp
     handlers/connection/client_connection_handler.cpp
@@ -31,6 +35,8 @@ set(CLIENT_SOURCES
     
     # --- [NEW] Room Logic ---
     handlers/room/room_handler.cpp
+    handlers/friend/friend_handler.cpp
+    handlers/lucky_wheel/lucky_wheel_handler.cpp
 
     ui/components/button.cpp
     ui/components/text_input.cpp
@@ -48,6 +54,8 @@ set(CLIENT_SOURCES
     ui/screens/in_game_state.cpp
     ui/screens/game_starting_countdown_state.cpp
 
+    ui/screens/friends_state.cpp
+    ui/screens/lucky_wheel_state.cpp
     ui/game_manager.cpp
 )
 
@@ -58,6 +66,8 @@ set(CLIENT_HEADERS
     net/auth/auth_sender.h
     net/challenge/challenge_sender.h
     net/rank/rank_sender.h
+    net/friend/friend_sender.h
+    net/lucky_wheel/lucky_wheel_sender.h
     core/thread_safe_queue.h
     core/network_event.h
     core/network_client.h
@@ -65,6 +75,8 @@ set(CLIENT_HEADERS
     logic/chat/chat_logic.h
     logic/auth/auth_logic.h
     logic/rank/rank_logic.h
+    logic/friend/friend_logic.h
+    logic/lucky_wheel/lucky_wheel_logic.h
     
     handlers/chat/chat_handler.h
     handlers/connection/client_connection_handler.h
@@ -78,6 +90,8 @@ set(CLIENT_HEADERS
     handlers/room/room_handler.h
     handlers/room/room_sender.h
     handlers/room/room_structs.h
+    handlers/friend/friend_handler.h
+    handlers/lucky_wheel/lucky_wheel_handler.h
 
     ui/game_state.h
     ui/state_context.h
@@ -97,6 +111,8 @@ set(CLIENT_HEADERS
     ui/screens/waiting_room_state.h
     ui/screens/game_starting_countdown_state.h
 
+    ui/screens/friends_state.h
+    ui/screens/lucky_wheel_state.h
     ui/game_manager.h
 )
 

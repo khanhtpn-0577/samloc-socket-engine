@@ -1,4 +1,5 @@
 #include "lobby_state.h"
+#include "friends_state.h"
 #include <iostream>
 
 LobbyState::LobbyState(StateContext& ctx)
@@ -30,7 +31,7 @@ LobbyState::LobbyState(StateContext& ctx)
 
     // ===== Logout Button =====
     logoutButton_.setFont(ctx_.font);
-    logoutButton_.setText("Logout", 20);
+    logoutButton_.setText("Log out", 20);
     logoutButton_.setSize({150.f, 40.f});
     logoutButton_.setPosition({1100.f, 30.f});
     logoutButton_.setColors(
@@ -39,6 +40,18 @@ LobbyState::LobbyState(StateContext& ctx)
         sf::Color::White
     );
     logoutButton_.setCallback([this]() { onLogoutClicked(); });
+
+    // ===== Friends Button (aligned with chat/ranking buttons) =====
+    friendsButton_.setFont(ctx_.font);
+    friendsButton_.setText("Friends", 22);
+    friendsButton_.setSize({300.f, 60.f});
+    friendsButton_.setPosition({490.f, 240.f});
+    friendsButton_.setColors(
+        sf::Color(180, 140, 20), // dark yellow fill
+        sf::Color::White,
+        sf::Color::White
+    );
+    friendsButton_.setCallback([this]() { onFriendsClicked(); });
 
     // ===== Chat Button =====
     chatButton_.setFont(ctx_.font);
@@ -75,6 +88,21 @@ LobbyState::LobbyState(StateContext& ctx)
         // Chuyển sang màn hình danh sách phòng
         ctx_.requestTransition(GameStateType::RoomList);
     });
+    // ===== Lucky Wheel Button =====
+    luckyWheelButton_.setFont(ctx_.font);
+    luckyWheelButton_.setText("Lucky Wheel", 22);
+    luckyWheelButton_.setSize({300.f, 60.f});
+    luckyWheelButton_.setPosition({490.f, 480.f});
+    luckyWheelButton_.setColors(
+        sf::Color(200, 120, 20),
+        sf::Color::White,
+        sf::Color::White
+    );
+    luckyWheelButton_.setCallback([this]() {
+        ctx_.requestTransition(GameStateType::LuckyWheel);
+    });
+
+
 }
 
 void LobbyState::onEnter() {
@@ -104,6 +132,8 @@ void LobbyState::handleEvent(const sf::Event& event,
     chatButton_.handleEvent(event, mousePos);
     rankingButton_.handleEvent(event, mousePos);
     btnPlayGame_.handleEvent(event, mousePos); 
+    friendsButton_.handleEvent(event, mousePos);
+    luckyWheelButton_.handleEvent(event, mousePos);
 }
 
 void LobbyState::update(float dt) {
@@ -121,6 +151,9 @@ void LobbyState::draw(sf::RenderWindow& window) {
     chatButton_.draw(window);
     rankingButton_.draw(window);
     btnPlayGame_.draw(window); 
+    friendsButton_.draw(window);
+    luckyWheelButton_.draw(window);
+
 }
 
 void LobbyState::onLogoutClicked() {
@@ -134,4 +167,9 @@ void LobbyState::onLogoutClicked() {
 void LobbyState::onChatClicked() {
     std::cout << "[LobbyState] Go to PrivateChatState\n";
     ctx_.requestTransition(GameStateType::PrivateChat);
+}
+
+void LobbyState::onFriendsClicked() {
+    std::cout << "[LobbyState] Go to FriendsState\n";
+    ctx_.requestTransition(GameStateType::Friends);
 }
