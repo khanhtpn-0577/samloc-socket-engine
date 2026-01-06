@@ -11,7 +11,7 @@ ClientConnectionHandler::ClientConnectionHandler(
     ChatHandler& chatHandler,
     AuthHandler& authHandler,
     ChallengeHandler& challengeHandler,
-    RankHandler& rankHandler
+    RankHandler& rankHandler,
     FriendHandler& friendHandler
 ):
     chatHandler_(chatHandler),

@@ -63,14 +63,18 @@ std::string FriendHandler::buildPayload(
     return ss.str();
 }
 
-std::string FriendHandler::buildFriendListPayload(const std::vector<FriendInfo>& friends) {
+std::string FriendHandler::buildFriendListPayload(const std::vector<FriendData>& friends) {
     std::stringstream ss;
     ss << "[";
     for (size_t i = 0; i < friends.size(); i++) {
         ss << "{\"userId\":" << friends[i].userId
            << ",\"username\":\"" << friends[i].username
-           << "\",\"balance\":" << friends[i].balance << "}";
+           << "\",\"balance\":" << std::fixed << std::setprecision(2) << friends[i].balance << "}";
         if (i < friends.size() - 1) ss << ",";
+        
+        std::cout << "[FriendHandler] Serializing friend: userId=" << friends[i].userId
+                  << ", username=" << friends[i].username
+                  << ", balance=" << friends[i].balance << "\n";
     }
     ss << "]";
     return ss.str();

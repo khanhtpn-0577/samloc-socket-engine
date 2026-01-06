@@ -29,7 +29,7 @@ struct RemoveFriendResult {
 };
 
 struct FriendListData {
-    std::vector<FriendInfo> friends;
+    std::vector<FriendData> friends;
     bool success;
 };
 

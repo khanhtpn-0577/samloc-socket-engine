@@ -218,7 +218,7 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
         }
         std::cout << "[Connection handler] Sent response of type "
                   << response.header.messageType
-                  << " to fd=" << clientFd << "with payload: " << response.payload << "\n";
+                  << " to fd=" << clientFd << " with payload: " << response.payload << "\n";
     }
 }
 

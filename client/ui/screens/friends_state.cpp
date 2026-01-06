@@ -184,8 +184,6 @@ void FriendsState::onExit() {
 }
 
 void FriendsState::handleEvent(const sf::Event& event, const sf::Vector2f& mousePos) {
-    std::cout << "[FriendsState] Handling event\n";
-
     // Handle confirmation dialog
     if (showConfirmationDialog_) {
         if (event.type == sf::Event::MouseButtonPressed) {
@@ -277,7 +275,8 @@ void FriendsState::draw(sf::RenderWindow& window) {
     for (const auto& friendInfo : displayFriends_) {
         // Friend info text
         std::stringstream ss;
-        ss << friendInfo.username << " - Balance: " << std::fixed << std::setprecision(0) << friendInfo.balance;
+        // Show full balance with cents preserved
+        ss << friendInfo.username << " - Balance: " << std::fixed << std::setprecision(2) << friendInfo.balance;
         sf::Text friendText(ss.str(), ctx_.font, 12);
         friendText.setPosition(30.0f, friendItemY);
         friendText.setFillColor(sf::Color::White);

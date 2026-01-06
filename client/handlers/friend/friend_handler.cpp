@@ -310,7 +310,9 @@ void FriendHandler::onGetFriendListResponse(const Message& message) {
             {username, balance}
         });
 
-        std::cout << "[FriendHandler] Parsed friend: userId=" << userId << ", username=" << username << "\n";
+        std::cout << "[FriendHandler] Parsed friend: userId=" << userId 
+                  << ", username=" << username 
+                  << ", balance=" << balance << "\n";
 
         pos = objEnd + 1;
     }

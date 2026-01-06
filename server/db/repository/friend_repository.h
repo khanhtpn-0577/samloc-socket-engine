@@ -5,7 +5,7 @@
 #include <cstdint>
 #include "../database.h"
 
-struct FriendInfo {
+struct FriendData {
     uint32_t userId;
     std::string username;
     double balance;
@@ -59,7 +59,7 @@ public:
     RemoveResult removeFriend(uint32_t userId, uint32_t friendId);
 
     // Get all friends of a user (order by newest first)
-    std::vector<FriendInfo> getUserFriends(uint32_t userId);
+    std::vector<FriendData> getUserFriends(uint32_t userId);
 
     // Get all pending friend requests for a user
     std::vector<PendingRequest> getPendingRequests(uint32_t userId);

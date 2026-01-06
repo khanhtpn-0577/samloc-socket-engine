@@ -244,10 +244,10 @@ FriendRepository::RemoveResult FriendRepository::removeFriend(uint32_t userId, u
     return result;
 }
 
-std::vector<FriendInfo> FriendRepository::getUserFriends(uint32_t userId) {
+std::vector<FriendData> FriendRepository::getUserFriends(uint32_t userId) {
     std::cout << "[FriendRepository] getUserFriends - userId=" << userId << "\n";
 
-    std::vector<FriendInfo> friends;
+    std::vector<FriendData> friends;
     QueryResult result = db.queryPrepared(
         "SELECT p.player_id, p.username, p.balance, f.created_at "
         "FROM friends f "
@@ -260,11 +260,18 @@ std::vector<FriendInfo> FriendRepository::getUserFriends(uint32_t userId) {
     std::cout << "[FriendRepository] Found " << result.size() << " friends\n";
 
     for (const auto& row : result) {
-        FriendInfo info;
+        FriendData info;
         info.userId = std::stoul(row.at("player_id"));
         info.username = row.at("username");
-        info.balance = std::stod(row.at("balance"));
+        std::string balanceStr = row.at("balance");
+        info.balance = std::stod(balanceStr);
         info.createdAt = std::stoll(row.at("created_at"));
+        
+        std::cout << "[FriendRepository] Friend: userId=" << info.userId 
+                  << ", username=" << info.username 
+                  << ", balanceStr='" << balanceStr << "'"
+                  << ", balance=" << info.balance << "\n";
+        
         friends.push_back(info);
     }
 

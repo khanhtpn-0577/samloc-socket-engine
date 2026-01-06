@@ -66,6 +66,7 @@ void GameManager::transitionTo(GameStateType newState) {
             break;
         case GameStateType::Ranking:
             currentState_ = std::make_unique<RankingState>(ctx_);
+            break;
         case GameStateType::Friends:
             currentState_ = std::make_unique<FriendsState>(ctx_);
             break;

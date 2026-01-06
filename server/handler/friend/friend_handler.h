@@ -55,7 +55,7 @@ private:
     );
 
     // Build JSON payload with friend list
-    std::string buildFriendListPayload(const std::vector<FriendInfo>& friends);
+    std::string buildFriendListPayload(const std::vector<FriendData>& friends);
 
     // Build JSON payload with pending requests
     std::string buildPendingRequestsPayload(const std::vector<PendingRequest>& requests);

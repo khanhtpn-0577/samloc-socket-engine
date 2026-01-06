@@ -29,7 +29,6 @@ void consumeNetworkEvents(
     while (true) {
         auto opt = eventQueue.tryPop();
         if (!opt.has_value()) break;
-
         NetworkEvent& ev = *opt;
 
         if (std::holds_alternative<RawMessageEvent>(ev.payload)) {
@@ -99,7 +98,7 @@ int main(){
         chatHandler,
         authHandler,
         challengeHandler,
-        rankHandler
+        rankHandler,
         friendHandler
     );
 
