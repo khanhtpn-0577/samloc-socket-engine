@@ -11,6 +11,7 @@
 #include "screens/game_starting_countdown_state.h" 
 #include "screens/in_game_state.h"
 #include "screens/lucky_wheel_state.h"
+#include "screens/game_result_state.h"
 #include <memory>
 #include <map>
 

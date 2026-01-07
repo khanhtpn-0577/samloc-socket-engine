@@ -1,14 +1,22 @@
 #include "waiting_room_state.h"
 #include <iostream>
 
-/* ================= HELPER FUNCTIONS ================= */
+namespace UITheme {
+    static const sf::Color Background = sf::Color(10, 45, 30);      
+    static const sf::Color Panel = sf::Color(45, 30, 15, 230);  
+    static const sf::Color Gold = sf::Color(255, 215, 0);          
+    static const sf::Color TextMain = sf::Color::White;
+    static const sf::Color TextSub = sf::Color(180, 180, 180);
+    static const sf::Color ReadyGreen = sf::Color(39, 174, 96);   
+    static const sf::Color CancelOrange = sf::Color(211, 84, 0);   
+    static const sf::Color LeaveRed = sf::Color(192, 57, 43);
+    static const sf::Color SlotOutline = sf::Color(255, 215, 0, 60);
+}
 
-// Chuyển đổi an toàn từ std::string (UTF-8) sang sf::String để hiển thị tiếng Việt
 static sf::String toSf(const std::string& str) {
     return sf::String::fromUtf8(str.begin(), str.end());
 }
 
-// Định dạng tiền tệ: 1000000 -> 1.000.000 $
 static std::string formatMoney(long long value) {
     std::string s = std::to_string(value);
     int n = (int)s.length() - 3;
@@ -19,85 +27,72 @@ static std::string formatMoney(long long value) {
     return s + " $";
 }
 
-// Lấy ký tự đầu tiên chuẩn UTF-8 (hỗ trợ các chữ có dấu như Ă, Â, Đ...)
 static std::string utf8_first_char(const std::string& s) {
     if (s.empty()) return "?";
     unsigned char c = static_cast<unsigned char>(s[0]);
     int len = 1;
     if ((c & 0x80) == 0x00) len = 1;
     else if ((c & 0xE0) == 0xC0) len = 2;
-    else if ((c & 0xE0) == 0xE0) len = 3;
-    else if ((c & 0xF0) == 0xF0) len = 4;
-    if ((int)s.size() < len) return "?";
-    return s.substr(0, len);
+    else if ((c & 0xF0) == 0xE0) len = 3;
+    else len = 4;
+    return s.size() >= (size_t)len ? s.substr(0, len) : "?";
 }
 
-// Hàm bổ trợ căn giữa Text chuyên nghiệp
 static void centerText(sf::Text& t, float x, float y) {
     sf::FloatRect r = t.getLocalBounds();
     t.setOrigin(r.left + r.width / 2.0f, r.top + r.height / 2.0f);
     t.setPosition(x, y);
 }
 
-/* ================= PLAYER SLOT IMPLEMENTATION ================= */
-
 void WaitingRoomState::PlayerSlot::setup(sf::Font& font) {
-    // Thiết kế panel phẳng, bo góc nhẹ (thông qua cảm giác màu sắc)
     panelBg.setSize({220.f, 140.f});
     panelBg.setOrigin(110.f, 70.f);
-    panelBg.setFillColor(sf::Color(45, 52, 54, 200)); // Màu xám đen sang trọng
-    panelBg.setOutlineThickness(1.5f);
-    panelBg.setOutlineColor(sf::Color(99, 110, 114));
+    panelBg.setFillColor(UITheme::Panel);
+    panelBg.setOutlineThickness(2.0f);
+    panelBg.setOutlineColor(UITheme::SlotOutline);
 
-    // Avatar tròn tối giản
     avatarBg.setRadius(32.f);
     avatarBg.setOrigin(32.f, 32.f);
     avatarBg.setOutlineThickness(2.f);
-    avatarBg.setOutlineColor(sf::Color(255, 255, 255, 50));
+    avatarBg.setOutlineColor(UITheme::Gold);
 
     avatarLetter.setFont(font);
     avatarLetter.setCharacterSize(28);
-    avatarLetter.setFillColor(sf::Color::White);
+    avatarLetter.setFillColor(UITheme::TextMain);
 
     nameText.setFont(font);
     nameText.setCharacterSize(17);
-    nameText.setFillColor(sf::Color::White);
+    nameText.setFillColor(UITheme::TextMain);
 
     balanceText.setFont(font);
     balanceText.setCharacterSize(14);
-    balanceText.setFillColor(sf::Color(253, 203, 110)); // Màu vàng nhẹ
+    balanceText.setFillColor(UITheme::Gold);
 
     readyStatusText.setFont(font);
     readyStatusText.setCharacterSize(13);
 }
 
 void WaitingRoomState::PlayerSlot::setContent(const RoomMember& member) {
-    // Bảng màu Flat Design cho Avatar
     static sf::Color avColors[] = {
-        sf::Color(9, 132, 227),  // Blue
-        sf::Color(0, 184, 148),  // Green
-        sf::Color(108, 92, 231), // Purple
-        sf::Color(225, 112, 85)  // Orange
+        sf::Color(9, 132, 227), sf::Color(0, 184, 148),
+        sf::Color(108, 92, 231), sf::Color(225, 112, 85)
     };
-
-    avatarBg.setFillColor(avColors[member.id % 4]);
-
+    avatarBg.setFillColor(avColors[std::abs(member.id) % 4]);
     std::string initial = member.name.empty() ? "?" : utf8_first_char(member.name);
     avatarLetter.setString(toSf(initial));
     nameText.setString(toSf(member.name));
     balanceText.setString(toSf(formatMoney(member.balance)));
-
+    
     if (member.isReady) {
-        readyStatusText.setString(toSf("ĐÃ SẴN SÀNG"));
-        readyStatusText.setFillColor(sf::Color(85, 239, 196));
-        panelBg.setOutlineColor(sf::Color(0, 184, 148));
+        readyStatusText.setString(toSf("READY"));
+        readyStatusText.setFillColor(UITheme::ReadyGreen);
+        panelBg.setOutlineColor(UITheme::ReadyGreen);
     } else {
-        readyStatusText.setString(toSf("ĐANG CHỜ..."));
-        readyStatusText.setFillColor(sf::Color(178, 190, 195));
-        panelBg.setOutlineColor(sf::Color(99, 110, 114));
+        readyStatusText.setString(toSf("WAITING..."));
+        readyStatusText.setFillColor(UITheme::TextSub);
+        panelBg.setOutlineColor(UITheme::SlotOutline);
     }
-
-    // Cập nhật vị trí các thành phần
+    
     panelBg.setPosition(position);
     avatarBg.setPosition(position.x, position.y - 45.f);
     centerText(avatarLetter, avatarBg.getPosition().x, avatarBg.getPosition().y);
@@ -107,20 +102,17 @@ void WaitingRoomState::PlayerSlot::setContent(const RoomMember& member) {
 }
 
 void WaitingRoomState::PlayerSlot::setEmpty() {
-    panelBg.setOutlineColor(sf::Color(99, 110, 114, 100));
-    panelBg.setFillColor(sf::Color(45, 52, 54, 100));
+    panelBg.setOutlineColor(sf::Color(255, 215, 0, 30));
+    panelBg.setFillColor(sf::Color(0, 0, 0, 120));
     panelBg.setPosition(position);
-
     avatarBg.setFillColor(sf::Color(30, 30, 30, 150));
+    avatarBg.setOutlineColor(sf::Color(255, 255, 255, 20));
     avatarBg.setPosition(position.x, position.y - 45.f);
-
     avatarLetter.setString(toSf("+"));
     centerText(avatarLetter, avatarBg.getPosition().x, avatarBg.getPosition().y);
-
-    nameText.setString(toSf("TRỐNG"));
-    nameText.setFillColor(sf::Color(150, 150, 150));
+    nameText.setString(toSf("EMPTY"));
+    nameText.setFillColor(sf::Color(100, 100, 100));
     centerText(nameText, position.x, position.y + 12.f);
-
     balanceText.setString("");
     readyStatusText.setString("");
 }
@@ -134,75 +126,68 @@ void WaitingRoomState::PlayerSlot::draw(sf::RenderWindow& w) {
     w.draw(readyStatusText);
 }
 
-/* ================= WAITING ROOM STATE IMPLEMENTATION ================= */
-
 WaitingRoomState::WaitingRoomState(StateContext& ctx)
     : ctx_(ctx), isMyReady_(false) {
-
     background_.setSize({1280, 720});
-    background_.setFillColor(sf::Color(30, 39, 46)); // Màu nền tối sang trọng
-
+    background_.setFillColor(UITheme::Background);
+    
     headerBar_.setSize({1280, 56});
-    headerBar_.setFillColor(sf::Color(0, 0, 0, 180));
-
+    headerBar_.setFillColor(sf::Color(0, 0, 0, 200));
+    
     roomNameText_.setFont(ctx_.font);
     roomNameText_.setCharacterSize(24);
-    roomNameText_.setFillColor(sf::Color::White);
+    roomNameText_.setFillColor(UITheme::Gold);
     roomNameText_.setPosition(25, 12);
-
+    
     subTitleText_.setFont(ctx_.font);
     subTitleText_.setCharacterSize(14);
-    subTitleText_.setFillColor(sf::Color(178, 190, 195));
+    subTitleText_.setFillColor(UITheme::TextSub);
     subTitleText_.setPosition(400, 20);
-
+    
     btnLeave_.setFont(ctx_.font);
-    btnLeave_.setText(toSf("RỜI PHÒNG"), 16);
-    btnLeave_.setSize({120, 36});
-    btnLeave_.setPosition({1140, 10});
-    btnLeave_.setColors(sf::Color(192, 57, 43), sf::Color::White, sf::Color::White);
+    btnLeave_.setText("LEAVE ROOM", 16);
+    btnLeave_.setSize({140, 36});
+    btnLeave_.setPosition({1120, 10});
+    btnLeave_.setColors(UITheme::LeaveRed, sf::Color::White, sf::Color::White);
     btnLeave_.setCallback([this]{ onLeaveClicked(); });
-
+    
     btnReady_.setFont(ctx_.font);
-    btnReady_.setText(toSf("SẴN SÀNG"), 22);
+    btnReady_.setText("READY", 22);
     btnReady_.setSize({220, 60});
-    btnReady_.setPosition({640 - 110, 620});
-    btnReady_.setColors(sf::Color(39, 174, 96), sf::Color::White, sf::Color::White);
+    btnReady_.setPosition({640.f, 620.f}); 
+    btnReady_.setColors(UITheme::ReadyGreen, sf::Color::White, sf::Color::White);
     btnReady_.setCallback([this]{ onReadyClicked(); });
-
+    
     btnChat_.setFont(ctx_.font);
-    btnChat_.setText(toSf("CHAT"), 14);
+    btnChat_.setText("CHAT", 14);
     btnChat_.setSize({60, 60});
     btnChat_.setPosition({1190, 620});
     btnChat_.setColors(sf::Color(41, 128, 185), sf::Color::White, sf::Color::White);
-
+    
     setupSlotsLayout();
 }
 
 void WaitingRoomState::setupSlotsLayout() {
     for (int i = 0; i < 4; ++i) slots_[i].setup(ctx_.font);
-    // Bố cục bàn chơi hình thoi đối xứng
-    slots_[0].position = {640.f, 480.f}; // Người chơi (dưới)
-    slots_[1].position = {1000.f, 320.f}; // Phải
-    slots_[2].position = {640.f, 160.f};  // Trên
-    slots_[3].position = {280.f, 320.f};  // Trái
+    slots_[0].position = {640.f, 480.f}; 
+    slots_[1].position = {1000.f, 320.f}; 
+    slots_[2].position = {640.f, 160.f};  
+    slots_[3].position = {280.f, 320.f}; 
 }
 
 void WaitingRoomState::onEnter() {
     isMyReady_ = false;
     members_.clear();
     currentRoomInfo_ = ctx_.currentRoomInfo;
-
-    roomNameText_.setString(toSf("PHÒNG: " + currentRoomInfo_.name));
-    subTitleText_.setString(toSf("Mức cược: " + formatMoney(currentRoomInfo_.bet) + " | Chế độ: " + currentRoomInfo_.type));
-
+    roomNameText_.setString(toSf("ROOM: " + currentRoomInfo_.name));
+    subTitleText_.setString(toSf("Min Bet: " + formatMoney(currentRoomInfo_.bet) + " | Mode: " + currentRoomInfo_.type));
+    
     ctx_.roomHandler.setRoomUpdateCallback([this](const std::vector<RoomMember>& newMembers) {
         this->updateMembers(newMembers);
     });
-
     ctx_.roomHandler.setGameCountdownCallback([this](int seconds) {
         ctx_.requestTransition(GameStateType::GameStartingCountdown);
     });
-
     ctx_.roomHandler.setGameStartCallback([this](const std::vector<int>& hand){
         ctx_.myHand = hand;
         ctx_.requestTransition(GameStateType::InGame);
@@ -229,36 +214,26 @@ void WaitingRoomState::refreshSlotDisplay() {
             break;
         }
     }
-
     if (myIndex == -1) {
         for (int i = 0; i < 4; ++i) slots_[i].setEmpty();
         return;
     }
-
-    // Cập nhật trạng thái nút Ready của chính mình
     isMyReady_ = members_[myIndex].isReady;
-    btnReady_.setText(toSf(isMyReady_ ? "UNReady" : "Ready"));
-    btnReady_.setColors(isMyReady_ ? sf::Color(230, 126, 34) : sf::Color(39, 174, 96), sf::Color::White, sf::Color::White);
-
-    // Xếp mình vào Slot 0 (Vị trí trung tâm dưới)
+    btnReady_.setText(toSf(isMyReady_ ? "UNREADY" : "READY"));
+    btnReady_.setColors(isMyReady_ ? UITheme::CancelOrange : UITheme::ReadyGreen, sf::Color::White, sf::Color::White);
+    
     slots_[0].setContent(members_[myIndex]);
-
-    // Xếp những người khác vào các slot còn lại
     int uiSlot = 1;
     for (size_t i = 0; i < members_.size() && uiSlot < 4; ++i) {
         if ((int)i == myIndex) continue;
         slots_[uiSlot++].setContent(members_[i]);
     }
-    // Các slot còn lại để trống
     for (; uiSlot < 4; ++uiSlot) slots_[uiSlot].setEmpty();
 }
 
 void WaitingRoomState::onReadyClicked() {
     isMyReady_ = !isMyReady_;
     ctx_.network.roomSender().sendReady(isMyReady_);
-    // Cập nhật UI tạm thời để tạo cảm giác mượt mà (Optimistic UI)
-    btnReady_.setText(toSf(isMyReady_ ? "HỦY SẴN SÀNG" : "SẴN SÀNG"));
-    btnReady_.setColors(isMyReady_ ? sf::Color(230, 126, 34) : sf::Color(39, 174, 96), sf::Color::White, sf::Color::White);
 }
 
 void WaitingRoomState::onLeaveClicked() {

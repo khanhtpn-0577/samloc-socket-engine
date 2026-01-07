@@ -67,6 +67,9 @@ void GameManager::transitionTo(GameStateType newState) {
         case GameStateType::InGame:
             currentState_ = std::make_unique<InGameState>(ctx_);
             break;
+        case GameStateType::GameResult:
+            currentState_ = std::make_unique<GameResultState>(ctx_);
+            break;
         default:
             currentState_ = nullptr;
             break;

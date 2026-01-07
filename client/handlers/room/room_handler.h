@@ -1,40 +1,45 @@
 #pragma once
-#include "../../net/protocol.h"
-#include "room_structs.h"
-#include <functional>
-#include <vector>
 #include <string>
+#include <vector>
+#include <functional>
+#include <nlohmann/json.hpp>
+#include "../../core/network_event.h"
+#include "room_structs.h"
 
-using RoomMembersCallback = std::function<void(const std::vector<RoomMember>&)>;
+using json = nlohmann::json;
+
 using RoomListCallback = std::function<void(const std::vector<RoomInfo>&)>;
-using JoinRoomCallback = std::function<void(bool success, const std::string& message, int roomId, const RoomInfo& roomInfo)>;
-using GameCountdownCallback = std::function<void(int seconds)>;
-using GameStartCallback = std::function<void(const std::vector<int>& hand)>;
-using TurnInfoCallback = std::function<void(int currentPlayerId, int timeout)>;
+using RoomMembersCallback = std::function<void(const std::vector<RoomMember>&)>;
+using JoinRoomCallback = std::function<void(bool, const std::string&, int, const RoomInfo&)>; 
+using GameCountdownCallback = std::function<void(int)>;
+using GameStartCallback = std::function<void(const std::vector<int>&)>;
+using TurnInfoCallback = std::function<void(int, int)>;
 using MoveResultCallback = std::function<void(int, const std::vector<int>&, int, const std::string&)>;
+using GameResultCallback = std::function<void(const nlohmann::json&)>;
 
 class RoomHandler {
 public:
-    void onRoomListReceived(const Message& msg);
     void setRoomListCallback(RoomListCallback cb);
-
-    void onRoomUpdateReceived(const Message& msg);
     void setRoomUpdateCallback(RoomMembersCallback cb);
-
-    void onJoinRoomResult(const Message& msg, bool isSuccess);
     void setJoinRoomCallback(JoinRoomCallback cb);
-
-    void onGameCountdownReceived(const Message& msg);
     void setGameCountdownCallback(GameCountdownCallback cb);
-
-    void onGameStartReceived(const Message& msg);
     void setGameStartCallback(GameStartCallback cb);
-
-    void onMoveResultReceived(const Message& msg);
     void setTurnInfoCallback(TurnInfoCallback cb);
     void setMoveResultCallback(MoveResultCallback cb);
+    void setGameResultCallback(GameResultCallback cb); 
+
+    void onRoomListReceived(const Message& msg);
+    void onRoomUpdateReceived(const Message& msg);
+    void onJoinRoomResult(const Message& msg, bool isSuccess);
+    void onGameCountdownReceived(const Message& msg);
+    void onGameStartReceived(const Message& msg);
+    void onMoveResultReceived(const Message& msg);
+    void onGameEndReceived(const Message& msg); 
 
 private:
+    std::vector<RoomInfo> parseRooms(const std::string& payload);
+    std::vector<RoomMember> parseMembers(const std::string& payload);
+
     RoomListCallback listCallback_;
     RoomMembersCallback updateCallback_;
     JoinRoomCallback joinCallback_;
@@ -42,8 +47,5 @@ private:
     GameStartCallback gameStartCallback_;
     TurnInfoCallback turnInfoCallback_;
     MoveResultCallback moveResultCallback_;
-
-    std::vector<RoomInfo> parseRooms(const std::string& json);
-    std::vector<RoomMember> parseMembers(const std::string& json);
-    void parseMoveResult(const std::string& payload, int& userId, std::vector<int>& cardsPlayed, int& cardsLeft, std::string& action);
+    GameResultCallback gameResultCallback_;
 };

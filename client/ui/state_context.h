@@ -1,5 +1,5 @@
 #pragma once
-
+#include <nlohmann/json.hpp>
 #include "game_state.h"
 #include "../core/network_client.h"
 #include "../core/thread_safe_queue.h"
@@ -17,7 +17,7 @@
 #include <SFML/Graphics.hpp>
 #include <string>
 #include "../handlers/room/room_structs.h"
-// Forward declarations
+
 class NetworkClient;
 class ClientSession;
 class ChatHandler;
@@ -37,14 +37,14 @@ enum class GameStateType {
     GameStartingCountdown,
     InGame,
     Friends,
-    LuckyWheel
+    LuckyWheel,
+    GameResult
 };
 
 using StateTransitionCallback = std::function<void(GameStateType)>;
 
 class StateContext {
 public:
-    // Các biến tham chiếu bắt buộc phải có giá trị
     NetworkClient& network;
     ClientSession& session;
     ChatHandler& chatHandler;
@@ -54,19 +54,17 @@ public:
     StateTransitionCallback requestTransition;
     AuthHandler& auth_handler;
     RoomHandler& roomHandler;
-    // Game-specific data shared between states
     RoomInfo currentRoomInfo;
     int currentRoomId = 0;
     std::vector<int> myHand; 
     
-    // [NEW] Thông tin trạng thái bàn chơi (để InGame biết vẽ các người chơi khác)
     std::vector<RoomMember> currentRoomMembers;
-    int currentPlayerTurnId = 0; // ID người đang đến lượt
-    int currentTurnTimeout = 0; // Thời gian còn lại của lượt
+    nlohmann::json lastGameResult;
+    int currentPlayerTurnId = 0; 
+    int currentTurnTimeout = 0;
     FriendHandler& friendHandler;
     sf::Font& font;
 
-    // SỬA LỖI: Chỉ dùng 1 Constructor nhận đầy đủ tất cả tham số
     StateContext(NetworkClient& net,
                  ClientSession& sess,
                  ChatHandler& chat_h,
@@ -89,7 +87,6 @@ public:
           font(f) {}
 };
 
-// Full includes after forward declarations
 #include "../core/network_client.h"
 #include "../core/thread_safe_queue.h"
 #include "../core/network_event.h"

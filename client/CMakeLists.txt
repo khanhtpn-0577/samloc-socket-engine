@@ -33,7 +33,6 @@ set(CLIENT_SOURCES
     handlers/challenge/challenge_handler.cpp
     handlers/rank/rank_handler.cpp
     
-    # --- [NEW] Room Logic ---
     handlers/room/room_handler.cpp
     handlers/friend/friend_handler.cpp
     handlers/lucky_wheel/lucky_wheel_handler.cpp
@@ -53,6 +52,7 @@ set(CLIENT_SOURCES
     ui/screens/room_list_state.cpp
     ui/screens/in_game_state.cpp
     ui/screens/game_starting_countdown_state.cpp
+    ui/screens/game_result_state.cpp
 
     ui/screens/friends_state.cpp
     ui/screens/lucky_wheel_state.cpp
@@ -86,7 +86,6 @@ set(CLIENT_HEADERS
     handlers/challenge/challenge_handler.h
     handlers/rank/rank_handler.h
     
-    # --- [NEW] Room Headers ---
     handlers/room/room_handler.h
     handlers/room/room_sender.h
     handlers/room/room_structs.h
@@ -103,8 +102,8 @@ set(CLIENT_HEADERS
     ui/screens/private_chat_state.h
     ui/screens/ranking_state.h
     ui/screens/in_game_state.h
+    ui/screens/game_result_state.h
     
-    # --- [NEW] Room UI Headers ---
     ui/screens/room_list_state.h
     ui/screens/in_game_state.h
     ui/components/card_ui.h
