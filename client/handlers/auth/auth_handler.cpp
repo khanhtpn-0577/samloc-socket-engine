@@ -150,12 +150,45 @@ void AuthHandler::onLogoutResponse(const Message& message) {
 
 void AuthHandler::onSignupSender(const std::string& username, const std::string& password, const std::string& displayName) {
     std::cout << "[AuthHandler] Signup request: username=" << username << "\n";
-    authLogic_.onSignupSender(username, password, displayName);
+    
+    // Create a validation callback to capture messages from AuthLogic
+    auto validationCallback = [this](bool success, const std::string& message) {
+        std::cout << "[AuthHandler] Validation result: " << (success ? "PASSED" : "FAILED") << " - " << message;
+        
+        // Call the signup callback to update UI with validation status
+        if (signupCallback_) {
+            signupCallback_(
+                success,
+                0,      // userId: not yet available
+                "",     // username
+                "",     // displayName
+                message
+            );
+        }
+    };
+    
+    authLogic_.onSignupSender(username, password, displayName, validationCallback);
 }
 
 void AuthHandler::onLoginSender(const std::string& username, const std::string& password) {
     std::cout << "[AuthHandler] Login request: username=" << username << "\n";
-    authLogic_.onLoginSender(username, password);
+    
+    // Create a validation callback to capture messages from AuthLogic
+    auto validationCallback = [this](bool success, const std::string& message) {
+        std::cout << "[AuthHandler] Validation result: " << (success ? "PASSED" : "FAILED") << " - " << message;
+        
+        // Call the login callback to update UI with validation status
+        if (loginCallback_) {
+            loginCallback_(
+                success,
+                0,      // userId: not yet available
+                "",     // token
+                message
+            );
+        }
+    };
+    
+    authLogic_.onLoginSender(username, password, validationCallback);
 }
 
 void AuthHandler::setSignupCallback(SignupCallback cb) {

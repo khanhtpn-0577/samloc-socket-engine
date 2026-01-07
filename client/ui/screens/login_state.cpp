@@ -146,10 +146,18 @@ void LoginState::onSignupClicked() {
             showDisplayName_ = false;
 
             if (success) {
-                std::cout << "[LoginState] Signup success. Transition to Lobby\n";
-                //ctx_.requestTransition(GameStateType::Lobby);
-                statusText_.setString("Signup successful! You can now login.");
+                // Check if validation passed (message contains "Validation passed")
+                if (message.find("Validation passed") != std::string::npos) {
+                    // Validation passed, waiting for server response
+                    statusText_.setString("Validation passed, waiting for server...");
+                    statusText_.setFillColor(sf::Color::White);
+                } else {
+                    // Server response
+                    statusText_.setString("Signup successful! You can now login.");
+                    statusText_.setFillColor(sf::Color::Green);
+                }
             } else {
+                // Validation failed or server error
                 statusText_.setString("Signup failed: " + message);
                 statusText_.setFillColor(sf::Color::Red);
             }
@@ -181,14 +189,26 @@ void LoginState::onLoginClicked() {
                          const std::string& message) {
 
             if (!success) {
-                statusText_.setString("Login failed: " + message);
+                // Check if validation failed
+                if (message.find("Validation failed") != std::string::npos) {
+                    statusText_.setString("Login failed: " + message);
+                } else {
+                    statusText_.setString("Login failed: " + message);
+                }
                 statusText_.setFillColor(sf::Color::Red);
                 return;
             }
 
-            // Optional nhưng nên có
-            ctx_.session.setUsername(username);
+            // Check if validation passed (message contains "Validation passed")
+            if (message.find("Validation passed") != std::string::npos) {
+                // Validation passed, waiting for server response
+                statusText_.setString("Validation passed, waiting for server...");
+                statusText_.setFillColor(sf::Color::White);
+                return;
+            }
 
+            // Server response received and login successful
+            ctx_.session.setUsername(username);
             std::cout << "[LoginState] Login success. Transition to Lobby\n";
             ctx_.requestTransition(GameStateType::Lobby);
         }

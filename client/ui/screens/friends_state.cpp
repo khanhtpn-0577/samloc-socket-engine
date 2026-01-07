@@ -35,7 +35,8 @@ void FriendsState::onEnter() {
             DisplayPendingRequest displayReq;
             displayReq.senderId = req.first;
             displayReq.senderUsername = req.second.first;
-            displayReq.senderDisplayName = req.second.second.first;
+            //displayReq.senderDisplayName = req.second.second.first;
+            displayReq.senderUsername = displayReq.senderUsername
             displayReq.timestamp = req.second.second.second;
             displayRequests_.push_back(displayReq);
         }
@@ -47,16 +48,13 @@ void FriendsState::onEnter() {
         displayFriends_.clear();
         for (const auto& f : friends) {
             DisplayFriend displayFriend;
-<<<<<<< HEAD
             displayFriend.userId = f.first;
             displayFriend.username = f.second.first;
             displayFriend.balance = f.second.second.first;
-=======
-            displayFriend.userId = f.userId;
-            displayFriend.username = f.username;
-            displayFriend.displayName = f.displayName;
-            displayFriend.balance = f.balance;
->>>>>>> 648f902 (display friend's displayName in the friend list)
+            // displayFriend.userId = f.userId;
+            // displayFriend.username = f.username;
+            // displayFriend.displayName = f.displayName;
+            // displayFriend.balance = f.balance;
             displayFriends_.push_back(displayFriend);
         }
         redrawFriendList();

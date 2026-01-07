@@ -52,13 +52,10 @@ struct FriendListEntry {
 };
 
 struct FriendListReceivedEvent {
-<<<<<<< HEAD
     std::vector<
         std::pair<uint32_t, std::pair<std::string, std::pair<double, bool>>>
     > friends;
-=======
-    std::vector<FriendListEntry> friends;
->>>>>>> 648f902 (display friend's displayName in the friend list)
+    //std::vector<FriendListEntry> friends;
 };
 
 
@@ -87,16 +84,13 @@ public:
     // === Callbacks ===
     using MessageCallback = std::function<void(const std::string& message, const std::string& color)>;
     using PendingRequestsCallback = std::function<void(const std::vector<std::pair<uint32_t, std::pair<std::string, std::pair<std::string, std::string>>>>& requests)>;
-<<<<<<< HEAD
     using FriendListCallback =
     std::function<void(
         const std::vector<
             std::pair<uint32_t, std::pair<std::string, std::pair<double, bool>>>
         >& friends
     )>;
-=======
-    using FriendListCallback = std::function<void(const std::vector<FriendListEntry>& friends)>;
->>>>>>> 648f902 (display friend's displayName in the friend list)
+    //using FriendListCallback = std::function<void(const std::vector<FriendListEntry>& friends)>;
 
     void setMessageCallback(MessageCallback cb);
     void setPendingRequestsCallback(PendingRequestsCallback cb);

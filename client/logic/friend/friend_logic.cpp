@@ -15,7 +15,7 @@ void FriendLogic::handleSendFriendRequest(uint32_t userId, const std::string& ta
         return;
     }
 
-    if (targetUsername.length() > 30) {
+    if (targetUsername.length() > 40) {
         std::cout << "[FriendLogic] Validation failed: targetUsername too long\n";
         return;
     }

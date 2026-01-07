@@ -17,7 +17,7 @@ SendFriendRequestResult FriendLogic::sendFriendRequest(uint32_t senderId, const 
         return result;
     }
 
-    if (targetUsername.length() > 30) {
+    if (targetUsername.length() > 40) {
         result.message = "Username too long";
         std::cout << "[FriendLogic] Username too long\n";
         return result;

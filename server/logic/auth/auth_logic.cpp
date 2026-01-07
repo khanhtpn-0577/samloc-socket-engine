@@ -5,6 +5,8 @@
 #include <iomanip>
 #include <iostream>
 #include <chrono>
+#include <algorithm>
+#include <cctype>
 #include <sqlite3.h>
 
 AuthLogic::AuthLogic(Database& db) : db(db) {}
@@ -56,17 +58,40 @@ SignupResult AuthLogic::signup(
     const std::string& displayName
 ) {
     SignupResult result{false, "", 0};
-    
-    // Validate input
-    if (username.empty() || username.length() < 3) {
-        result.message = "Username must be at least 3 characters";
+
+    const auto hasSpace = [](const std::string& s) {
+        return std::any_of(s.begin(), s.end(), [](unsigned char c) {
+            return std::isspace(c) != 0;
+        });
+    };
+
+    std::cout << "[AuthLogic] Validating signup for username: " << username << std::endl;
+
+    if (username.length() < 3 || username.length() > 40) {
+        result.message = "Username must be between 3 and 40 characters";
+        std::cout << "[AuthLogic] Signup validation failed: username length out of range\n";
         return result;
     }
-    
-    if (password.empty() || password.length() < 6) {
-        result.message = "Password must be at least 6 characters";
+
+    if (hasSpace(username)) {
+        result.message = "Username cannot contain spaces";
+        std::cout << "[AuthLogic] Signup validation failed: username contains spaces\n";
         return result;
     }
+
+    if (password.length() < 6 || password.length() > 50) {
+        result.message = "Password must be between 6 and 50 characters";
+        std::cout << "[AuthLogic] Signup validation failed: password length out of range\n";
+        return result;
+    }
+
+    if (hasSpace(password)) {
+        result.message = "Password cannot contain spaces";
+        std::cout << "[AuthLogic] Signup validation failed: password contains spaces\n";
+        return result;
+    }
+
+    std::cout << "[AuthLogic] Signup validation passed\n";
     
     // Check if username already exists
     std::cout << "[AuthLogic] Checking if username already exists: " << username << std::endl;
@@ -123,11 +148,40 @@ LoginResult AuthLogic::login(
     const std::string& password
 ) {
     LoginResult result{false, "", 0, "", 0LL};
-    
-    if (username.empty() || password.empty()) {
-        result.message = "Username and password required";
+
+    const auto hasSpace = [](const std::string& s) {
+        return std::any_of(s.begin(), s.end(), [](unsigned char c) {
+            return std::isspace(c) != 0;
+        });
+    };
+
+    std::cout << "[AuthLogic] Validating login for username: " << username << std::endl;
+
+    if (username.length() < 3 || username.length() > 40) {
+        result.message = "Username must be between 3 and 40 characters";
+        std::cout << "[AuthLogic] Login validation failed: username length out of range\n";
         return result;
     }
+
+    if (hasSpace(username)) {
+        result.message = "Username cannot contain spaces";
+        std::cout << "[AuthLogic] Login validation failed: username contains spaces\n";
+        return result;
+    }
+
+    if (password.length() < 6 || password.length() > 50) {
+        result.message = "Password must be between 6 and 50 characters";
+        std::cout << "[AuthLogic] Login validation failed: password length out of range\n";
+        return result;
+    }
+
+    if (hasSpace(password)) {
+        result.message = "Password cannot contain spaces";
+        std::cout << "[AuthLogic] Login validation failed: password contains spaces\n";
+        return result;
+    }
+
+    std::cout << "[AuthLogic] Login validation passed\n";
     
     // Get user from database
     QueryResult userResult = db.queryPrepared(
