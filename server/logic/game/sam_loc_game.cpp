@@ -90,7 +90,7 @@ HandInfo SamLocGame::analyzeHand(const std::vector<DBCard>& cards) {
 bool SamLocGame::canBeat(const std::vector<DBCard>& cardsToPlay, std::string& err) {
     HandInfo newHand = analyzeHand(cardsToPlay);
     if (newHand.type == INVALID) {
-        err = "Bộ bài không hợp lệ";
+        err = "Invalid hand type";
         return false;
     }
 
@@ -111,9 +111,9 @@ bool SamLocGame::canBeat(const std::vector<DBCard>& cardsToPlay, std::string& er
 
     if (newHand.type == boardHand.type && newHand.count == boardHand.count) {
         if (newHand.power > boardHand.power) return true;
-        err = "Bài nhỏ hơn bài trên bàn";
+        err = "Hand power is lower than board";
     } else {
-        err = "Không cùng loại bộ bài";
+        err = "Hand type mismatch";
     }
     return false;
 }
@@ -163,7 +163,7 @@ std::vector<GameEvent> SamLocGame::broadcastMoveResult(int actorId, std::string 
 
 std::vector<GameEvent> SamLocGame::addPlayer(int playerId) {
     std::vector<GameEvent> events;
-    if (players.size() >= (size_t)roomInfo.maxPlayers) return events;
+    if (players.size() >= (size_t)roomInfo.maxPlayers || lockedForJoin) return events;
     for (const auto& p : players) if (p.id == playerId) return events;
 
     Player p;
@@ -211,6 +211,7 @@ std::vector<GameEvent> SamLocGame::removePlayer(int playerId) {
 
 std::vector<GameEvent> SamLocGame::onPlayerDisconnect(int playerId) {
     if (state == GameState::WAITING) return removePlayer(playerId);
+    
     std::vector<GameEvent> events;
     Player* pOut = nullptr;
     for (auto& p : players) if (p.id == playerId) pOut = &p;
@@ -218,20 +219,26 @@ std::vector<GameEvent> SamLocGame::onPlayerDisconnect(int playerId) {
     if (pOut && !pOut->isDisconnected) {
         pOut->isDisconnected = true;
         pOut->hasPassed = true;
-        json jOut; jOut["userId"] = playerId; jOut["msg"] = "Mat ket noi.";
-        GameEvent ev;
-        ev.type = MessageType::PLAYER_DISCONNECT_GAME;
-        ev.payload = jOut.dump();
-        ev.targetPlayerIds = getAllPlayerIds();
-        ev.roomId = roomId;
-        events.push_back(ev);
+
+        gameRepo.logMove(currentGameId, playerId, "DISCONNECT", "[]");
+
+        json jMsg;
+        jMsg["userId"] = playerId;
+        jMsg["msg"] = "Player disconnected.";
+        
+        GameEvent discEv;
+        discEv.type = MessageType::PLAYER_DISCONNECT_GAME;
+        discEv.payload = jMsg.dump();
+        discEv.targetPlayerIds = getAllPlayerIds();
+        discEv.roomId = roomId;
+        events.push_back(discEv);
 
         if (state == GameState::PLAYING && players[currentPlayerIndex].id == playerId) {
             auto passEvs = passTurn(playerId);
             events.insert(events.end(), passEvs.begin(), passEvs.end());
         }
 
-        if (countActivePlayers() < 2) {
+        if (countActivePlayers() == 1) {
             int winId = -1;
             for (const auto& p : players) if (!p.isDisconnected) winId = p.id;
             if (winId != -1) {
@@ -279,6 +286,9 @@ std::vector<GameEvent> SamLocGame::setPlayerReady(int playerId, bool ready) {
 std::vector<GameEvent> SamLocGame::startPlayingPhase(int firstId) {
     std::vector<GameEvent> events;
     if (players.empty()) return events;
+    
+    currentGameId = gameRepo.createGame(roomId, "SAM_LOC");
+    
     state = GameState::PLAYING;
     lockedForJoin = true;
     std::vector<DBCard> deck = masterDeck;
@@ -298,7 +308,7 @@ std::vector<GameEvent> SamLocGame::startPlayingPhase(int firstId) {
         }
         GameEvent ev;
         ev.type = MessageType::S_GAME_START;
-        ev.payload = json({{"hand", hIds}}).dump();
+        ev.payload = json({{"hand", hIds}, {"gameId", currentGameId}}).dump();
         ev.targetPlayerIds = { p.id };
         ev.roomId = roomId;
         events.push_back(ev);
@@ -334,6 +344,9 @@ std::vector<GameEvent> SamLocGame::playCards(int playerId, std::vector<int> card
         return broadcastMoveResult(playerId, "invalid", {});
     }
 
+    json jCards = cardIds;
+    gameRepo.logMove(currentGameId, playerId, "PLAY", jCards.dump());
+
     for (int cid : cardIds) {
         p->hand.erase(std::remove_if(p->hand.begin(), p->hand.end(), [cid](const DBCard& c) { return c.id == cid; }), p->hand.end());
     }
@@ -351,6 +364,8 @@ std::vector<GameEvent> SamLocGame::playCards(int playerId, std::vector<int> card
 std::vector<GameEvent> SamLocGame::passTurn(int playerId) {
     std::vector<GameEvent> events;
     if (state != GameState::PLAYING || currentPlayerIndex < 0 || players[currentPlayerIndex].id != playerId) return events;
+
+    gameRepo.logMove(currentGameId, playerId, "PASS", "[]");
 
     players[currentPlayerIndex].hasPassed = true;
     nextTurnIndex();
@@ -382,19 +397,73 @@ void SamLocGame::nextTurnIndex() {
 
 std::vector<GameEvent> SamLocGame::handleWin(int winId, int reason) {
     state = GameState::FINISHED;
-    json res = json::array();
-    double total = 0;
-    for (const auto& p : players) {
-        if (p.id == winId) continue;
-        double lost = -roomInfo.betAmount * (double)p.hand.size();
-        total += std::abs(lost);
-        res.push_back({{"userId", p.id}, {"change", lost}, {"cardsLeft", (int)p.hand.size()}});
+    lockedForJoin = false;
+    
+    gameRepo.endGame(currentGameId, winId);
+
+    json losersArr = json::array();
+    double totalWinPool = 0;
+    Player* winnerPlayer = nullptr;
+
+    for (auto& p : players) {
+        if (p.id == winId) {
+            winnerPlayer = &p;
+            continue;
+        }
+
+        double mainPenalty = (roomInfo.type == "dem_la") ? (double)p.hand.size() * roomInfo.betAmount : roomInfo.betAmount;
+        double quitPenalty = p.isDisconnected ? roomInfo.betAmount * 2.0 : 0;
+        double totalLost = mainPenalty + quitPenalty;
+        totalWinPool += totalLost;
+
+        p.balance -= totalLost;
+        playerRepo.updateBalance(p.id, -totalLost);
+        gameRepo.saveResult(currentGameId, p.id, 2, (int)p.hand.size(), -totalLost);
+
+        json loserObj;
+        loserObj["userId"] = p.id;
+        loserObj["name"] = p.name;
+        loserObj["cardsLeft"] = (int)p.hand.size();
+        loserObj["mainPenalty"] = mainPenalty;
+        loserObj["quitPenalty"] = quitPenalty;
+        loserObj["totalChange"] = -totalLost;
+        loserObj["isQuit"] = p.isDisconnected;
+        losersArr.push_back(loserObj);
     }
-    json j;
-    j["winnerId"] = winId; j["totalWin"] = total; j["results"] = res; j["reason"] = reason;
-    GameEvent ev; ev.type = MessageType::S_GAME_END; ev.payload = j.dump();
-    ev.targetPlayerIds = getAllPlayerIds(); ev.roomId = roomId;
-    return {ev};
+
+    if (winnerPlayer) {
+        winnerPlayer->balance += totalWinPool;
+        playerRepo.updateBalance(winId, totalWinPool);
+        gameRepo.saveResult(currentGameId, winId, 1, 0, totalWinPool);
+    }
+
+    json finalPayload;
+    finalPayload["gameId"] = currentGameId;
+    finalPayload["winner"] = {{"id", winId}, {"name", winnerPlayer ? winnerPlayer->name : ""}, {"totalBonus", totalWinPool}};
+    finalPayload["losers"] = losersArr;
+    finalPayload["roomInfo"] = {{"type", roomInfo.type}, {"bet", roomInfo.betAmount}};
+    finalPayload["reason"] = reason;
+
+    GameEvent ev;
+    ev.type = MessageType::S_GAME_END;
+    ev.payload = finalPayload.dump();
+    ev.targetPlayerIds = getAllPlayerIds();
+    ev.roomId = roomId;
+
+    for (auto& p : players) p.isReady = false;
+    startingScheduled = false;
+
+    players.erase(std::remove_if(players.begin(), players.end(), [](const Player& p) {
+        return p.isDisconnected;
+    }), players.end());
+
+    GameEvent syncEv;
+    syncEv.type = MessageType::S_ROOM_UPDATE;
+    syncEv.payload = getPlayersStateJsonFor(-1);
+    syncEv.targetPlayerIds = getAllPlayerIds();
+    syncEv.roomId = roomId;
+
+    return {ev, syncEv};
 }
 
 int SamLocGame::pickFirstPlayerId() {

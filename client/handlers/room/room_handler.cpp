@@ -4,6 +4,7 @@
 
 using json = nlohmann::json;
 
+// --- SETTERS ---
 void RoomHandler::setRoomListCallback(RoomListCallback cb) { listCallback_ = cb; }
 void RoomHandler::setRoomUpdateCallback(RoomMembersCallback cb) { updateCallback_ = cb; }
 void RoomHandler::setJoinRoomCallback(JoinRoomCallback cb) { joinCallback_ = cb; }
@@ -11,6 +12,37 @@ void RoomHandler::setGameCountdownCallback(GameCountdownCallback cb) { countdown
 void RoomHandler::setGameStartCallback(GameStartCallback cb) { gameStartCallback_ = cb; }
 void RoomHandler::setTurnInfoCallback(TurnInfoCallback cb) { turnInfoCallback_ = cb; }
 void RoomHandler::setMoveResultCallback(MoveResultCallback cb) { moveResultCallback_ = cb; }
+void RoomHandler::setGameResultCallback(GameResultCallback cb) { gameResultCallback_ = cb; }
+
+void RoomHandler::onJoinRoomResult(const Message& msg, bool isSuccess) {
+    std::string message = "";
+    int roomId = 0;
+    RoomInfo roomInfo; 
+    
+    if (!isSuccess) {
+        try {
+            auto j = json::parse(msg.payload);
+            message = j.value("reason", j.value("msg", "Error"));
+        } catch (...) { message = "Error"; }
+    } else {
+        // Nếu cần lấy roomId từ payload khi thành công
+        try {
+            auto j = json::parse(msg.payload);
+            roomId = j.value("roomId", 0);
+            roomInfo.id = roomId;
+        } catch(...) {}
+    }
+    
+    if (joinCallback_) joinCallback_(isSuccess, message, roomId, roomInfo);
+}
+
+void RoomHandler::onGameEndReceived(const Message& msg) {
+    try {
+        auto j = nlohmann::json::parse(msg.payload);
+        if (gameResultCallback_) gameResultCallback_(j);
+    } catch (...) {}
+}
+
 
 void RoomHandler::onRoomListReceived(const Message& msg) {
     if (listCallback_) listCallback_(parseRooms(msg.payload));
@@ -19,18 +51,6 @@ void RoomHandler::onRoomListReceived(const Message& msg) {
 void RoomHandler::onRoomUpdateReceived(const Message& msg) {
     if (msg.payload.empty() || msg.payload == "{}") return;
     if (updateCallback_) updateCallback_(parseMembers(msg.payload));
-}
-
-void RoomHandler::onJoinRoomResult(const Message& msg, bool isSuccess) {
-    std::string message = "";
-    int roomId = 0;
-    if (!isSuccess) {
-        try {
-            auto j = json::parse(msg.payload);
-            message = j.value("reason", j.value("msg", "Error"));
-        } catch (...) { message = "Error"; }
-    }
-    if (joinCallback_) joinCallback_(isSuccess, message, roomId, {});
 }
 
 void RoomHandler::onGameCountdownReceived(const Message& msg) {
@@ -51,7 +71,6 @@ void RoomHandler::onMoveResultReceived(const Message& msg) {
     try {
         auto j = json::parse(msg.payload);
         std::vector<RoomMember> updatedMembers;
-        
         json jArr = j.contains("members") ? j["members"] : (j.contains("players") ? j["players"] : json::array());
 
         if (jArr.is_array()) {

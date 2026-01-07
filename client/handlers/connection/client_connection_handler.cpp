@@ -96,12 +96,10 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
             break;
 
         case MessageType::S_PLAYER_JOINED:
-            // light ack - let join callback know success
             roomHandler_.onJoinRoomResult(message, true);
             break;
 
         case MessageType::S_EXISTING_PLAYERS:
-            // When receiving existing players we consider join success + room update
             roomHandler_.onJoinRoomResult(message, true);
             roomHandler_.onRoomUpdateReceived(message);
             break;
@@ -123,11 +121,14 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
         case MessageType::S_MOVE_RESULT:
             roomHandler_.onMoveResultReceived(message);
             break;
+            
+        case MessageType::S_GAME_END: 
+            roomHandler_.onGameEndReceived(message);
+            break;
 
         case MessageType::PLAYER_DISCONNECT_GAME:
             std::cerr << "[ClientConn] Unhandled Game/Error message type: 0x"
                       << std::hex << (int)message.header.messageType << std::dec << "\n";
-            // TODO: route to in-game state if required
             break;
         case MessageType::LUCKY_WHEEL_SPIN_RESPONSE:
             luckyWheelHandler_.onSpinResponse(message);
