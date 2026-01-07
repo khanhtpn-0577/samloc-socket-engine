@@ -8,6 +8,7 @@
 struct FriendData {
     uint32_t userId;
     std::string username;
+    std::string displayName;
     double balance;
     int64_t createdAt;
 };

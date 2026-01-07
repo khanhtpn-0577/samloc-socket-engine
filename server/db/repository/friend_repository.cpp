@@ -248,21 +248,22 @@ std::vector<FriendData> FriendRepository::getUserFriends(uint32_t userId) {
     std::cout << "[FriendRepository] getUserFriends - userId=" << userId << "\n";
 
     std::vector<FriendData> friends;
-    QueryResult result = db.queryPrepared(
-        "SELECT p.player_id, p.username, p.balance, f.created_at "
-        "FROM friends f "
-        "JOIN players p ON f.friend_id = p.player_id "
-        "WHERE f.player_id = ? "
-        "ORDER BY f.created_at DESC;",
-        {std::to_string(userId)}
-    );
+        QueryResult result = db.queryPrepared(
+            "SELECT p.player_id, p.username, p.display_name, p.balance, f.created_at "
+            "FROM friends f "
+            "JOIN players p ON f.friend_id = p.player_id "
+            "WHERE f.player_id = ? "
+            "ORDER BY f.created_at DESC;",
+            {std::to_string(userId)}
+        );
 
     std::cout << "[FriendRepository] Found " << result.size() << " friends\n";
 
     for (const auto& row : result) {
         FriendData info;
         info.userId = std::stoul(row.at("player_id"));
-        info.username = row.at("username");
+            info.username = row.at("username");
+            info.displayName = row.at("display_name");
         std::string balanceStr = row.at("balance");
         info.balance = std::stod(balanceStr);
         info.createdAt = std::stoll(row.at("created_at"));

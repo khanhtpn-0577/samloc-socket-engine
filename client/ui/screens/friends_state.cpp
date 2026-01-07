@@ -47,9 +47,16 @@ void FriendsState::onEnter() {
         displayFriends_.clear();
         for (const auto& f : friends) {
             DisplayFriend displayFriend;
+<<<<<<< HEAD
             displayFriend.userId = f.first;
             displayFriend.username = f.second.first;
             displayFriend.balance = f.second.second.first;
+=======
+            displayFriend.userId = f.userId;
+            displayFriend.username = f.username;
+            displayFriend.displayName = f.displayName;
+            displayFriend.balance = f.balance;
+>>>>>>> 648f902 (display friend's displayName in the friend list)
             displayFriends_.push_back(displayFriend);
         }
         redrawFriendList();
@@ -275,8 +282,9 @@ void FriendsState::draw(sf::RenderWindow& window) {
     for (const auto& friendInfo : displayFriends_) {
         // Friend info text
         std::stringstream ss;
+        std::string nameLabel = friendInfo.displayName.empty() ? friendInfo.username : friendInfo.displayName + " (" + friendInfo.username + ")";
         // Show full balance with cents preserved
-        ss << friendInfo.username << " - Balance: " << std::fixed << std::setprecision(2) << friendInfo.balance;
+        ss << nameLabel << " - Balance: " << std::fixed << std::setprecision(2) << friendInfo.balance;
         sf::Text friendText(ss.str(), ctx_.font, 12);
         friendText.setPosition(30.0f, friendItemY);
         friendText.setFillColor(sf::Color::White);
@@ -389,7 +397,9 @@ void FriendsState::onRemoveFriendClicked(size_t friendIndex) {
 
     if (friendIndex < displayFriends_.size()) {
         selectedFriendForRemoval_ = friendIndex;
-        showRemovalConfirmation(displayFriends_[friendIndex].username);
+        const auto& friendInfo = displayFriends_[friendIndex];
+        std::string nameLabel = friendInfo.displayName.empty() ? friendInfo.username : friendInfo.displayName + " (" + friendInfo.username + ")";
+        showRemovalConfirmation(nameLabel);
     }
 }
 
@@ -464,12 +474,12 @@ void FriendsState::redrawPendingRequests() {
     for (auto& req : displayRequests_) {
         // Position accept button
         req.acceptButton.setSize(sf::Vector2f(60.0f, 25.0f));
-        req.acceptButton.setPosition(rightX + rightWidth - 70.0f, requestY + 5.0f);
+        req.acceptButton.setPosition(rightX + rightWidth - 140.0f, requestY + 5.0f);
         req.acceptButton.setFillColor(sf::Color::Green);
 
         // Position decline button
         req.declineButton.setSize(sf::Vector2f(60.0f, 25.0f));
-        req.declineButton.setPosition(rightX + rightWidth - 35.0f, requestY + 5.0f);
+        req.declineButton.setPosition(rightX + rightWidth - 70.0f, requestY + 5.0f);
         req.declineButton.setFillColor(sf::Color::Red);
 
         requestY += 35.0f;
