@@ -364,7 +364,10 @@ void FriendsState::draw(sf::RenderWindow& window) {
         confirmDialogBackground_.setPosition(dialogX, dialogY);
         window.draw(confirmDialogBackground_);
 
-        confirmDialogText_.setPosition(dialogX + 20.0f, dialogY + 30.0f);
+        sf::FloatRect textBounds = confirmDialogText_.getLocalBounds();
+        confirmDialogText_.setOrigin(textBounds.left + textBounds.width / 2.0f,
+                         textBounds.top + textBounds.height / 2.0f);
+        confirmDialogText_.setPosition(dialogX + 200.0f, dialogY + 75.0f);
         window.draw(confirmDialogText_);
 
         confirmYesButton_.setPosition(sf::Vector2f(dialogX + 70.0f, dialogY + 100.0f));
@@ -491,7 +494,7 @@ void FriendsState::showRemovalConfirmation(const std::string& friendUsername) {
 
     showConfirmationDialog_ = true;
     confirmationFriendName_ = friendUsername;
-    confirmDialogText_.setString("Are you sure you want to unfriend " + friendUsername + "?");
+    confirmDialogText_.setString("Are you sure you want to unfriend\n" + friendUsername + "?");
 }
 
 void FriendsState::closeRemovalConfirmation() {
