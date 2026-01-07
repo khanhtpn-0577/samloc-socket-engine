@@ -91,16 +91,22 @@ public:
         >& friends
     )>;
     //using FriendListCallback = std::function<void(const std::vector<FriendListEntry>& friends)>;
+    //using FriendListCallback = std::function<void(const std::vector<FriendListEntry>& friends)>;
+    using RefreshCallback = std::function<void()>;
 
     void setMessageCallback(MessageCallback cb);
     void setPendingRequestsCallback(PendingRequestsCallback cb);
     void setFriendListCallback(FriendListCallback cb);
+    void setRefreshPendingRequestsCallback(RefreshCallback cb);
+    void setRefreshFriendListCallback(RefreshCallback cb);
 
 private:
     FriendLogic& logic_;
     MessageCallback messageCallback_;
     PendingRequestsCallback pendingRequestsCallback_;
     FriendListCallback friendListCallback_;
+    RefreshCallback refreshPendingRequestsCallback_;
+    RefreshCallback refreshFriendListCallback_;
 
     // Parse simple JSON-like payload
     std::string parseField(const std::string& payload, const std::string& key);
