@@ -163,10 +163,19 @@ void LobbyState::draw(sf::RenderWindow& window) {
 
 void LobbyState::onLogoutClicked() {
     std::cout << "[LobbyState] Logout clicked\n";
+    // Set callback to transition only on successful server response
+    ctx_.auth_handler.setLogoutCallback([this](bool success, const std::string& message) {
+        if (success) {
+            std::cout << "[LobbyState] Logout successful. Returning to Login screen\n";
+            ctx_.requestTransition(GameStateType::Login);
+        } else {
+            std::cout << "[LobbyState] Logout failed: " << message << "\n";
+            // Stay in Lobby; optionally show a UI message if desired
+        }
+    });
 
+    // Send logout request and wait for LOGOUT_RESPONSE
     ctx_.network.authSender().sendLogout();
-    ctx_.session.setLoggedIn(false);
-    ctx_.requestTransition(GameStateType::Login);
 }
 
 void LobbyState::onChatClicked() {

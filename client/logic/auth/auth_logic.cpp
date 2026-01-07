@@ -10,6 +10,10 @@ void AuthLogic::setValidationCallback(ValidationCallback cb) {
     validationCallback_ = std::move(cb);
 }
 
+void AuthLogic::updateIdentity(uint32_t newUserId, const std::string& newToken) {
+    authSender.updateIdentity(newUserId, newToken);
+}
+
 void AuthLogic::onSignupSender(
     const std::string& username,
     const std::string& password,

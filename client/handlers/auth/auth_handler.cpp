@@ -115,6 +115,8 @@ void AuthHandler::onLoginResponse(const Message& message) {
         std::cout << "[AuthHandler] Login successful. UserId=" << userId
                   << ", Token=" << token.substr(0, 8) << "..., Balance=" << balance << "\n";
         session_.setState(ClientState::LOGGED_IN);
+        // Ensure AuthSender identity is updated for subsequent messages (e.g., LOGOUT)
+        authLogic_.updateIdentity(userId, token);
     }
 
     // 3. Gọi callback cho GUI
@@ -143,8 +145,15 @@ void AuthHandler::onLogoutResponse(const Message& message) {
         session_.setUserId(0);
         session_.setToken("");
         session_.setState(ClientState::LOGGED_OUT);
+        // Clear AuthSender identity
+        authLogic_.updateIdentity(0, "");
         
         std::cout << "You are now logged out.\n";
+    }
+
+    // Notify UI via callback regardless of success
+    if (logoutCallback_) {
+        logoutCallback_(success, msg);
     }
 }
 
@@ -222,3 +231,7 @@ void AuthHandler::onBalanceResponse(const Message& message) {
         std::cout << "[AuthHandler] Failed to get balance: " << serverMsg << "\n";
     }
 }
+void AuthHandler::setLogoutCallback(LogoutCallback cb) {
+    logoutCallback_ = std::move(cb);
+}
+
