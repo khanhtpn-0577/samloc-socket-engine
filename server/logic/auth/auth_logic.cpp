@@ -122,7 +122,7 @@ LoginResult AuthLogic::login(
     const std::string& username,
     const std::string& password
 ) {
-    LoginResult result{false, "", 0, "", 0.0};
+    LoginResult result{false, "", 0, "", 0LL};
     
     if (username.empty() || password.empty()) {
         result.message = "Username and password required";
@@ -177,7 +177,7 @@ LoginResult AuthLogic::login(
         result.message = "Failed to create session";
         return result;
     }
-    double balance = std::stod(userResult[0]["balance"]);
+    int64_t balance = std::stoll(userResult[0]["balance"]);
     
     result.success = true;
     result.userId = userId;
@@ -247,4 +247,32 @@ void AuthLogic::cleanExpiredSessions() {
     if (cleaned) {
         std::cout << "[AuthLogic] Cleaned expired sessions\n";
     }
+}
+
+UserInfo AuthLogic::getUserInfo(uint32_t userId) {
+    UserInfo userInfo{0, "", "", 0LL};
+
+    std::cout << "[AuthLogic] Retrieving user info for userId=" << userId << "\n";
+    
+    QueryResult userResult = db.queryPrepared(
+        "SELECT username, display_name, balance FROM players WHERE player_id = ?;",
+        {std::to_string(userId)}
+    );
+    
+    if (userResult.empty()) {
+        std::cout << "[AuthLogic] User not found: userId=" << userId << "\n";
+        return userInfo;
+    }
+    
+    userInfo.userId = userId;
+    userInfo.username = userResult[0]["username"];
+    userInfo.displayName = userResult[0]["display_name"];
+    userInfo.balance = std::stoll(userResult[0]["balance"]);
+
+    std::cout << "[AuthLogic] Retrieved user info: userId=" << userId
+              << ", username=" << userInfo.username
+              << ", displayName=" << userInfo.displayName
+              << ", balance=" << userInfo.balance << "\n";
+    
+    return userInfo;
 }

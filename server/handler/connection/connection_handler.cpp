@@ -169,6 +169,11 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
                 response = authHandler.handleLogout(incoming);
                 needRespond = true;
                 break;
+            case MessageType::REQUEST_BALANCE:
+                response = authHandler.handleRequestBalance(incoming);
+                std::cout <<"[Connection handler] Handling REQUEST_BALANCE\n";
+                needRespond = true;
+                break;
             case MessageType::SEND_CHALLENGE:
                 response = challengeHandler.handleSendChallenge(incoming);
                 needRespond = true;

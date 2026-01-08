@@ -39,6 +39,7 @@ void RoomHandler::onJoinRoomResult(const Message& msg, bool isSuccess) {
 void RoomHandler::onGameEndReceived(const Message& msg) {
     try {
         auto j = nlohmann::json::parse(msg.payload);
+        std::cout << "[RoomHandler] Game End received with payload: " << msg.payload << "\n";
         if (gameResultCallback_) gameResultCallback_(j);
     } catch (...) {}
 }

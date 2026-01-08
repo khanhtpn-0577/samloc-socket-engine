@@ -72,3 +72,14 @@ void AuthSender::updateIdentity(uint32_t newUserId, const std::string& newToken)
     userId = newUserId;
     token = newToken;
 }
+
+bool AuthSender::requestBalance(uint32_t userId) {
+    std::stringstream payload;
+    payload << "{\"userId\":" << userId << "}";
+    if (sendMessage(MessageType::REQUEST_BALANCE, payload.str())) {
+        std::cout << "Balance request sent for userId=" << userId << "\n";
+        return true;
+    }
+    std::cerr << "Failed to send balance request\n";
+    return false;
+}

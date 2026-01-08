@@ -60,7 +60,11 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
         case MessageType::LOGOUT_RESPONSE:
             authHandler_.onLogoutResponse(message);
             break;
-
+        case MessageType::REQUEST_BALANCE_RESPONSE:
+            authHandler_.onBalanceResponse(message);
+            std::cout << "[ClientConnectionHandler] Received REQUEST_BALANCE_RESPONSE with payload: " << message.payload << "\n";
+            break;
+        
         // CHALLENGE HANDLER MESSAGES
         case MessageType::CHALLENGE_NOTIFICATION:
             challengeHandler_.onChallengeNotification(message);

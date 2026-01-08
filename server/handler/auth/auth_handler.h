@@ -23,6 +23,9 @@ public:
     // Handle LOGOUT message
     Message handleLogout(const Message& incomingMsg);
 
+    // Handle REQUEST_BALANCE message
+    Message handleRequestBalance(const Message& incomingMsg);
+
     // Parse uint32 field from JSON-like payload
     uint32_t parseUint32Field(const std::string& payload, const std::string& key);
 
@@ -34,7 +37,7 @@ private:
         const std::string& message,
         uint32_t userId = 0,
         const std::string& token = "",
-        double balance = 0.0
+        int64_t balance = 0
     );
 
     // Parse simple JSON-like payload
@@ -47,7 +50,7 @@ private:
         const std::string& message,
         uint32_t userId = 0,
         const std::string& token = "",
-        double balance = 0.0
+        int64_t balance = 0
     );
 
 private:

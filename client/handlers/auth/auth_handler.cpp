@@ -166,3 +166,26 @@ void AuthHandler::setLoginCallback(LoginCallback cb) {
     loginCallback_ = std::move(cb);
 }
 
+void AuthHandler::getCurrentBalance() {
+    std::cout << "[AuthHandler] Requesting current balance\n";
+    uint32_t userId = session_.userId();
+    authLogic_.getCurrentBalance(userId);
+}
+
+void AuthHandler::onBalanceResponse(const Message& message) {
+    std::cout << "[AuthHandler] Received REQUEST_BALANCE_RESPONSE\n";
+
+    // Parse payload
+    bool success = parseBoolField(message.payload, "success");
+    std::string serverMsg = parseField(message.payload, "message");
+    double balance = static_cast<double>(
+        parseUint32Field(message.payload, "balance")
+    );
+
+    if (success) {
+        session_.setBalance(balance);
+        std::cout << "[AuthHandler] Balance updated: " << balance << "\n";
+    } else {
+        std::cout << "[AuthHandler] Failed to get balance: " << serverMsg << "\n";
+    }
+}

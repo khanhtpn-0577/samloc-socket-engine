@@ -49,6 +49,10 @@ enum class MessageType : uint16_t {
     LOGIN_RESPONSE = 0x0103,
     LOGOUT = 0x0104,
     LOGOUT_RESPONSE = 0x0105,
+    REQUEST_BALANCE = 0x0106,
+    REQUEST_BALANCE_RESPONSE = 0x0107,
+
+
     C_LEAVE_ROOM = 0x200C,     
     
     SEND_CHALLENGE = 0x0200,

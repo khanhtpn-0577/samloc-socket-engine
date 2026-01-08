@@ -20,6 +20,8 @@ public:
 
     void onLoginSender(const std::string& username, const std::string& password);
 
+    void getCurrentBalance();
+
     // Handle SIGNUP_RESPONSE
     void onSignupResponse(const Message& message);
 
@@ -28,6 +30,8 @@ public:
 
     // Handle LOGOUT_RESPONSE
     void onLogoutResponse(const Message& message);
+
+    void onBalanceResponse(const Message& message);
 
     using SignupCallback = std::function<void(
         bool success,
