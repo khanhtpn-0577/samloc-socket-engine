@@ -13,6 +13,7 @@ public:
     std::vector<DBRoom> getAllRooms();
     bool removePlayerFromRoom(int roomId, int playerId);
     int getCurrentPlayersInDB(int roomId);
+    
 private:
     Database& database;
 };

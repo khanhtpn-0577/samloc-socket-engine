@@ -5,6 +5,7 @@
 #include "../challenge/challenge_handler.h"
 #include "../friend/friend_handler.h"
 #include "../game/game_handler.h"
+#include "../private_room/private_room_handler.h"
 #include "../../logic/lucky_wheel/lucky_wheel_logic.h"
 #include "../../handler/lucky_wheel/lucky_wheel_handler.h"
 #include "../../logic/chat/chat_logic.h"
@@ -12,6 +13,7 @@
 #include "../../logic/challenge/challenge_logic.h"
 #include "../../logic/rank/rank_logic.h"
 #include "../../logic/friend/friend_logic.h"
+#include "../../logic/private_room/private_room_logic.h"
 #include "../session/session_manager.h"
 #include "../../db/database.h"
 #include <sys/socket.h>
@@ -123,12 +125,15 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
     RankLogic rankLogic(db);
     FriendLogic friendLogic(db);
     LuckyWheelLogic luckyWheelLogic(db);
+    PrivateRoomLogic privateRoomLogic(db);
 
     ChatHandler chatHandler(chatLogic);
     FriendHandler friendHandler(friendLogic);
     AuthHandler authHandler(authLogic);
     ChallengeHandler challengeHandler(challengeLogic);
     RankHandler rankHandler(rankLogic);
+    PrivateRoomHandler privateRoomHandler(privateRoomLogic);
+    
     
     LuckyWheelHandler luckyWheelHandler(luckyWheelLogic);
 
@@ -222,6 +227,11 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
             case MessageType::LUCKY_WHEEL_SPIN_REQUEST:
                 std::cout <<"[Connection handler] Handling LUCKY_WHEEL_SPIN_REQUEST\n";
                 response = luckyWheelHandler.handleSpinRequest(incoming);
+                needRespond = true;
+                break;
+            case MessageType::C_CREATE_PRIVATE_ROOM:
+                std::cout <<"[Connection handler] Handling C_CREATE_PRIVATE_ROOM\n";
+                response = privateRoomHandler.handleCreatePrivateRoom(incoming);
                 needRespond = true;
                 break;
             default:

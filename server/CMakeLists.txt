@@ -25,6 +25,7 @@ set(SERVER_SOURCES
     handler/game/game_handler.cpp 
     logic/chat/chat_logic.cpp
     handler/lucky_wheel/lucky_wheel_handler.cpp
+    handler/private_room/private_room_handler.cpp
 
     db/database.cpp
     db/repository/private_chat_repository.cpp
@@ -35,6 +36,7 @@ set(SERVER_SOURCES
     db/repository/game_repository.cpp
     db/repository/friend_repository.cpp
     db/repository/lucky_wheel_repository.cpp
+    db/repository/private_room_repository.cpp
 
     logic/chat/chat_logic.cpp
     logic/rank/rank_logic.cpp
@@ -43,6 +45,7 @@ set(SERVER_SOURCES
     logic/friend/friend_logic.cpp
     logic/game/sam_loc_game.cpp 
     logic/lucky_wheel/lucky_wheel_logic.cpp
+    logic/private_room/private_room_logic.cpp
 )
 
 set(SERVER_HEADERS
@@ -60,6 +63,7 @@ set(SERVER_HEADERS
     handler/game/game_handler.h  
     handler/rank/rank_handler.h
     handler/lucky_wheel/lucky_wheel_handler.h
+    handler/private_room/private_room_handler.h
 
     logic/chat/chat_logic.h
     utils/logger.h
@@ -73,6 +77,7 @@ set(SERVER_HEADERS
     db/repository/rank_repository.h
     db/repository/friend_repository.h
     db/repository/lucky_wheel_repository.h
+    db/repository/private_room_repository.h
 
 
     logic/auth/auth_logic.h
@@ -82,6 +87,7 @@ set(SERVER_HEADERS
     logic/game/game_config.h  
     logic/rank/rank_logic.h
     logic/lucky_wheel/lucky_wheel_logic.h
+    logic/private_room/private_room_logic.h
 )
 
 # --- Tạo executable cho Server ---

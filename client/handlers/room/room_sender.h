@@ -116,6 +116,65 @@ bool sendJoinRoom(int roomId) {
         return socket_.sendMessage(msg);
     }
 
+    bool sendCreateRoomInfo(
+        const std::string& roomName,
+        const std::string& roomType,
+        int bet
+    ) {
+        // 1. Validate input
+        if (roomName.empty()) {
+            std::cerr << "[DEBUG][CreateRoom] Error: roomName is empty\n";
+            return false;
+        }
+        if (roomType != "dat_cuoc" && roomType != "dem_la") {
+            std::cerr << "[DEBUG][CreateRoom] Error: invalid roomType = " << roomType << "\n";
+            return false;
+        }
+        if (bet < 0) {
+            std::cerr << "[DEBUG][CreateRoom] Error: invalid bet = " << bet << "\n";
+            return false;
+        }
+
+        Message msg;
+        msg.header.messageType = (uint16_t)MessageType::C_CREATE_PRIVATE_ROOM;
+        msg.header.senderId = session_.userId();
+
+        // 2. Build JSON payload
+        std::stringstream ss;
+        ss << "{"
+        << "\"name\":\"" << roomName << "\","
+        << "\"type\":\"" << roomType << "\","
+        << "\"bet\":" << bet
+        << "}";
+
+        msg.payload = ss.str();
+        msg.header.payloadLength = msg.payload.size();
+        setToken(msg.header, session_.token());
+
+        // 3. Debug log
+        std::cout << "-------------------------------------------\n";
+        std::cout << "[DEBUG][CreateRoom] Sending CREATE PRIVATE ROOM\n";
+        std::cout << "   + MessageType: " << (int)msg.header.messageType << "\n";
+        std::cout << "   + SenderID:    " << msg.header.senderId << "\n";
+        std::cout << "   + Payload:     " << msg.payload << "\n";
+        std::cout << "   + Length:      " << msg.header.payloadLength << "\n";
+        std::cout << "   + Token:       "
+                << (session_.token().empty() ? "EMPTY" : "EXISTS") << "\n";
+
+        // 4. Send
+        bool success = socket_.sendMessage(msg);
+
+        if (success) {
+            std::cout << "[DEBUG][CreateRoom] SUCCESS: Message sent.\n";
+        } else {
+            std::cerr << "[DEBUG][CreateRoom] FAILED: Could not write to socket!\n";
+        }
+
+        std::cout << "-------------------------------------------\n";
+        return success;
+    }
+
+
 private:
     ClientSocket& socket_;
     ClientSession& session_;

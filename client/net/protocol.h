@@ -87,6 +87,8 @@ enum class MessageType : uint16_t {
     C_PASS_TURN = 0x3012,
     S_MOVE_RESULT = 0x3013, // Server báo 1 người vừa đánh/pass
     S_GAME_END = 0x3020,
+    C_CREATE_PRIVATE_ROOM = 0x4000,
+    S_CREATE_PRIVATE_ROOM_RESPONSE = 0x4001,
     
     ERROR_MESSAGE = 0x0090,
     PLAYER_DISCONNECT_GAME = 0x0091,
