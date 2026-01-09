@@ -37,7 +37,7 @@ bool RoomRepository::updateRoomStatus(int roomId, const std::string& s) {
 
 std::vector<DBRoom> RoomRepository::getAllRooms() {
     std::vector<DBRoom> v;
-    auto rows = database.query("SELECT * FROM rooms ORDER BY room_id");
+    auto rows = database.query("SELECT * FROM rooms WHERE is_private = 0 ORDER BY room_id");
     for (auto& r : rows) {
         DBRoom d;
         d.id = std::stoi(r.at("room_id"));

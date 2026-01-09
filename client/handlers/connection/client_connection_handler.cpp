@@ -84,7 +84,6 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
         case MessageType::CHALLENGE_EXPIRED:
             challengeHandler_.onChallengeExpired(message);
             break;
-
         // RANK HANDLER MESSAGES
         case MessageType::FRIEND_RANK_RESPONSE:
             rankHandler_.onFriendRankResponse(message);

@@ -315,7 +315,7 @@ void RoomListState::handleEvent(const sf::Event& event, const sf::Vector2f& mous
     btnBack_.handleEvent(event, mousePos);
     btnLogout_.handleEvent(event, mousePos);
     btnCreateRoom_.handleEvent(event, mousePos);
-
+ 
 
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
         for (const auto& item : uiRooms_) {
