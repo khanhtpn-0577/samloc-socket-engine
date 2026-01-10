@@ -50,7 +50,7 @@ std::string AuthHandler::buildPayload(
     const std::string& message,
     uint32_t userId,
     const std::string& token,
-    double balance
+    int64_t balance
 ) {
     std::stringstream ss;
     ss << "{\"success\":" << (success ? "true" : "false")
@@ -76,7 +76,7 @@ Message AuthHandler::createResponse(
     const std::string& message,
     uint32_t userId,
     const std::string& token,
-    double balance
+    int64_t balance
 ) {
     Message response;
     response.header.messageType = static_cast<uint16_t>(type);
@@ -166,5 +166,28 @@ Message AuthHandler::handleLogout(const Message& incomingMsg) {
         success ? "Logout successful" : "Logout failed",
         0,
         ""
+    );
+}
+
+Message AuthHandler::handleRequestBalance(const Message& incomingMsg) {
+    std::cout << "[AuthHandler] Handling REQUEST_BALANCE\n";
+    
+    uint32_t userId = parseUint32Field(incomingMsg.payload, "userId");
+    std::cout << "[AuthHandler] Request balance for userId=" << userId << "\n";
+
+    UserInfo userInfo = authLogic.getUserInfo(userId);
+    LoginResult result;
+    result.success = (userInfo.userId != 0);
+
+    result.message = result.success ? "User info retrieved successfully" : "Failed to retrieve user info";
+    result.balance = userInfo.balance;
+
+    return createResponse(
+        MessageType::REQUEST_BALANCE_RESPONSE,
+        result.success,
+        result.message,
+        userId,
+        "",
+        result.balance
     );
 }

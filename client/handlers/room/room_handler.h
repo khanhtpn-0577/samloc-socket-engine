@@ -16,6 +16,9 @@ using GameStartCallback = std::function<void(const std::vector<int>&)>;
 using TurnInfoCallback = std::function<void(int, int)>;
 using MoveResultCallback = std::function<void(int, const std::vector<int>&, int, const std::string&)>;
 using GameResultCallback = std::function<void(const nlohmann::json&)>;
+using CreateRoomCallback = std::function<void(bool success, const std::string& message, int roomId, int roomCode)>;
+
+
 
 class RoomHandler {
 public:
@@ -28,6 +31,9 @@ public:
     void setMoveResultCallback(MoveResultCallback cb);
     void setGameResultCallback(GameResultCallback cb); 
 
+    // Callback for create room response
+    void setCreateRoomCallback(CreateRoomCallback cb);
+
     void onRoomListReceived(const Message& msg);
     void onRoomUpdateReceived(const Message& msg);
     void onJoinRoomResult(const Message& msg, bool isSuccess);
@@ -35,6 +41,7 @@ public:
     void onGameStartReceived(const Message& msg);
     void onMoveResultReceived(const Message& msg);
     void onGameEndReceived(const Message& msg); 
+    void onCreatePrivateRoomResponse(const Message& msg);
 
 private:
     std::vector<RoomInfo> parseRooms(const std::string& payload);
@@ -48,4 +55,8 @@ private:
     TurnInfoCallback turnInfoCallback_;
     MoveResultCallback moveResultCallback_;
     GameResultCallback gameResultCallback_;
+
+    // Callback for create room response
+    CreateRoomCallback createRoomCallback_;
+
 };

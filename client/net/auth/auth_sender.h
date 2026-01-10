@@ -12,6 +12,7 @@ public:
     bool sendSignup(const std::string& username, const std::string& password, const std::string& displayName);
     bool sendLogin(const std::string& username, const std::string& password);
     bool sendLogout();
+    bool requestBalance(uint32_t userId);
 
     void updateIdentity(uint32_t newUserId, const std::string& newToken);
 

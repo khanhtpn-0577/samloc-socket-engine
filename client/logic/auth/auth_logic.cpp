@@ -21,5 +21,10 @@ void AuthLogic::onLoginSender(
         authSender.sendLogin(username, password);
 }
 
+void AuthLogic::getCurrentBalance(uint32_t userId) {
+    std::cout << "[AuthLogic] getCurrentBalance called for userId=" << userId << "\n";
+    authSender.requestBalance(userId);
+}
+
 
 

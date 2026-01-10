@@ -26,6 +26,8 @@ public:
         const std::string& password
     );
 
+    void getCurrentBalance(uint32_t userId);
+
 private:
     AuthSender& authSender;
 };

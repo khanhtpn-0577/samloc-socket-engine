@@ -27,6 +27,8 @@ GameManager::GameManager(StateContext& ctx)
 
 void GameManager::transitionTo(GameStateType newState) {
     if (currentStateType_ == newState && currentState_ != nullptr) {
+        currentState_->onExit();
+        currentState_->onEnter();
         return;
     }
 

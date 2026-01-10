@@ -16,7 +16,7 @@ static std::string formatMoney(long long value) {
     return s + " $";
 }
 
-RoomListState::RoomListState(StateContext& ctx) : ctx_(ctx), isPopupVisible_(false) {
+RoomListState::RoomListState(StateContext& ctx) : ctx_(ctx), isPopupVisible_(false), isCreateRoomPopupVisible_(false), activeField_(CreateField::None), isDatCuoc_(true) {
     background_.setSize({1280, 720});
     background_.setFillColor(sf::Color(10, 45, 30)); 
 
@@ -48,6 +48,125 @@ RoomListState::RoomListState(StateContext& ctx) : ctx_(ctx), isPopupVisible_(fal
         ctx_.requestTransition(GameStateType::Login);
     });
 
+    //Button Create Room
+    btnCreateRoom_.setFont(ctx_.font);
+    btnCreateRoom_.setText("CREATE PRIVATE ROOM", 18);
+    btnCreateRoom_.setSize({260, 40});
+    btnCreateRoom_.setPosition({980.f, 632.f});
+ 
+    btnCreateRoom_.setColors(
+        sf::Color(46, 204, 113),
+        sf::Color::White,
+        sf::Color::White
+    );
+    btnCreateRoom_.setCallback([this]() {
+        openCreateRoomPopup();
+    });
+
+
+    // ====== POPUP Create Room UI ======
+    createPopupBg_.setSize({620, 420});
+    createPopupBg_.setOrigin(310, 210);
+    createPopupBg_.setPosition(640, 360);
+    createPopupBg_.setFillColor(sf::Color(32, 24, 18));
+    createPopupBg_.setOutlineThickness(2.f);
+    createPopupBg_.setOutlineColor(sf::Color(255, 215, 0, 200));
+
+    createPopupHeader_.setSize({620, 70});
+    createPopupHeader_.setOrigin(310, 210);
+    createPopupHeader_.setPosition(640, 360);
+    createPopupHeader_.setFillColor(sf::Color(255, 215, 0, 30));
+
+    createPopupTitle_.setFont(ctx_.font);
+    createPopupTitle_.setString("CREATE PRIVATE ROOM");
+    createPopupTitle_.setCharacterSize(26);
+    createPopupTitle_.setFillColor(sf::Color(255, 215, 0));
+    createPopupTitle_.setStyle(sf::Text::Bold);
+    {
+        auto b = createPopupTitle_.getLocalBounds();
+        createPopupTitle_.setOrigin(b.left + b.width / 2.f, b.top + b.height / 2.f);
+        createPopupTitle_.setPosition(640.f, 245.f);
+    }
+
+    // Labels
+    auto mkLabel = [&](sf::Text& t, const std::string& s, float x, float y) {
+        t.setFont(ctx_.font);
+        t.setString(s);
+        t.setCharacterSize(18);
+        t.setFillColor(sf::Color(220, 220, 220));
+        t.setPosition(x, y);
+    };
+
+    mkLabel(lbRoomName_, "Room name", 420.f, 300.f);
+    mkLabel(lbRoomType_, "Room type", 420.f, 365.f);
+    mkLabel(lbBet_, "Bet", 420.f, 430.f);
+
+    // Input boxes
+    auto mkInputBox = [&](sf::RectangleShape& box, float x, float y) {
+        box.setSize({360.f, 44.f});
+        box.setPosition(x, y);
+        box.setFillColor(sf::Color(20, 20, 20, 160));
+        box.setOutlineThickness(2.f);
+        box.setOutlineColor(sf::Color(255, 215, 0, 80));
+    };
+
+    mkInputBox(inputRoomNameBox_, 420.f, 325.f);
+    mkInputBox(inputBetBox_, 420.f, 455.f);
+
+    // Input texts
+    auto mkInputText = [&](sf::Text& t, float x, float y) {
+        t.setFont(ctx_.font);
+        t.setCharacterSize(18);
+        t.setFillColor(sf::Color::White);
+        t.setPosition(x + 12.f, y + 9.f);
+    };
+    mkInputText(inputRoomNameText_, 420.f, 325.f);
+    mkInputText(inputBetText_, 420.f, 455.f);
+
+    // Hints
+    hintRoomName_.setFont(ctx_.font);
+    hintRoomName_.setString("Enter room name...");
+    hintRoomName_.setCharacterSize(16);
+    hintRoomName_.setFillColor(sf::Color(180,180,180,160));
+    hintRoomName_.setPosition(432.f, 336.f);
+
+    hintBet_.setFont(ctx_.font);
+    hintBet_.setString("Enter bet (digits only)...");
+    hintBet_.setCharacterSize(16);
+    hintBet_.setFillColor(sf::Color(180,180,180,160));
+    hintBet_.setPosition(432.f, 466.f);
+
+    // Type buttons (segmented)
+    btnTypeDatCuoc_.setFont(ctx_.font);
+    btnTypeDatCuoc_.setText("DAT_CUOC", 16);
+    btnTypeDatCuoc_.setSize({170.f, 40.f});
+    btnTypeDatCuoc_.setPosition({420.f, 390.f});
+    btnTypeDatCuoc_.setCallback([this]() { isDatCuoc_ = true; });
+
+    btnTypeDemLa_.setFont(ctx_.font);
+    btnTypeDemLa_.setText("DEM_LA", 16);
+    btnTypeDemLa_.setSize({170.f, 40.f});
+    btnTypeDemLa_.setPosition({610.f, 390.f});
+    btnTypeDemLa_.setCallback([this]() { isDatCuoc_ = false; });
+
+    // Bottom buttons
+    btnCreateConfirm_.setFont(ctx_.font);
+    btnCreateConfirm_.setText("CREATE", 18);
+    btnCreateConfirm_.setSize({160.f, 48.f});
+    btnCreateConfirm_.setPosition({420.f, 520.f});
+    btnCreateConfirm_.setCallback([this]() {
+        submitCreateRoom();
+    });
+
+    btnCreateCancel_.setFont(ctx_.font);
+    btnCreateCancel_.setText("CANCEL", 18);
+    btnCreateCancel_.setSize({160.f, 48.f});
+    btnCreateCancel_.setPosition({620.f, 520.f});
+    btnCreateCancel_.setCallback([this]() { closeCreateRoomPopup(); });
+
+
+    //==============================
+
     popupOverlay_.setSize({1280, 720});
     popupOverlay_.setFillColor(sf::Color(0, 0, 0, 200));
 
@@ -78,6 +197,23 @@ void RoomListState::onEnter() {
     ctx_.roomHandler.setJoinRoomCallback([this](bool success, const std::string& msg, int roomId, const RoomInfo& roomInfo) {
         this->onJoinResult(success, msg, roomId, roomInfo);
     });
+
+    ctx_.roomHandler.setCreateRoomCallback(
+        [this](bool success,
+               const std::string& msg,
+               int roomId,
+               int roomCode) {
+            if (success) {
+                std::cout << "[CreateRoom] success, roomId="
+                          << roomId
+                          << " code=" << roomCode << "\n";
+
+                ctx_.network.roomSender().sendJoinRoom(roomId);
+            } else {
+                showPopup(msg.empty() ? "Create room failed" : msg);
+            }
+        }
+    );
 
     ctx_.network.roomSender().sendGetRoomList();
 }
@@ -182,6 +318,12 @@ void RoomListState::hidePopup() {
 }
 
 void RoomListState::handleEvent(const sf::Event& event, const sf::Vector2f& mousePos) {
+    if (isCreateRoomPopupVisible_) {
+        handleCreatePopupEvent(event, mousePos);
+        return;
+    }
+
+
     if (isPopupVisible_) {
         btnPopupOk_.handleEvent(event, mousePos);
         return;
@@ -189,6 +331,8 @@ void RoomListState::handleEvent(const sf::Event& event, const sf::Vector2f& mous
 
     btnBack_.handleEvent(event, mousePos);
     btnLogout_.handleEvent(event, mousePos);
+    btnCreateRoom_.handleEvent(event, mousePos);
+ 
 
     if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
         for (const auto& item : uiRooms_) {
@@ -208,6 +352,8 @@ void RoomListState::draw(sf::RenderWindow& window) {
     window.draw(titleText_);
     btnBack_.draw(window);
     btnLogout_.draw(window);
+    btnCreateRoom_.draw(window);
+
 
     sf::Vector2f mousePos = window.mapPixelToCoords(sf::Mouse::getPosition(window));
 
@@ -231,4 +377,181 @@ void RoomListState::draw(sf::RenderWindow& window) {
         window.draw(popupText_);
         btnPopupOk_.draw(window);
     }
+
+    if (isCreateRoomPopupVisible_) {
+        window.draw(popupOverlay_);
+        window.draw(createPopupBg_);
+        window.draw(createPopupHeader_);
+        window.draw(createPopupTitle_);
+
+        // labels
+        window.draw(lbRoomName_);
+        window.draw(lbRoomType_);
+        window.draw(lbBet_);
+
+        // input boxes
+        window.draw(inputRoomNameBox_);
+        window.draw(inputBetBox_);
+
+        // hints if empty
+        if (inputRoomName_.empty()) window.draw(hintRoomName_);
+        if (inputBet_.empty()) window.draw(hintBet_);
+
+        // typed text
+        window.draw(inputRoomNameText_);
+        window.draw(inputBetText_);
+
+        // type segmented buttons
+        btnTypeDatCuoc_.draw(window);
+        btnTypeDemLa_.draw(window);
+
+        // bottom buttons
+        btnCreateConfirm_.draw(window);
+        btnCreateCancel_.draw(window);
+    }
+
+
+}
+
+bool RoomListState::isDigitsOnly(const std::string& s) const {
+    if (s.empty()) return false;
+    for (char c : s) {
+        if (c < '0' || c > '9') return false;
+    }
+    return true;
+}
+
+void RoomListState::openCreateRoomPopup() {
+    isCreateRoomPopupVisible_ = true;
+    activeField_ = CreateField::RoomName;
+    // reset nếu muốn
+    // inputRoomName_.clear();
+    // inputBet_.clear();
+    refreshCreatePopupTexts();
+}
+
+void RoomListState::closeCreateRoomPopup() {
+    isCreateRoomPopupVisible_ = false;
+    activeField_ = CreateField::None;
+    refreshCreatePopupTexts();
+}
+
+void RoomListState::refreshCreatePopupTexts() {
+    inputRoomNameText_.setString(toSfString(inputRoomName_));
+    inputBetText_.setString(toSfString(inputBet_));
+
+    // highlight focus
+    auto focusColor = sf::Color(255, 215, 0, 220);
+    auto normalColor = sf::Color(255, 215, 0, 80);
+
+    inputRoomNameBox_.setOutlineColor(activeField_ == CreateField::RoomName ? focusColor : normalColor);
+    inputBetBox_.setOutlineColor(activeField_ == CreateField::Bet ? focusColor : normalColor);
+
+    // button colors for segmented control
+    if (isDatCuoc_) {
+        btnTypeDatCuoc_.setColors(sf::Color(255, 215, 0), sf::Color::Black, sf::Color::Black);
+        btnTypeDemLa_.setColors(sf::Color(60, 60, 60), sf::Color::White, sf::Color::White);
+    } else {
+        btnTypeDatCuoc_.setColors(sf::Color(60, 60, 60), sf::Color::White, sf::Color::White);
+        btnTypeDemLa_.setColors(sf::Color(255, 215, 0), sf::Color::Black, sf::Color::Black);
+    }
+}
+
+void RoomListState::handleCreatePopupEvent(const sf::Event& event, const sf::Vector2f& mousePos) {
+    // click focus on input boxes
+    if (event.type == sf::Event::MouseButtonPressed && event.mouseButton.button == sf::Mouse::Left) {
+        if (inputRoomNameBox_.getGlobalBounds().contains(mousePos)) {
+            activeField_ = CreateField::RoomName;
+            refreshCreatePopupTexts();
+            return;
+        }
+        if (inputBetBox_.getGlobalBounds().contains(mousePos)) {
+            activeField_ = CreateField::Bet;
+            refreshCreatePopupTexts();
+            return;
+        }
+    }
+
+    // buttons
+    btnTypeDatCuoc_.handleEvent(event, mousePos);
+    btnTypeDemLa_.handleEvent(event, mousePos);
+    btnCreateConfirm_.handleEvent(event, mousePos);
+    btnCreateCancel_.handleEvent(event, mousePos);
+
+    // keyboard
+    if (event.type == sf::Event::KeyPressed) {
+        if (event.key.code == sf::Keyboard::Escape) {
+            closeCreateRoomPopup();
+            return;
+        }
+        if (event.key.code == sf::Keyboard::Tab) {
+            activeField_ = (activeField_ == CreateField::RoomName) ? CreateField::Bet : CreateField::RoomName;
+            refreshCreatePopupTexts();
+            return;
+        }
+        if (event.key.code == sf::Keyboard::Enter) {
+            submitCreateRoom();
+            return;
+        }
+        if (event.key.code == sf::Keyboard::BackSpace) {
+            if (activeField_ == CreateField::RoomName && !inputRoomName_.empty()) {
+                inputRoomName_.pop_back();
+                refreshCreatePopupTexts();
+                return;
+            }
+            if (activeField_ == CreateField::Bet && !inputBet_.empty()) {
+                inputBet_.pop_back();
+                refreshCreatePopupTexts();
+                return;
+            }
+        }
+    }
+
+    // text input
+    if (event.type == sf::Event::TextEntered) {
+        uint32_t u = event.text.unicode;
+        if (u < 32 || u == 127) return; // ignore control
+
+        char c = static_cast<char>(u);
+
+        if (activeField_ == CreateField::RoomName) {
+            if (inputRoomName_.size() < 20) {
+                inputRoomName_.push_back(c);
+                refreshCreatePopupTexts();
+            }
+            return;
+        }
+
+        if (activeField_ == CreateField::Bet) {
+            if (c >= '0' && c <= '9' && inputBet_.size() < 12) {
+                inputBet_.push_back(c);
+                refreshCreatePopupTexts();
+            }
+            return;
+        }
+    }
+}
+
+void RoomListState::submitCreateRoom() {
+    if (inputRoomName_.empty()) {
+        showPopup("Room name is required");
+        return;
+    }
+
+    if (inputBet_.empty() || !isDigitsOnly(inputBet_)) {
+        showPopup("Bet must be digits only");
+        return;
+    }
+
+    std::cout << "[CreateRoom] name=" << inputRoomName_
+              << " type=" << (isDatCuoc_ ? "dat_cuoc" : "dem_la")
+              << " bet=" << inputBet_ << "\n";
+
+    ctx_.network.roomSender().sendCreateRoomInfo(
+        inputRoomName_,
+        isDatCuoc_ ? "dat_cuoc" : "dem_la",
+        std::stoll(inputBet_)
+    );
+
+    closeCreateRoomPopup();
 }

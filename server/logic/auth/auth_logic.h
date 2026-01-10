@@ -16,13 +16,20 @@ struct LoginResult {
     std::string message;
     uint32_t userId;
     std::string token;
-    double balance;
+    int64_t balance;
 };
 
 struct SessionInfo {
     uint32_t userId;
     std::string token;
     int64_t expiresAt;
+};
+
+struct UserInfo {
+    uint32_t userId;
+    std::string username;
+    std::string displayName;
+    int64_t balance;
 };
 
 /**
@@ -47,6 +54,8 @@ public:
         const std::string& username,
         const std::string& password
     );
+
+    UserInfo getUserInfo(uint32_t userId);
 
     // Logout user
     bool logout(const std::string& token);

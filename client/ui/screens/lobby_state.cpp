@@ -1,5 +1,6 @@
 #include "lobby_state.h"
 #include "friends_state.h"
+#include "../../handlers/auth/auth_handler.h"
 #include <iostream>
 
 LobbyState::LobbyState(StateContext& ctx)
@@ -119,7 +120,7 @@ void LobbyState::onEnter() {
         std::to_string(ctx_.session.userId()) +
         ")"
     );
-
+    ctx_.auth_handler.getCurrentBalance();
     balanceText_.setString(
         "Balance: " +
         std::to_string(static_cast<long long>(ctx_.session.balance()))

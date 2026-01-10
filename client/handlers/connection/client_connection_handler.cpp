@@ -60,7 +60,11 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
         case MessageType::LOGOUT_RESPONSE:
             authHandler_.onLogoutResponse(message);
             break;
-
+        case MessageType::REQUEST_BALANCE_RESPONSE:
+            authHandler_.onBalanceResponse(message);
+            std::cout << "[ClientConnectionHandler] Received REQUEST_BALANCE_RESPONSE with payload: " << message.payload << "\n";
+            break;
+        
         // CHALLENGE HANDLER MESSAGES
         case MessageType::CHALLENGE_NOTIFICATION:
             challengeHandler_.onChallengeNotification(message);
@@ -81,6 +85,9 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
             challengeHandler_.onChallengeExpired(message);
             break;
 
+        case MessageType::S_CREATE_PRIVATE_ROOM_RESPONSE:
+            roomHandler_.onCreatePrivateRoomResponse(message);
+            break; 
         // RANK HANDLER MESSAGES
         case MessageType::FRIEND_RANK_RESPONSE:
             rankHandler_.onFriendRankResponse(message);
@@ -173,6 +180,8 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
             std::cout << "[ClientConnectionHandler] GET_FRIEND_LIST_RESPONSE\n";
             friendHandler_.onGetFriendListResponse(message);
             break;
+
+        
 
         default:
             std::cerr << "[ClientConnectionHandler] Unknown message type: 0x"

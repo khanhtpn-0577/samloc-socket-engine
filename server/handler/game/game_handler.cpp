@@ -201,3 +201,4 @@ void GameHandler::updateLoop() {
         } else it = games.erase(it);
     }
 }
+
