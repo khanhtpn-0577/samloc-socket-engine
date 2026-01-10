@@ -198,6 +198,23 @@ void RoomListState::onEnter() {
         this->onJoinResult(success, msg, roomId, roomInfo);
     });
 
+    ctx_.roomHandler.setCreateRoomCallback(
+        [this](bool success,
+               const std::string& msg,
+               int roomId,
+               int roomCode) {
+            if (success) {
+                std::cout << "[CreateRoom] success, roomId="
+                          << roomId
+                          << " code=" << roomCode << "\n";
+
+                ctx_.network.roomSender().sendJoinRoom(roomId);
+            } else {
+                showPopup(msg.empty() ? "Create room failed" : msg);
+            }
+        }
+    );
+
     ctx_.network.roomSender().sendGetRoomList();
 }
 

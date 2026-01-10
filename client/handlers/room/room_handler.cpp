@@ -152,3 +152,33 @@ std::vector<RoomMember> RoomHandler::parseMembers(const std::string& payload) {
     } catch (...) {}
     return members;
 }
+
+void RoomHandler::setCreateRoomCallback(CreateRoomCallback cb) {
+    createRoomCallback_ = cb;
+}
+
+void RoomHandler::onCreatePrivateRoomResponse(const Message& msg) {
+    try {
+        auto j = json::parse(msg.payload);
+
+        bool success = j.value("success", false);
+        int roomId   = j.value("roomId", 0);
+        int roomCode = j.value("roomCode", 0);
+        std::string message =
+            j.value("reason", j.value("message", ""));
+
+        if (createRoomCallback_) {
+            createRoomCallback_(success, message, roomId, roomCode);
+        }
+    } catch (...) {
+        if (createRoomCallback_) {
+            createRoomCallback_(false,
+                                "Invalid server response",
+                                0,
+                                0);
+        }
+    }
+}
+
+
+

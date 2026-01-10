@@ -84,6 +84,10 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
         case MessageType::CHALLENGE_EXPIRED:
             challengeHandler_.onChallengeExpired(message);
             break;
+
+        case MessageType::S_CREATE_PRIVATE_ROOM_RESPONSE:
+            roomHandler_.onCreatePrivateRoomResponse(message);
+            break; 
         // RANK HANDLER MESSAGES
         case MessageType::FRIEND_RANK_RESPONSE:
             rankHandler_.onFriendRankResponse(message);
@@ -176,6 +180,8 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
             std::cout << "[ClientConnectionHandler] GET_FRIEND_LIST_RESPONSE\n";
             friendHandler_.onGetFriendListResponse(message);
             break;
+
+        
 
         default:
             std::cerr << "[ClientConnectionHandler] Unknown message type: 0x"
