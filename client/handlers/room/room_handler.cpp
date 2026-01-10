@@ -14,26 +14,68 @@ void RoomHandler::setTurnInfoCallback(TurnInfoCallback cb) { turnInfoCallback_ =
 void RoomHandler::setMoveResultCallback(MoveResultCallback cb) { moveResultCallback_ = cb; }
 void RoomHandler::setGameResultCallback(GameResultCallback cb) { gameResultCallback_ = cb; }
 
-void RoomHandler::onJoinRoomResult(const Message& msg, bool isSuccess) {
-    std::string message = "";
+
+void RoomHandler::onJoinRoomResult(const Message& msg, bool isFailType) {
+    bool success = false;
+    std::string displayMsg = "";
     int roomId = 0;
-    RoomInfo roomInfo; 
-    
-    if (!isSuccess) {
-        try {
-            auto j = json::parse(msg.payload);
-            message = j.value("reason", j.value("msg", "Error"));
-        } catch (...) { message = "Error"; }
-    } else {
-        // Nếu cần lấy roomId từ payload khi thành công
-        try {
-            auto j = json::parse(msg.payload);
-            roomId = j.value("roomId", 0);
-            roomInfo.id = roomId;
-        } catch(...) {}
+    RoomInfo info;
+    info.id = 0;
+    info.bet = 0;
+    info.name = "";
+    info.type = "";
+    info.status = "waiting";
+
+    try {
+        std::string cleanPayload = msg.payload;
+        size_t startPos = cleanPayload.find('{');
+        if (startPos != std::string::npos) {
+            cleanPayload = cleanPayload.substr(startPos);
+        }
+
+        if (cleanPayload.empty()) return;
+
+        auto j = json::parse(cleanPayload);
+        json jObj;
+
+        if (j.is_array() && !j.empty()) {
+            jObj = j[0];
+        } else if (j.is_object()) {
+            jObj = j;
+        } else {
+            throw std::runtime_error("Invalid format");
+        }
+
+        success = jObj.value("success", !isFailType);
+        displayMsg = jObj.value("message", jObj.value("reason", ""));
+        roomId = jObj.value("roomId", 0);
+        
+        if (jObj.contains("roomInfo") && jObj["roomInfo"].is_object()) {
+            auto& ri = jObj["roomInfo"];
+            info.id = roomId;
+            info.name = ri.value("name", "");
+            info.type = ri.value("type", "");
+            
+            if (ri.contains("bet")) {
+                if (ri["bet"].is_number()) {
+                    info.bet = static_cast<long long>(ri["bet"].get<double>());
+                } else if (ri["bet"].is_string()) {
+                    info.bet = std::atoll(ri["bet"].get<std::string>().c_str());
+                }
+            }
+        }
+    } catch (const std::exception& e) {
+        success = false;
+        if (isFailType || msg.payload.find("funds") != std::string::npos) {
+            displayMsg = "Insufficient funds!";
+        } else {
+            displayMsg = "Data error";
+        }
     }
-    
-    if (joinCallback_) joinCallback_(isSuccess, message, roomId, roomInfo);
+
+    if (joinCallback_) {
+        joinCallback_(success, displayMsg, roomId, info);
+    }
 }
 
 void RoomHandler::onGameEndReceived(const Message& msg) {

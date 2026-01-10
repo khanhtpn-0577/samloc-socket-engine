@@ -230,12 +230,8 @@ void InGameState::syncHandFromServer() {
             break;
         }
     }
-    std::sort(myHand_.begin(), myHand_.end(), [](const CardUI& a, const CardUI& b) { 
-        return a.getID() < b.getID(); 
-    });
     layoutHand();
 }
-
 void InGameState::onPlayClicked() {
     std::vector<int> selected;
     for (const auto& c : myHand_) { if (c.isSelected()) selected.push_back(c.getID()); }

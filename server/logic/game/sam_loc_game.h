@@ -12,7 +12,6 @@
 #include "../../db/repository/card_repository.h"
 #include "../../db/repository/game_repository.h"
 
-/* ================== GAME STATE ================== */
 
 enum class GameState {
     WAITING,
@@ -21,7 +20,6 @@ enum class GameState {
     FINISHED
 };
 
-/* ================== PLAYER ================== */
 
 struct Player {
     int id = -1;
@@ -33,7 +31,6 @@ struct Player {
     bool hasPassed = false;
 };
 
-/* ================== GAME ================== */
 enum HandType {
     INVALID = 0,
     SINGLE = 1,      // Cóc
@@ -45,8 +42,8 @@ enum HandType {
 
 struct HandInfo {
     HandType type;
-    int power; // Giá trị orderValue cao nhất của bộ
-    int count; // Số lượng lá bài
+    int power;
+    int count;
 };
 
 class SamLocGame {
@@ -59,20 +56,16 @@ public:
         GameRepository& gRepo
     );
 
-    /* ---------- Core ---------- */
     std::vector<GameEvent> addPlayer(int playerId);
     std::vector<GameEvent> removePlayer(int playerId);
     std::vector<GameEvent> onPlayerDisconnect(int playerId);
 
-    /* ---------- Player actions ---------- */
     std::vector<GameEvent> setPlayerReady(int playerId, bool ready);
     std::vector<GameEvent> playCards(int playerId, std::vector<int> cardIds);
     std::vector<GameEvent> passTurn(int playerId);
 
-    /* ---------- Loop ---------- */
     std::vector<GameEvent> update();
 
-    /* ---------- Getters ---------- */
     std::string getPlayersStateJsonFor(int viewerId);
     std::vector<int> getAllPlayerIds();
     bool isPlayerInGame(int playerId);
@@ -83,7 +76,6 @@ public:
     bool canBeat(const std::vector<DBCard>& cardsToPlay, std::string& err);
     HandInfo analyzeHand(const std::vector<DBCard>& cards);
 private:
-    /* ---------- Internal game flow ---------- */
     std::vector<GameEvent> startPlayingPhase(int firstPlayerId);
     std::vector<GameEvent> handleWin(int winnerId, int reasonCode);
 
@@ -93,14 +85,12 @@ private:
 
     bool isValidMove(const std::vector<DBCard>& cards, std::string& err);
 
-    /* ---------- Helpers ---------- */
     std::vector<GameEvent> broadcastMoveResult(
         int actorId,
         std::string action,
         std::vector<int> cards
     );
 
-    /* ---------- Data ---------- */
     int roomId;
     DBRoom roomInfo;
     std::vector<DBCard> masterDeck;
