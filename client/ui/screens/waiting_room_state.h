@@ -6,6 +6,7 @@
 #include "../../handlers/room/room_structs.h" 
 #include <vector>
 #include <string>
+#include <utility>
 
 class WaitingRoomState : public GameState {
 public:
@@ -30,6 +31,8 @@ private:
     Button btnLeave_;
     Button btnReady_;
     Button btnChat_;
+    Button btnInviteFriend_;
+
 
     bool isMyReady_;
     std::vector<RoomMember> members_;
@@ -58,4 +61,35 @@ private:
     void refreshSlotDisplay();
     void onReadyClicked();
     void onLeaveClicked();
+
+
+    // UI state cho popup invite
+    bool isInvitePopupVisible_ = false;
+
+    // friend list cache
+    std::vector<std::pair<uint32_t, std::pair<std::string, double>>> friendList_;
+
+    sf::RectangleShape invitePopupBg_;
+    sf::Text invitePopupTitle_;
+    sf::Text invitePopupListText_;
+    Button btnInvitePopupClose_;
+
+
+    struct InviteFriendRow {
+        uint32_t userId;
+        std::string username;
+        long long balance;
+        bool online;
+
+        sf::RectangleShape bg;
+        sf::Text nameText;
+        sf::Text balanceText;
+        sf::Text statusText;
+        Button inviteBtn;
+    };
+
+    std::vector<InviteFriendRow> inviteFriendRows_;
+
+
+
 };
