@@ -84,31 +84,32 @@ Message GameHandler::handleMessage(const Message& msg, int senderId) {
                 userRoomMap.erase(senderId);
             }
         }
+
         DBRoom roomInfo;
         if (!roomRepo->getRoom(roomId, roomInfo)) return Message();
 
         if (games.find(roomId) == games.end()) {
             games[roomId] = std::make_shared<SamLocGame>(roomId, roomInfo, globalDeck, *playerRepo, *gameRepo);
         }
+
         auto game = games[roomId];
         if (!game->isPlayerInGame(senderId)) {
             if (game->getCurrentPlayerCount() >= roomInfo.maxPlayers || !game->isJoinAllowed()) return Message();
             events = game->addPlayer(senderId);
         }
+
         userRoomMap[senderId] = roomId;
         try { roomRepo->addPlayerToRoom(roomId, senderId); } catch(...) {}
-
-        Message ack;
-        ack.header.messageType = (uint16_t)MessageType::S_JOIN_ROOM_SUCCESS;
-        ack.payload = json({{"roomId", roomId}, {"msg", "joined"}}).dump();
-        if (auto* c = SessionManager::instance().get(senderId)) c->sendMessage(ack);
 
         Message msgEx;
         msgEx.header.messageType = (uint16_t)MessageType::S_EXISTING_PLAYERS;
         msgEx.payload = game->getPlayersStateJsonFor(senderId);
         if (auto* c = SessionManager::instance().get(senderId)) c->sendMessage(msgEx);
 
-        if (!events.empty()) dispatchEvents(events);
+        if (!events.empty()) {
+            dispatchEvents(events);
+        }
+
         return Message();
     }
 

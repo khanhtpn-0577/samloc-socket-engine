@@ -178,16 +178,24 @@ void WaitingRoomState::setupSlotsLayout() {
 void WaitingRoomState::onEnter() {
     isMyReady_ = false;
     members_.clear();
-    currentRoomInfo_ = ctx_.currentRoomInfo;
+    
+    currentRoomInfo_ = ctx_.currentRoomInfo; 
+    
     roomNameText_.setString(toSf("ROOM: " + currentRoomInfo_.name));
-    subTitleText_.setString(toSf("Min Bet: " + formatMoney(currentRoomInfo_.bet) + " | Mode: " + currentRoomInfo_.type));
+    
+    long long displayBet = currentRoomInfo_.bet;
+    if (displayBet < 0 || displayBet > 1000000000000LL) displayBet = 0; 
+    
+    subTitleText_.setString(toSf("Min Bet: " + formatMoney(displayBet) + " | Mode: " + currentRoomInfo_.type));
     
     ctx_.roomHandler.setRoomUpdateCallback([this](const std::vector<RoomMember>& newMembers) {
         this->updateMembers(newMembers);
     });
+    
     ctx_.roomHandler.setGameCountdownCallback([this](int seconds) {
         ctx_.requestTransition(GameStateType::GameStartingCountdown);
     });
+
     ctx_.roomHandler.setGameStartCallback([this](const std::vector<int>& hand){
         ctx_.myHand = hand;
         ctx_.requestTransition(GameStateType::InGame);

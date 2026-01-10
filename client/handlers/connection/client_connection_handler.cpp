@@ -102,7 +102,7 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
             roomHandler_.onJoinRoomResult(message, false);
             break;
 
-        case MessageType::S_PLAYER_JOINED:
+        case MessageType::S_JOIN_ROOM_SUCCESS:
             roomHandler_.onJoinRoomResult(message, true);
             break;
 
