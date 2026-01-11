@@ -37,7 +37,7 @@ private:
     bool isMyReady_;
     std::vector<RoomMember> members_;
     
-    RoomInfo currentRoomInfo_; 
+    RoomInfo currentRoomInfo_;
 
     struct PlayerSlot {
         sf::RectangleShape panelBg;
@@ -89,6 +89,14 @@ private:
     };
 
     std::vector<InviteFriendRow> inviteFriendRows_;
+
+    // ===== Challenge result popup =====
+    bool isChallengePopupVisible_ = false;
+    bool challengeResultSuccess_ = false;
+    sf::RectangleShape challengePopupBg_;
+    sf::Text challengePopupText_;
+    Button challengePopupOkBtn_;
+
 
 
 

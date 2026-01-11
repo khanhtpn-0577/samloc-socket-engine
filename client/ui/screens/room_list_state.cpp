@@ -187,6 +187,9 @@ void RoomListState::onEnter() {
     ctx_.roomHandler.setCreateRoomCallback(
         [this](bool success, const std::string& msg, int roomId, int roomCode) {
             if (success) {
+                ctx_.currentRoomId = roomId;
+                std::cout << "[Room_List_state] set ctx_.currentRoomId= " 
+                                     << ctx_.currentRoomId << "\n";
                 ctx_.network.roomSender().sendJoinRoom(roomId);
             } else {
                 showPopup(msg.empty() ? "Create room failed" : msg);
@@ -286,13 +289,12 @@ void RoomListState::hidePopup() {
 }
 
 void RoomListState::handleEvent(const sf::Event& event, const sf::Vector2f& mousePos) {
-    if (isCreateRoomPopupVisible_) {
-        handleCreatePopupEvent(event, mousePos);
-        return;
-    }
-
     if (isPopupVisible_) {
         btnPopupOk_.handleEvent(event, mousePos);
+        return;
+    }
+    if (isCreateRoomPopupVisible_) {
+        handleCreatePopupEvent(event, mousePos);
         return;
     }
 

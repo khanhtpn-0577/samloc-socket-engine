@@ -67,7 +67,14 @@ bool ConnectionHandler::sendMessage(const Message& msg) {
     safeMsg.header.payloadLength = static_cast<uint32_t>(safeMsg.payload.size());
     std::string bytes = safeMsg.serialize();
     bool ok = sendAll(bytes.data(), bytes.size());
-    std::cout << "[SEND] fd=" << clientFd << " bytes=" << bytes.size() << " type=0x" << std::hex << safeMsg.header.messageType << std::dec << "\n";
+    std::cout
+        << "[SEND Message]"
+        << " fd=" << clientFd
+        << " bytes=" << bytes.size()
+        << " type=0x" << std::hex << safeMsg.header.messageType
+        << " (" << std::dec << safeMsg.header.messageType << ")"
+        << " payloadLen=" << safeMsg.header.payloadLength
+        << " payload=";
     return ok;
 }
 
@@ -181,20 +188,10 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
                 break;
             case MessageType::SEND_CHALLENGE:
                 response = challengeHandler.handleSendChallenge(incoming);
+                std::cout <<"[Connection handler] Handling SEND_CHALLENGE\n";
                 needRespond = true;
                 break;
-            case MessageType::ACCEPT_CHALLENGE:
-                response = challengeHandler.handleAcceptChallenge(incoming);
-                needRespond = true;
-                break;
-            case MessageType::REJECT_CHALLENGE:
-                response = challengeHandler.handleRejectChallenge(incoming);
-                needRespond = true;
-                break;
-            case MessageType::CANCEL_CHALLENGE:
-                response = challengeHandler.handleCancelChallenge(incoming);
-                needRespond = true;
-                break;
+            
             case MessageType::FRIEND_RANK_REQUEST:
                 std::cout <<"[Connection handler] Handling FRIEND_RANK_REQUEST\n";
                 response = rankHandler.handleFriendRankRequest(incoming);

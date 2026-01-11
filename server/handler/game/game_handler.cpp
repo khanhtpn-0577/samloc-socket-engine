@@ -77,6 +77,7 @@ Message GameHandler::handleMessage(const Message& msg, int senderId) {
 
     if (type == MessageType::C_JOIN_ROOM) {
         int roomId = jPayload.value("roomId", 0);
+        std::cout << "[Server][JOIN_ROOM] Parsed roomId=" << roomId << "\n";
         if (userRoomMap.count(senderId) && userRoomMap[senderId] != roomId) {
             int oldRid = userRoomMap[senderId];
             if (games.count(oldRid) && games[oldRid]->getState() == GameState::WAITING) {

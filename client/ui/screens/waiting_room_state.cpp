@@ -207,6 +207,33 @@ WaitingRoomState::WaitingRoomState(StateContext& ctx)
         isInvitePopupVisible_ = false;
     });
 
+    //popup invite result
+    challengePopupBg_.setSize({420, 200});
+    challengePopupBg_.setOrigin(210, 100);
+    challengePopupBg_.setPosition(640, 360);
+    challengePopupBg_.setFillColor(sf::Color(20, 20, 20, 240));
+    challengePopupBg_.setOutlineThickness(2);
+    challengePopupBg_.setOutlineColor(UITheme::Gold);
+
+    challengePopupText_.setFont(ctx_.font);
+    challengePopupText_.setCharacterSize(18);
+    challengePopupText_.setFillColor(UITheme::TextMain);
+    centerText(challengePopupText_, 640, 340);
+
+    challengePopupOkBtn_.setFont(ctx_.font);
+    challengePopupOkBtn_.setText("OK", 16);
+    challengePopupOkBtn_.setSize({120, 36});
+    challengePopupOkBtn_.setPosition({640, 420});
+    challengePopupOkBtn_.setColors(
+        sf::Color(52, 152, 219),
+        sf::Color::White,
+        sf::Color::White
+    );
+    challengePopupOkBtn_.setCallback([this] {
+        isChallengePopupVisible_ = false;
+    });
+
+
     
     setupSlotsLayout();
 }
@@ -307,10 +334,18 @@ void WaitingRoomState::onEnter() {
                         sf::Color::White,
                         sf::Color::White
                     );
-                    row.inviteBtn.setCallback([uid = row.userId] {
-                        std::cout << "[Invite] Invite userId=" << uid << "\n";
-                        // TODO: send invite packet
-                    });
+                    row.inviteBtn.setCallback(
+                        [this, uid = row.userId] {
+                            std::cout << "[Invite] Send challenge to userId=" << uid
+                                    << " roomId=" << ctx_.currentRoomId << "\n";
+
+                            ctx_.challengeHandler.onSendChallenge(
+                                uid,
+                                ctx_.currentRoomId
+                            );
+                        }
+                    );
+
                 }
 
                 inviteFriendRows_.push_back(row);
@@ -319,6 +354,22 @@ void WaitingRoomState::onEnter() {
             isInvitePopupVisible_ = true;
         }
     );
+
+    ctx_.challengeHandler.setChallengeResultCallback(
+        [this](bool success, const std::string& msg) {
+            challengeResultSuccess_ = success;
+            challengePopupText_.setString(
+                toSf(success ? "INVITE SENT!\n" + msg
+                            : "INVITE FAILED!\n" + msg)
+            );
+            challengePopupText_.setFillColor(
+                success ? UITheme::ReadyGreen : UITheme::LeaveRed
+            );
+            centerText(challengePopupText_, 640, 340);
+            isChallengePopupVisible_ = true;
+        }
+    );
+
 
 
 }
@@ -372,6 +423,11 @@ void WaitingRoomState::onLeaveClicked() {
 }
 
 void WaitingRoomState::handleEvent(const sf::Event& e, const sf::Vector2f& mousePos) {
+    if (isChallengePopupVisible_) {
+        challengePopupOkBtn_.handleEvent(e, mousePos);
+        return;
+    }
+    
     if (isInvitePopupVisible_) {
         btnInvitePopupClose_.handleEvent(e, mousePos);
         for (auto& row : inviteFriendRows_) {
@@ -380,8 +436,6 @@ void WaitingRoomState::handleEvent(const sf::Event& e, const sf::Vector2f& mouse
         }
         return;
     }
-
-
 
     btnLeave_.handleEvent(e, mousePos);
     btnReady_.handleEvent(e, mousePos);
@@ -425,6 +479,18 @@ void WaitingRoomState::draw(sf::RenderWindow& w) {
 
         btnInvitePopupClose_.draw(w);
     }
+
+    if (isChallengePopupVisible_) {
+        sf::RectangleShape overlay;
+        overlay.setSize({1280, 720});
+        overlay.setFillColor(sf::Color(0, 0, 0, 180));
+        w.draw(overlay);
+
+        w.draw(challengePopupBg_);
+        w.draw(challengePopupText_);
+        challengePopupOkBtn_.draw(w);
+    }
+
 
 
 }

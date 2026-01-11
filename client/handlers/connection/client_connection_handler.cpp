@@ -66,23 +66,9 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
             break;
         
         // CHALLENGE HANDLER MESSAGES
-        case MessageType::CHALLENGE_NOTIFICATION:
-            challengeHandler_.onChallengeNotification(message);
-            break;
         case MessageType::SEND_CHALLENGE_RESPONSE:
             challengeHandler_.onSendChallengeResponse(message);
-            break;
-        case MessageType::ACCEPT_CHALLENGE_RESPONSE:
-            challengeHandler_.onAcceptChallengeResponse(message);
-            break;
-        case MessageType::REJECT_CHALLENGE_RESPONSE:
-            challengeHandler_.onRejectChallengeResponse(message);
-            break;
-        case MessageType::CANCEL_CHALLENGE_RESPONSE:
-            challengeHandler_.onCancelChallengeResponse(message);
-            break;
-        case MessageType::CHALLENGE_EXPIRED:
-            challengeHandler_.onChallengeExpired(message);
+            std::cout << "[ClientConnectionHandler] Received SEND_CHALLENGE_RESPONSE with payload: " << message.payload << "\n";
             break;
 
         case MessageType::S_CREATE_PRIVATE_ROOM_RESPONSE:
@@ -106,8 +92,9 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
             roomHandler_.onJoinRoomResult(message, true);
             break;
 
+
         case MessageType::S_EXISTING_PLAYERS:
-            roomHandler_.onJoinRoomResult(message, true);
+            //roomHandler_.onJoinRoomResult(message, true);
             roomHandler_.onRoomUpdateReceived(message);
             break;
 
