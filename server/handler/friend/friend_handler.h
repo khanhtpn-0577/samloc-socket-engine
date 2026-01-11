@@ -60,5 +60,7 @@ private:
     // Build JSON payload with pending requests
     std::string buildPendingRequestsPayload(const std::vector<PendingRequest>& requests);
 
+    std::string buildFriendListPayloadWithOnline(const std::vector<FriendData>& friends);
+
     FriendLogic& friendLogic;
 };

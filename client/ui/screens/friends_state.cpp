@@ -49,7 +49,7 @@ void FriendsState::onEnter() {
             DisplayFriend displayFriend;
             displayFriend.userId = f.first;
             displayFriend.username = f.second.first;
-            displayFriend.balance = f.second.second;
+            displayFriend.balance = f.second.second.first;
             displayFriends_.push_back(displayFriend);
         }
         redrawFriendList();

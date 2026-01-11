@@ -1,124 +1,101 @@
 #include "challenge_handler.h"
 #include <iostream>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
-ChallengeHandler::ChallengeHandler(ClientSession& session)
-    : session(session) {}
+ChallengeHandler::ChallengeHandler(
+    ChallengeLogic& challengeLogic,
+    ClientSession& session
+)
+    : session_(session),
+      challengeLogic_(challengeLogic) {}
 
-std::string ChallengeHandler::parseField(const std::string& payload, const std::string& key) {
-    std::string searchKey = "\"" + key + "\":\"";
-    size_t keyPos = payload.find(searchKey);
-    
-    if (keyPos == std::string::npos) {
-        return "";
+void ChallengeHandler::onSendChallenge(uint32_t targetUserId, uint32_t roomId) {
+    std::cout << "[ChallengeHandler] Request send challenge to userId="
+              << targetUserId << "\n";
+
+    if (!session_.isLoggedIn()) {
+        std::cerr << "[ChallengeHandler] Not logged in, ignore send challenge\n";
+        return;
     }
-    
-    size_t valueStart = keyPos + searchKey.length();
-    size_t valueEnd = payload.find("\"", valueStart);
-    
-    if (valueEnd == std::string::npos) {
-        return "";
-    }
-    
-    return payload.substr(valueStart, valueEnd - valueStart);
+
+    challengeLogic_.sendChallenge(
+        targetUserId,
+        roomId
+    );
 }
 
-uint32_t ChallengeHandler::parseUint32Field(const std::string& payload, const std::string& key) {
-    std::string searchKey = "\"" + key + "\":";
-    size_t keyPos = payload.find(searchKey);
-    
-    if (keyPos == std::string::npos) {
-        return 0;
-    }
-    
-    size_t valueStart = keyPos + searchKey.length();
-    size_t valueEnd = payload.find_first_of(",}", valueStart);
-    
-    if (valueEnd == std::string::npos) {
-        return 0;
-    }
-    
-    std::string valueStr = payload.substr(valueStart, valueEnd - valueStart);
+void ChallengeHandler::setChallengeResultCallback(
+    std::function<void(bool, const std::string&)> cb
+) {
+    challengeResultCallback_ = std::move(cb);
+}
+
+void ChallengeHandler::onSendChallengeResponse(
+    const Message& message
+) {
+    bool success = false;
+    std::string msg;
+
     try {
-        return std::stoul(valueStr);
+        auto j = json::parse(message.payload);
+        success = j.value("success", false);
+        msg = j.value("message", "");
     } catch (...) {
-        return 0;
+        msg = "Invalid response";
+    }
+
+    std::cout << "[ChallengeHandler] Response success="
+              << success << " message=" << msg << "\n";
+
+    if (challengeResultCallback_) {
+        challengeResultCallback_(success, msg);
     }
 }
 
-bool ChallengeHandler::parseBoolField(const std::string& payload, const std::string& key) {
-    std::string searchKey = "\"" + key + "\":";
-    size_t keyPos = payload.find(searchKey);
-    
-    if (keyPos == std::string::npos) {
-        return false;
-    }
-    
-    size_t valueStart = keyPos + searchKey.length();
-    return payload.substr(valueStart, 4) == "true";
+
+void ChallengeHandler::setChallengeNotifyCallback(
+    std::function<void(
+        uint32_t,
+        const std::string&,
+        uint32_t,
+        const std::string&,
+        int64_t
+    )> cb
+) {
+    challengeNotifyCallback_ = std::move(cb);
 }
 
-void ChallengeHandler::onChallengeNotification(const Message& message) {
-    std::cout << "\n========================================\n";
-    std::cout << "[CHALLENGE] You received a challenge!\n";
-    
-    uint32_t challengeId = parseUint32Field(message.payload, "challengeId");
-    uint32_t senderId = parseUint32Field(message.payload, "senderId");
-    
-    std::cout << "Challenge ID: " << challengeId << "\n";
-    std::cout << "From User ID: " << senderId << "\n";
-    std::cout << "You have 30 seconds to accept or reject.\n";
-    std::cout << "========================================\n\n";
-}
+void ChallengeHandler::onChallengeNotification(
+    const Message& message
+) {
+    try {
+        auto j = json::parse(message.payload);
 
-void ChallengeHandler::onSendChallengeResponse(const Message& message) {
-    std::cout << "[ChallengeHandler] Received SEND_CHALLENGE_RESPONSE\n";
-    
-    bool success = parseBoolField(message.payload, "success");
-    std::string msg = parseField(message.payload, "message");
-    uint32_t challengeId = parseUint32Field(message.payload, "challengeId");
-    
-    std::cout << "Send Challenge: " << (success ? "SUCCESS" : "FAILED") << " - " << msg << "\n";
-    
-    if (success) {
-        std::cout << "Challenge ID: " << challengeId << "\n";
-        std::cout << "Waiting for opponent to respond...\n";
-    }
-}
+        uint32_t fromUserId = j.value("fromUserId", 0);
+        std::string fromUsername = j.value("fromUsername", "");
+        uint32_t roomId = j.value("roomId", 0);
+        std::string roomType = j.value("roomType", "");
+        int64_t betAmount = j.value("betAmount", 0);
 
-void ChallengeHandler::onAcceptChallengeResponse(const Message& message) {
-    std::cout << "[ChallengeHandler] Received ACCEPT_CHALLENGE_RESPONSE\n";
-    
-    bool success = parseBoolField(message.payload, "success");
-    std::string msg = parseField(message.payload, "message");
-    
-    std::cout << "Accept Challenge: " << (success ? "SUCCESS" : "FAILED") << " - " << msg << "\n";
-    
-    if (success) {
-        std::cout << "Challenge accepted! Preparing game room...\n";
+        std::cout
+            << "[ChallengeHandler] CHALLENGE_NOTIFICATION"
+            << " from=" << fromUsername
+            << " roomId=" << roomId
+            << " bet=" << betAmount << "\n";
+
+        if (challengeNotifyCallback_) {
+            challengeNotifyCallback_(
+                fromUserId,
+                fromUsername,
+                roomId,
+                roomType,
+                betAmount
+            );
+        }
+    } catch (...) {
+        std::cerr << "[ChallengeHandler] Invalid CHALLENGE_NOTIFICATION payload\n";
     }
 }
 
-void ChallengeHandler::onRejectChallengeResponse(const Message& message) {
-    std::cout << "[ChallengeHandler] Received REJECT_CHALLENGE_RESPONSE\n";
-    
-    bool success = parseBoolField(message.payload, "success");
-    std::string msg = parseField(message.payload, "message");
-    
-    std::cout << "Reject Challenge: " << (success ? "SUCCESS" : "FAILED") << " - " << msg << "\n";
-}
 
-void ChallengeHandler::onCancelChallengeResponse(const Message& message) {
-    std::cout << "[ChallengeHandler] Received CANCEL_CHALLENGE_RESPONSE\n";
-    
-    bool success = parseBoolField(message.payload, "success");
-    std::string msg = parseField(message.payload, "message");
-    
-    std::cout << "Cancel Challenge: " << (success ? "SUCCESS" : "FAILED") << " - " << msg << "\n";
-}
-
-void ChallengeHandler::onChallengeExpired(const Message& message) {
-    std::cout << "\n[CHALLENGE] Challenge has expired!\n";
-    
-    uint32_t challengeId = parseUint32Field(message.payload, "challengeId");
-    std::cout << "Challenge ID: " << challengeId << "\n\n";
-}

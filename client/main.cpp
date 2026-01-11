@@ -90,7 +90,9 @@ int main(){
     FriendLogic friendLogic(friendSender);
     FriendHandler friendHandler(friendLogic);
     
-    ChallengeHandler challengeHandler(session);
+    ChallengeSender& challengeSender = network.challengeSender();
+    ChallengeLogic challengeLogic(challengeSender);
+    ChallengeHandler challengeHandler(challengeLogic, session);
 
     RankSender& rankSender = network.rankSender();
     RankLogic rankLogic(rankSender);
@@ -124,6 +126,7 @@ int main(){
         chatHandler,
         rankHandler,
         luckyWheelHandler,
+        challengeHandler,
         eventQueue,
         authHandler, 
         friendHandler,

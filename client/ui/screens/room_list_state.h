@@ -91,4 +91,16 @@ private:
     void onJoinResult(bool success, const std::string& message, int roomId, const RoomInfo& roomInfo);
     void showPopup(const std::string& msg);
     void hidePopup();
+
+    // ===== Challenge popup =====
+    bool isChallengePopupVisible_ = false;
+
+    sf::RectangleShape challengePopupBg_;
+    sf::Text challengePopupText_;
+
+    Button btnChallengeYes_;
+    Button btnChallengeNo_;
+    
+    uint32_t pendingChallengeRoomId_ = 0;
+
 };

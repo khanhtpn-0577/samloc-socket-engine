@@ -13,7 +13,7 @@ NetworkClient::NetworkClient(
       session_(session),                       //dùng session bên ngoài
       chatSender_(socket_, session_),          
       authSender_(socket_, 0, ""),          
-      challengeSender_(socket_, 0, ""),
+      challengeSender_(socket_, session_),
       rankSender_(socket_, session_),
       roomSender_(socket_, session_), 
       friendSender_(socket_),

@@ -3,6 +3,7 @@
 #include <sstream>
 #include <chrono>
 #include <iomanip>
+#include "../session/session_manager.h"
 
 FriendHandler::FriendHandler(FriendLogic& friendLogic)
     : friendLogic(friendLogic) {
@@ -245,11 +246,37 @@ Message FriendHandler::handleGetFriendList(const Message& incomingMsg) {
     response.payload = buildPayload(result.success, "Friend list");
     
     // Append friend list array
-    std::string friendsArray = buildFriendListPayload(result.friends);
+    //std::string friendsArray = buildFriendListPayload(result.friends);
+    std::string friendsArray = buildFriendListPayloadWithOnline(result.friends);
     response.payload.insert(response.payload.length() - 1, ",\"friends\":" + friendsArray);
     
     response.header.payloadLength = response.payload.size();
     std::memset(response.header.token, 0, 32);
 
     return response;
+}
+
+std::string FriendHandler::buildFriendListPayloadWithOnline(
+    const std::vector<FriendData>& friends) {
+
+    std::ostringstream oss;
+    oss << "[";
+
+    for (size_t i = 0; i < friends.size(); ++i) {
+        const auto& f = friends[i];
+
+        bool online = (SessionManager::instance().get(f.userId) != nullptr);
+
+        oss << "{"
+            << "\"userId\":" << f.userId << ","
+            << "\"username\":\"" << f.username << "\","
+            << "\"balance\":" << f.balance << ","
+            << "\"online\":" << (online ? "true" : "false")
+            << "}";
+
+        if (i + 1 < friends.size()) oss << ",";
+    }
+
+    oss << "]";
+    return oss.str();
 }

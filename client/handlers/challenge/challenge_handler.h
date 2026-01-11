@@ -1,42 +1,47 @@
 #pragma once
 
 #include <string>
+#include <functional>
 #include "../../net/protocol.h"
 #include "../session/client_session.h"
+#include "../../logic/challenge/challenge_logic.h"
 
-/**
- * ChallengeHandler
- *  - Handles challenge-related messages from server
- *  - CHALLENGE_NOTIFICATION, SEND_CHALLENGE_RESPONSE, ACCEPT_CHALLENGE_RESPONSE, etc.
- */
 class ChallengeHandler {
 public:
-    explicit ChallengeHandler(ClientSession& session);
+    explicit ChallengeHandler(ChallengeLogic& challengeLogic, ClientSession& session);
 
-    // Handle CHALLENGE_NOTIFICATION (someone challenged you)
-    void onChallengeNotification(const Message& message);
+    // GỬI LỜI MỜI THÁCH ĐẤU
+    void onSendChallenge(uint32_t targetUserId, uint32_t roomId);
 
-    // Handle SEND_CHALLENGE_RESPONSE
     void onSendChallengeResponse(const Message& message);
 
-    // Handle ACCEPT_CHALLENGE_RESPONSE
-    void onAcceptChallengeResponse(const Message& message);
+    void setChallengeResultCallback(
+        std::function<void(bool success, const std::string& message)> cb
+    );
 
-    // Handle REJECT_CHALLENGE_RESPONSE
-    void onRejectChallengeResponse(const Message& message);
+    void onChallengeNotification(const Message& message);
 
-    // Handle CANCEL_CHALLENGE_RESPONSE
-    void onCancelChallengeResponse(const Message& message);
-
-    // Handle CHALLENGE_EXPIRED
-    void onChallengeExpired(const Message& message);
-
-private:
-    // Parse simple JSON-like payload
-    std::string parseField(const std::string& payload, const std::string& key);
-    uint32_t parseUint32Field(const std::string& payload, const std::string& key);
-    bool parseBoolField(const std::string& payload, const std::string& key);
+    void setChallengeNotifyCallback(
+        std::function<void(
+            uint32_t fromUserId,
+            const std::string& fromUsername,
+            uint32_t roomId,
+            const std::string& roomType,
+            int64_t betAmount
+        )> cb
+    );
 
 private:
-    ClientSession& session;
+    ClientSession& session_;
+    ChallengeLogic& challengeLogic_;
+
+    std::function<void(bool, std::string)> challengeResultCallback_;
+
+    std::function<void(
+        uint32_t,
+        std::string,
+        uint32_t,
+        std::string,
+        int64_t
+    )> challengeNotifyCallback_;
 };

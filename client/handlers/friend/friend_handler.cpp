@@ -265,7 +265,7 @@ void FriendHandler::onFriendRequestAcceptedNotification(const Message& message) 
 void FriendHandler::onGetFriendListResponse(const Message& message) {
     std::cout << "[FriendHandler] onGetFriendListResponse\n";
 
-    std::vector<std::pair<uint32_t, std::pair<std::string, double>>> friends;
+    std::vector<std::pair<uint32_t, std::pair<std::string, std::pair<double, bool>>>> friends;
 
     // Parse the friends array
     size_t friendsPos = message.payload.find("\"friends\":");
@@ -304,15 +304,16 @@ void FriendHandler::onGetFriendListResponse(const Message& message) {
         uint32_t userId = parseUint32Field(objStr, "userId");
         std::string username = parseField(objStr, "username");
         double balance = parseDoubleField(objStr, "balance");
+        bool online = parseBoolField(objStr, "online");
 
         friends.push_back({
             userId,
-            {username, balance}
+            {username, {balance, online}}
         });
 
         std::cout << "[FriendHandler] Parsed friend: userId=" << userId 
                   << ", username=" << username 
-                  << ", balance=" << balance << "\n";
+                  << ", balance=" << balance << ", online=" << online << "\n";
 
         pos = objEnd + 1;
     }

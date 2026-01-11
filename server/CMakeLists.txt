@@ -37,6 +37,7 @@ set(SERVER_SOURCES
     db/repository/friend_repository.cpp
     db/repository/lucky_wheel_repository.cpp
     db/repository/private_room_repository.cpp
+    db/repository/challenge_repository.cpp
 
     logic/chat/chat_logic.cpp
     logic/rank/rank_logic.cpp
@@ -78,6 +79,7 @@ set(SERVER_HEADERS
     db/repository/friend_repository.h
     db/repository/lucky_wheel_repository.h
     db/repository/private_room_repository.h
+    db/repository/challenge_repository.h
 
 
     logic/auth/auth_logic.h

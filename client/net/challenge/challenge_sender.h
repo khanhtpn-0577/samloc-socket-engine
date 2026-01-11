@@ -4,24 +4,24 @@
 #include <cstdint>
 #include "../protocol.h"
 #include "../client_socket.h"
+#include "../../handlers/session/client_session.h"
 
 class ChallengeSender {
 public:
-    ChallengeSender(ClientSocket& socket, uint32_t userId, const std::string& token);
+    ChallengeSender(ClientSocket& socket, ClientSession& session);
 
-    bool sendChallenge(uint32_t receiverId);
-    bool acceptChallenge(uint32_t challengeId);
-    bool rejectChallenge(uint32_t challengeId);
-    bool cancelChallenge(uint32_t challengeId);
+    // Generic send message
+    bool sendMessage(MessageType type, const std::string& payload);
+
+    // Get current timestamp
+    static uint64_t getCurrentTimestamp();
 
     void updateIdentity(uint32_t newUserId, const std::string& newToken);
 
 private:
-    ClientSocket& socket;
-    uint32_t userId;
-    std::string token;
+    ClientSocket& socket_;
+    ClientSession& session_;
 
-    static uint64_t getCurrentTimestamp();
+    // Create base message with header
     Message createMessage(MessageType type, const std::string& payload);
-    bool sendMessage(MessageType type, const std::string& payload);
 };

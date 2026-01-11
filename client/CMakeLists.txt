@@ -24,6 +24,7 @@ set(CLIENT_SOURCES
     logic/rank/rank_logic.cpp
     logic/friend/friend_logic.cpp
     logic/lucky_wheel/lucky_wheel_logic.cpp
+    logic/challenge/challenge_logic.cpp
     
     handlers/chat/chat_handler.cpp
     handlers/connection/client_connection_handler.cpp
@@ -77,6 +78,7 @@ set(CLIENT_HEADERS
     logic/rank/rank_logic.h
     logic/friend/friend_logic.h
     logic/lucky_wheel/lucky_wheel_logic.h
+    logic/challenge/challenge_logic.h
     
     handlers/chat/chat_handler.h
     handlers/connection/client_connection_handler.h

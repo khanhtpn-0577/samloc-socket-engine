@@ -11,6 +11,7 @@
 #include "../handlers/friend/friend_handler.h"
 #include "../handlers/lucky_wheel/lucky_wheel_handler.h"
 #include "../handlers/room/room_handler.h"
+#include "../handlers/challenge/challenge_handler.h"
 #include <memory>
 #include <functional>
 #include <vector>
@@ -50,6 +51,7 @@ public:
     ChatHandler& chatHandler;
     RankHandler& rankHandler;
     LuckyWheelHandler& luckyWheelHandler;
+    ChallengeHandler& challengeHandler;
     ThreadSafeQueue<NetworkEvent>& eventQueue;
     StateTransitionCallback requestTransition;
     AuthHandler& auth_handler;
@@ -70,6 +72,7 @@ public:
                  ChatHandler& chat_h,
                  RankHandler& rank_h,
                  LuckyWheelHandler& lucky_wheel_h,
+                 ChallengeHandler& challenge_h,
                  ThreadSafeQueue<NetworkEvent>& eq,
                  AuthHandler& auth_h,
                  FriendHandler& friend_h,
@@ -79,6 +82,7 @@ public:
           chatHandler(chat_h),
           rankHandler(rank_h),
           luckyWheelHandler(lucky_wheel_h),
+          challengeHandler(challenge_h),
           eventQueue(eq),
           requestTransition(nullptr),
           auth_handler(auth_h),
