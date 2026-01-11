@@ -1,5 +1,7 @@
 #include "challenge_handler.h"
 #include <iostream>
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;
 
 ChallengeHandler::ChallengeHandler(
     ChallengeLogic& challengeLogic,
@@ -32,24 +34,15 @@ void ChallengeHandler::setChallengeResultCallback(
 void ChallengeHandler::onSendChallengeResponse(
     const Message& message
 ) {
-    const std::string& payload = message.payload;
-
     bool success = false;
     std::string msg;
 
-    // Parse "success"
-    size_t sPos = payload.find("\"success\":");
-    if (sPos != std::string::npos) {
-        size_t vPos = sPos + 10;
-        success = (payload[vPos] == '1');
-    }
-
-    // Parse "message"
-    size_t mPos = payload.find("\"message\":\"");
-    if (mPos != std::string::npos) {
-        size_t start = mPos + 11;
-        size_t end = payload.find("\"", start);
-        msg = payload.substr(start, end - start);
+    try {
+        auto j = json::parse(message.payload);
+        success = j.value("success", false);
+        msg = j.value("message", "");
+    } catch (...) {
+        msg = "Invalid response";
     }
 
     std::cout << "[ChallengeHandler] Response success="
@@ -57,6 +50,51 @@ void ChallengeHandler::onSendChallengeResponse(
 
     if (challengeResultCallback_) {
         challengeResultCallback_(success, msg);
+    }
+}
+
+
+void ChallengeHandler::setChallengeNotifyCallback(
+    std::function<void(
+        uint32_t,
+        const std::string&,
+        uint32_t,
+        const std::string&,
+        int64_t
+    )> cb
+) {
+    challengeNotifyCallback_ = std::move(cb);
+}
+
+void ChallengeHandler::onChallengeNotification(
+    const Message& message
+) {
+    try {
+        auto j = json::parse(message.payload);
+
+        uint32_t fromUserId = j.value("fromUserId", 0);
+        std::string fromUsername = j.value("fromUsername", "");
+        uint32_t roomId = j.value("roomId", 0);
+        std::string roomType = j.value("roomType", "");
+        int64_t betAmount = j.value("betAmount", 0);
+
+        std::cout
+            << "[ChallengeHandler] CHALLENGE_NOTIFICATION"
+            << " from=" << fromUsername
+            << " roomId=" << roomId
+            << " bet=" << betAmount << "\n";
+
+        if (challengeNotifyCallback_) {
+            challengeNotifyCallback_(
+                fromUserId,
+                fromUsername,
+                roomId,
+                roomType,
+                betAmount
+            );
+        }
+    } catch (...) {
+        std::cerr << "[ChallengeHandler] Invalid CHALLENGE_NOTIFICATION payload\n";
     }
 }
 

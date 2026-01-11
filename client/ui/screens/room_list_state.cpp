@@ -168,6 +168,53 @@ RoomListState::RoomListState(StateContext& ctx) : ctx_(ctx), isPopupVisible_(fal
     btnPopupOk_.setPosition({640, 430});
     btnPopupOk_.setColors(sf::Color(255, 215, 0), sf::Color::Black, sf::Color::Black);
     btnPopupOk_.setCallback([this]() { hidePopup(); });
+
+
+    // ===== Challenge popup =====
+    challengePopupBg_.setSize({520, 260});
+    challengePopupBg_.setOrigin(260, 130);
+    challengePopupBg_.setPosition(640, 360);
+    challengePopupBg_.setFillColor(sf::Color(45, 30, 15));
+    challengePopupBg_.setOutlineThickness(2);
+    challengePopupBg_.setOutlineColor(sf::Color(255, 215, 0));
+
+    challengePopupText_.setFont(ctx_.font);
+    challengePopupText_.setCharacterSize(20);
+    challengePopupText_.setFillColor(sf::Color::White);
+
+    btnChallengeYes_.setFont(ctx_.font);
+    btnChallengeYes_.setText("YES", 18);
+    btnChallengeYes_.setSize({120, 40});
+    btnChallengeYes_.setPosition({560, 430});
+    btnChallengeYes_.setColors(sf::Color(46, 204, 113), sf::Color::Black, sf::Color::Black);
+    // logic sau
+    btnChallengeYes_.setCallback([this]() {
+        isChallengePopupVisible_ = false;
+
+        if (pendingChallengeRoomId_ == 0) {
+            showPopup("Invalid challenge room");
+            return;
+        }
+
+        std::cout << "[Challenge] Accept challenge, join roomId="
+                << pendingChallengeRoomId_ << "\n";
+
+        ctx_.currentRoomId = pendingChallengeRoomId_;
+        ctx_.network.roomSender().sendJoinRoom(pendingChallengeRoomId_);
+
+        pendingChallengeRoomId_ = 0; // reset
+    });
+
+    btnChallengeNo_.setFont(ctx_.font);
+    btnChallengeNo_.setText("NO", 18);
+    btnChallengeNo_.setSize({120, 40});
+    btnChallengeNo_.setPosition({720, 430});
+    btnChallengeNo_.setColors(sf::Color(192, 57, 43), sf::Color::White, sf::Color::White);
+    btnChallengeNo_.setCallback([this]() {
+        isChallengePopupVisible_ = false;
+        pendingChallengeRoomId_ = 0;
+    });
+
 }
 
 void RoomListState::onEnter() {
@@ -196,6 +243,34 @@ void RoomListState::onEnter() {
             }
         }
     );
+
+    ctx_.challengeHandler.setChallengeNotifyCallback(
+        [this](
+            uint32_t fromUserId,
+            const std::string& fromUsername,
+            uint32_t roomId,
+            const std::string& roomType,
+            int64_t betAmount
+        ) {
+            pendingChallengeRoomId_ = roomId;
+
+            std::string msg =
+                "You received a challenge from " + fromUsername +
+                "\nRoom type: " + roomType +
+                "\nBet: " + formatMoney(betAmount);
+
+            challengePopupText_.setString(toSfString(msg));
+            auto b = challengePopupText_.getLocalBounds();
+            challengePopupText_.setOrigin(
+                b.left + b.width / 2.f,
+                b.top + b.height / 2.f
+            );
+            challengePopupText_.setPosition(640.f, 330.f);
+
+            isChallengePopupVisible_ = true;
+        }
+    );
+
 
     ctx_.network.roomSender().sendGetRoomList();
 }
@@ -289,6 +364,13 @@ void RoomListState::hidePopup() {
 }
 
 void RoomListState::handleEvent(const sf::Event& event, const sf::Vector2f& mousePos) {
+    if (isChallengePopupVisible_) {
+        btnChallengeYes_.handleEvent(event, mousePos);
+        btnChallengeNo_.handleEvent(event, mousePos);
+        return;
+    }
+
+
     if (isPopupVisible_) {
         btnPopupOk_.handleEvent(event, mousePos);
         return;
@@ -364,6 +446,16 @@ void RoomListState::draw(sf::RenderWindow& window) {
         btnCreateConfirm_.draw(window);
         btnCreateCancel_.draw(window);
     }
+
+    if (isChallengePopupVisible_) {
+        window.draw(popupOverlay_);
+        window.draw(challengePopupBg_);
+        window.draw(challengePopupText_);
+        btnChallengeYes_.draw(window);
+        btnChallengeNo_.draw(window);
+    }
+
+
 }
 
 bool RoomListState::isDigitsOnly(const std::string& s) const {

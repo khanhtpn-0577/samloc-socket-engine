@@ -4,12 +4,21 @@
 #include <cstdint>
 #include "../../db/database.h"
 
+struct ChallengeResult {
+    bool success;
+    std::string message;
+    uint32_t roomId;
+    uint32_t targetUserId;
+    std::string roomType;
+    int64_t betAmount;
+    std::string senderUsername;
+};
+
 class ChallengeLogic {
 public:
     explicit ChallengeLogic(Database& db);
 
-    // xử lý SEND_CHALLENGE
-    std::string processSendChallenge(
+    ChallengeResult processSendChallenge(
         uint32_t senderId,
         const std::string& payload
     );

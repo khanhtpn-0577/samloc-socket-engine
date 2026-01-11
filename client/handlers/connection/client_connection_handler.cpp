@@ -68,7 +68,12 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
         // CHALLENGE HANDLER MESSAGES
         case MessageType::SEND_CHALLENGE_RESPONSE:
             challengeHandler_.onSendChallengeResponse(message);
-            std::cout << "[ClientConnectionHandler] Received SEND_CHALLENGE_RESPONSE with payload: " << message.payload << "\n";
+            //std::cout << "[ClientConnectionHandler] Received SEND_CHALLENGE_RESPONSE with payload: " << message.payload << "\n";
+            break;
+
+        case MessageType::CHALLENGE_NOTIFICATION:
+            std::cout << "[ClientConnectionHandler] Received CHALLENGE_NOTIFICATION with payload: " << message.payload << "\n";
+            challengeHandler_.onChallengeNotification(message);
             break;
 
         case MessageType::S_CREATE_PRIVATE_ROOM_RESPONSE:

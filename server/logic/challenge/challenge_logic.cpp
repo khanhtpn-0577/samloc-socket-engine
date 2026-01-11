@@ -5,42 +5,60 @@
 ChallengeLogic::ChallengeLogic(Database& db)
     : database_(db) {}
 
-std::string ChallengeLogic::processSendChallenge(
+ChallengeResult ChallengeLogic::processSendChallenge(
     uint32_t senderId,
     const std::string& payload
 ) {
-    uint32_t roomId = 0;
-    uint32_t targetUserId = 0;
+    ChallengeResult result{};
+    result.success = false;
+    result.roomId = 0;
+    result.targetUserId = 0;
 
-    // Parse payload rất đơn giản (giống phong cách Rank)
     size_t roomPos = payload.find("\"roomId\":");
     size_t targetPos = payload.find("\"targetUserId\":");
 
     if (roomPos == std::string::npos ||
         targetPos == std::string::npos) {
-        return R"({"success":0,"message":"Invalid payload"})";
+        result.message = "Invalid payload";
+        return result;
     }
 
-    roomId = std::stoul(
+    result.roomId = std::stoul(
         payload.substr(roomPos + 9,
         payload.find(",", roomPos) - (roomPos + 9))
     );
 
-    targetUserId = std::stoul(
+    result.targetUserId = std::stoul(
         payload.substr(targetPos + 15)
     );
 
     std::cout << "[ChallengeLogic] senderId=" << senderId
-              << " roomId=" << roomId
-              << " targetUserId=" << targetUserId << "\n";
+              << " roomId=" << result.roomId
+              << " targetUserId=" << result.targetUserId << "\n";
 
     ChallengeRepository repo(database_);
 
-    // CHECK: sender có phải chủ phòng không
-    if (!repo.isRoomOwner(senderId, roomId)) {
-        return R"({"success":0,"message":"You are not the room owner"})";
+    if (!repo.isRoomOwner(senderId, result.roomId)) {
+        result.message = "You are not the room owner";
+        return result;
     }
 
-    // OK
-    return R"({"success":1,"message":"Challenge sent successfully"})";
+    //Load room info
+    RoomChallengeInfo roomInfo;
+    if (!repo.getRoomChallengeInfo(result.roomId, roomInfo)) {
+        result.message = "Room not found";
+        return result;
+    }
+
+    if (!repo.getUsernameByUserId(senderId, result.senderUsername)) {
+        result.message = "Sender not found";
+        return result;
+    }
+
+    result.roomType  = roomInfo.roomType;
+    result.betAmount = roomInfo.betAmount;
+
+    result.success = true;
+    result.message = "Challenge sent successfully";
+    return result;
 }
