@@ -72,6 +72,14 @@ void RoomHandler::onJoinRoomResult(const Message& msg, bool isFailType) {
             displayMsg = "Data error";
         }
     }
+    std::cout << "[RoomHandler][JoinRoom] ===== BEFORE CALLBACK =====\n";
+    std::cout << "  success = " << success << "\n";
+    std::cout << "  displayMsg = " << displayMsg << "\n";
+    std::cout << "  roomId = " << roomId << "\n";
+    std::cout << "  info.id = " << info.id << "\n";
+    std::cout << "  info.name = " << info.name << "\n";
+    std::cout << "  info.type = " << info.type << "\n";
+    std::cout << "  info.bet = " << info.bet << "\n";
 
     if (joinCallback_) {
         joinCallback_(success, displayMsg, roomId, info);

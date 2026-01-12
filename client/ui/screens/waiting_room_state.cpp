@@ -399,11 +399,11 @@ void WaitingRoomState::onEnter() {
                     row.inviteBtn.setCallback(
                         [this, uid = row.userId] {
                             std::cout << "[Invite] Send challenge to userId=" << uid
-                                    << " roomId=" << ctx_.currentRoomId << "\n";
+                                    << " roomId=" << ctx_.currentRoomInfo.id << "\n";
 
                             ctx_.challengeHandler.onSendChallenge(
                                 uid,
-                                ctx_.currentRoomId
+                                ctx_.currentRoomInfo.id
                             );
                         }
                     );
