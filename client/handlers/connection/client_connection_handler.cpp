@@ -44,6 +44,7 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
         
         case MessageType::S_ROOM_CHAT:
             std::cout << "[ClientConnectionHandler] Received S_CHAT_ROOM with payload: " << message.payload << "\n";
+            chatHandler_.onServerRoomChat(message);
             break;
 
         case MessageType::FRIEND_LIST_RESPONSE:

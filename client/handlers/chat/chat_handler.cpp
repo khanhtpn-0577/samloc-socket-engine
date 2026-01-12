@@ -1,5 +1,7 @@
 #include "chat_handler.h"
 #include <iostream>
+#include <arpa/inet.h>
+
 
 ChatHandler::ChatHandler(ChatLogic& logic, ClientSession& session):
     chatLogic_(logic),
@@ -241,6 +243,33 @@ void ChatHandler::setChatHistoryCallback(ChatHistoryCallback cb) {
 void ChatHandler::setIncomingMessageCallback(IncomingMessageCallback cb) {
     incomingMessageCallback_ = cb;
 }
+
+void ChatHandler::onServerRoomChat(const Message& message) {
+    const std::string& p = message.payload;
+
+    if (p.size() < sizeof(uint32_t)) {
+        std::cerr << "[ChatHandler] Invalid S_ROOM_CHAT payload\n";
+        return;
+    }
+
+    uint32_t senderId;
+    std::memcpy(&senderId, p.data(), sizeof(uint32_t));
+    senderId = ntohl(senderId);
+
+    std::string content = p.substr(sizeof(uint32_t));
+
+    std::cout << "[ChatHandler] RoomChat from "
+              << senderId << ": " << content << "\n";
+
+    if (roomChatCallback_) {
+        roomChatCallback_(senderId, content);
+    }
+}
+
+void ChatHandler::setRoomChatCallback(RoomChatCallback cb) {
+    roomChatCallback_ = cb;
+}
+
 
 
 

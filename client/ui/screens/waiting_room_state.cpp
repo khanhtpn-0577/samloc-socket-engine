@@ -70,6 +70,8 @@ void WaitingRoomState::PlayerSlot::setup(sf::Font& font) {
 
     readyStatusText.setFont(font);
     readyStatusText.setCharacterSize(13);
+
+    playerId = -1;
 }
 
 void WaitingRoomState::PlayerSlot::setContent(const RoomMember& member) {
@@ -77,6 +79,9 @@ void WaitingRoomState::PlayerSlot::setContent(const RoomMember& member) {
         sf::Color(9, 132, 227), sf::Color(0, 184, 148),
         sf::Color(108, 92, 231), sf::Color(225, 112, 85)
     };
+
+    playerId = member.id;
+
     avatarBg.setFillColor(avColors[std::abs(member.id) % 4]);
     std::string initial = member.name.empty() ? "?" : utf8_first_char(member.name);
     avatarLetter.setString(toSf(initial));
@@ -102,6 +107,7 @@ void WaitingRoomState::PlayerSlot::setContent(const RoomMember& member) {
 }
 
 void WaitingRoomState::PlayerSlot::setEmpty() {
+    playerId = -1;
     panelBg.setOutlineColor(sf::Color(255, 215, 0, 30));
     panelBg.setFillColor(sf::Color(0, 0, 0, 120));
     panelBg.setPosition(position);
@@ -425,8 +431,15 @@ void WaitingRoomState::onEnter() {
             isChallengePopupVisible_ = true;
         }
     );
-
-
+    ctx_.chatHandler.setRoomChatCallback(
+        [this](uint32_t senderId, const std::string& msg) {
+            chatBubbles_.push_back({
+                senderId,
+                msg,
+                3.0f // hiển thị 3 giây
+            });
+        }
+    );
 
 }
 
@@ -435,6 +448,7 @@ void WaitingRoomState::onExit() {
     ctx_.roomHandler.setGameCountdownCallback(nullptr);
     ctx_.roomHandler.setGameStartCallback(nullptr);
     ctx_.friendHandler.setFriendListCallback(nullptr);
+    ctx_.chatHandler.setRoomChatCallback(nullptr);
 }
 
 void WaitingRoomState::updateMembers(const std::vector<RoomMember>& newMembers) {
@@ -443,6 +457,8 @@ void WaitingRoomState::updateMembers(const std::vector<RoomMember>& newMembers) 
 }
 
 void WaitingRoomState::refreshSlotDisplay() {
+    playerIdToSlot_.clear();
+
     int myId = (int)ctx_.session.userId();
     int myIndex = -1;
     for (size_t i = 0; i < members_.size(); ++i) {
@@ -460,10 +476,14 @@ void WaitingRoomState::refreshSlotDisplay() {
     btnReady_.setColors(isMyReady_ ? UITheme::CancelOrange : UITheme::ReadyGreen, sf::Color::White, sf::Color::White);
     
     slots_[0].setContent(members_[myIndex]);
+    playerIdToSlot_[members_[myIndex].id] = 0;
+
     int uiSlot = 1;
     for (size_t i = 0; i < members_.size() && uiSlot < 4; ++i) {
         if ((int)i == myIndex) continue;
-        slots_[uiSlot++].setContent(members_[i]);
+        slots_[uiSlot].setContent(members_[i]);
+        playerIdToSlot_[members_[i].id] = uiSlot;
+        ++uiSlot;
     }
     for (; uiSlot < 4; ++uiSlot) slots_[uiSlot].setEmpty();
 }
@@ -528,7 +548,16 @@ void WaitingRoomState::handleEvent(const sf::Event& e, const sf::Vector2f& mouse
     }
 }
 
-void WaitingRoomState::update(float dt) { (void)dt; }
+void WaitingRoomState::update(float dt) {
+    for (auto it = chatBubbles_.begin(); it != chatBubbles_.end(); ) {
+        it->ttl -= dt;
+        if (it->ttl <= 0.f) {
+            it = chatBubbles_.erase(it);
+        } else {
+            ++it;
+        }
+    }
+}
 
 void WaitingRoomState::draw(sf::RenderWindow& w) {
     w.draw(background_);
@@ -584,6 +613,35 @@ void WaitingRoomState::draw(sf::RenderWindow& w) {
         //btnChatSend_.draw(w);
         btnChatClose_.draw(w);
     }
+
+    for (const auto& bubble : chatBubbles_) {
+        auto it = playerIdToSlot_.find((int)bubble.senderId);
+        if (it == playerIdToSlot_.end()) continue; // Không tìm thấy player
+        
+        int slotIndex = it->second;
+        const auto& slot = slots_[slotIndex];
+
+        sf::Text text;
+        text.setFont(ctx_.font);
+        text.setCharacterSize(14);
+        text.setFillColor(sf::Color::Black);
+        text.setString(toSf(bubble.text));
+
+        sf::FloatRect r = text.getLocalBounds();
+
+        sf::RectangleShape bg;
+        bg.setSize({r.width + 12.f, r.height + 8.f});
+        bg.setFillColor(sf::Color::White);
+        bg.setOrigin(bg.getSize().x / 2.f, bg.getSize().y);
+        bg.setPosition(slot.position.x, slot.position.y - 90.f);
+
+        text.setOrigin(r.left + r.width / 2.f, r.top + r.height);
+        text.setPosition(bg.getPosition());
+
+        w.draw(bg);
+        w.draw(text);
+    }
+
 }
 
 void WaitingRoomState::submitChat() {
