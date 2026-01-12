@@ -232,6 +232,62 @@ WaitingRoomState::WaitingRoomState(StateContext& ctx)
     challengePopupOkBtn_.setCallback([this] {
         isChallengePopupVisible_ = false;
     });
+    btnChat_.setCallback([this]{
+        chatPopupVisible_ = true;
+        chatInputBuffer_.clear();
+    });
+
+
+    // ===== Chat Popup =====
+    chatPopupBg_.setSize({360.f, 160.f});
+    chatPopupBg_.setOrigin(180.f, 80.f);
+    chatPopupBg_.setPosition(640.f, 360.f);
+    chatPopupBg_.setFillColor(sf::Color(20, 20, 20, 230));
+    chatPopupBg_.setOutlineThickness(2.f);
+    chatPopupBg_.setOutlineColor(UITheme::Gold);
+
+    chatTitleText_.setFont(ctx_.font);
+    chatTitleText_.setCharacterSize(16);
+    chatTitleText_.setFillColor(UITheme::Gold);
+    chatTitleText_.setString("Room Chat");
+    centerText(chatTitleText_, 640.f, 300.f);
+
+    chatInputBox_.setSize({320.f, 40.f});
+    chatInputBox_.setOrigin(160.f, 20.f);
+    chatInputBox_.setPosition(640.f, 380.f);
+    chatInputBox_.setFillColor(sf::Color::White);
+
+    chatInputText_.setFont(ctx_.font);
+    chatInputText_.setCharacterSize(16);
+    chatInputText_.setFillColor(sf::Color::Black);
+    chatInputText_.setPosition(640.f - 150.f, 365.f);
+
+    // ===== Chat Popup Buttons =====
+
+    // SEND
+    btnChatSend_.setFont(ctx_.font);
+    btnChatSend_.setText("SEND", 14);
+    btnChatSend_.setSize({80.f, 32.f});
+    btnChatSend_.setPosition({700.f, 420.f});
+    btnChatSend_.setColors(UITheme::ReadyGreen, sf::Color::White, sf::Color::White);
+    btnChatSend_.setCallback([this]{
+        if (!chatInputBuffer_.empty()) {
+            submitChat();
+        }
+        chatInputBuffer_.clear();
+        chatInputText_.setString("");
+        chatPopupVisible_ = false;
+    });
+
+    // CLOSE
+    btnChatClose_.setFont(ctx_.font);
+    btnChatClose_.setText("X", 14);
+    btnChatClose_.setSize({32.f, 32.f});
+    btnChatClose_.setPosition({790.f, 280.f}); // góc phải popup
+    btnChatClose_.setColors(UITheme::LeaveRed, sf::Color::White, sf::Color::White);
+    btnChatClose_.setCallback([this]{
+        chatPopupVisible_ = false;
+    });
 
 
     
@@ -441,6 +497,35 @@ void WaitingRoomState::handleEvent(const sf::Event& e, const sf::Vector2f& mouse
     btnReady_.handleEvent(e, mousePos);
     btnChat_.handleEvent(e, mousePos);
     btnInviteFriend_.handleEvent(e, mousePos);
+
+    if (!chatPopupVisible_) return;
+
+    // NEW: popup buttons
+    btnChatSend_.handleEvent(e, mousePos);
+    btnChatClose_.handleEvent(e, mousePos);
+
+    if (e.type == sf::Event::TextEntered) {
+        if (e.text.unicode == 8) { // Backspace
+            if (!chatInputBuffer_.empty())
+                chatInputBuffer_.pop_back();
+        }
+        else if (e.text.unicode == 13) { // Enter
+            if (!chatInputBuffer_.empty()) {
+                submitChat();
+            }
+            chatInputBuffer_.clear();
+            chatInputText_.setString("");
+            chatPopupVisible_ = false;
+        }
+        else if (e.text.unicode < 128 && chatInputBuffer_.size() < 80) {
+            chatInputBuffer_ += static_cast<char>(e.text.unicode);
+        }
+        chatInputText_.setString(chatInputBuffer_);
+    }
+
+    if (e.type == sf::Event::KeyPressed && e.key.code == sf::Keyboard::Escape) {
+        chatPopupVisible_ = false;
+    }
 }
 
 void WaitingRoomState::update(float dt) { (void)dt; }
@@ -491,6 +576,23 @@ void WaitingRoomState::draw(sf::RenderWindow& w) {
         challengePopupOkBtn_.draw(w);
     }
 
+    if (chatPopupVisible_) {
+        w.draw(chatPopupBg_);
+        w.draw(chatTitleText_);
+        w.draw(chatInputBox_);
+        w.draw(chatInputText_);
+        //btnChatSend_.draw(w);
+        btnChatClose_.draw(w);
+    }
+}
 
+void WaitingRoomState::submitChat() {
+    if (chatInputBuffer_.empty()) return;
 
+    // Gửi goi tin
+    ctx_.chatHandler.onSendRoomChat(currentRoomInfo_.id, chatInputBuffer_ );
+
+    chatInputBuffer_.clear();
+    chatInputText_.setString("");
+    chatPopupVisible_ = false;
 }

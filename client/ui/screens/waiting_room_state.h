@@ -19,6 +19,8 @@ public:
     void draw(sf::RenderWindow& window) override;
 
     void updateMembers(const std::vector<RoomMember>& newMembers);
+    void submitChat();
+
 
 private:
     StateContext& ctx_;
@@ -53,6 +55,7 @@ private:
         void setContent(const RoomMember& member);
         void setEmpty();
         void draw(sf::RenderWindow& window);
+        
     };
 
     PlayerSlot slots_[4];
@@ -99,5 +102,14 @@ private:
 
 
 
+    // ==== Chat popup ====
+    bool chatPopupVisible_ = false;
+    sf::RectangleShape chatPopupBg_;
+    sf::Text chatTitleText_;
+    sf::Text chatInputText_;
+    sf::RectangleShape chatInputBox_;
+    std::string chatInputBuffer_;
+    Button btnChatSend_;
+    Button btnChatClose_;
 
 };

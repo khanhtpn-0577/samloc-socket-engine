@@ -28,6 +28,15 @@ void ChatHandler:: onSendPrivateChat(uint32_t receiverId, const std::string& mes
 
 }
 
+void ChatHandler:: onSendRoomChat(int roomId, const std::string& message){
+    // call logic
+    if (!chatLogic_.sendRoomMessage(roomId, message)){
+        //xu ly loi
+        std::cerr << "[ChatHandler] Send room chat failed\n";
+        return;
+    }
+}
+
 void ChatHandler::onServerACK(const Message& ackMsg){
     if(ackMsg.header.messageType != static_cast<uint16_t>(MessageType::CHAT_DIRECT_ACK)){
         return;
@@ -232,6 +241,8 @@ void ChatHandler::setChatHistoryCallback(ChatHistoryCallback cb) {
 void ChatHandler::setIncomingMessageCallback(IncomingMessageCallback cb) {
     incomingMessageCallback_ = cb;
 }
+
+
 
 
 
