@@ -41,6 +41,11 @@ void ClientConnectionHandler::handleMessage(const Message& message) {
         case MessageType::CHAT_DIRECT_ACK:
             chatHandler_.onServerACK(message);
             break;
+        
+        case MessageType::S_ROOM_CHAT:
+            std::cout << "[ClientConnectionHandler] Received S_CHAT_ROOM with payload: " << message.payload << "\n";
+            chatHandler_.onServerRoomChat(message);
+            break;
 
         case MessageType::FRIEND_LIST_RESPONSE:
             chatHandler_.onServerDeliverFriendList(message);

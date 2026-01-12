@@ -55,6 +55,15 @@ class ChatHandler {
 
         void setIncomingMessageCallback(IncomingMessageCallback cb);
 
+        void onSendRoomChat(int roomId, const std::string& message);
+
+        // ===== Room chat =====
+        using RoomChatCallback =
+            std::function<void(uint32_t senderId, const std::string& message)>;
+
+        void onServerRoomChat(const Message& message);
+        void setRoomChatCallback(RoomChatCallback cb);
+
 
 
 
@@ -73,5 +82,7 @@ class ChatHandler {
         FriendListCallback friendListCallback_;
         ChatHistoryCallback chatHistoryCallback_;
         IncomingMessageCallback incomingMessageCallback_;
+        RoomChatCallback roomChatCallback_;
+
 
 };

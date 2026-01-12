@@ -15,6 +15,12 @@ public:
         const Message& incomingMsg
     );
 
+    void handleRoomChat(
+        uint32_t senderId,
+        uint32_t roomId,
+        const std::string& message
+    );
+
 private:
     MessageSender messageSender;
 };

@@ -14,6 +14,8 @@ public:
 
     Message handlePrivateChatHistoryRequest(const Message& incomingMsg);
 
+    void handleRoomChat(const Message& incomingMsg);
+
 private:
     ChatLogic& chatLogic;
 };

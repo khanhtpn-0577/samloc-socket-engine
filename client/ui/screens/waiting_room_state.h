@@ -4,6 +4,7 @@
 #include "../state_context.h"
 #include "../components/button.h"
 #include "../../handlers/room/room_structs.h" 
+#include <unordered_map>
 #include <vector>
 #include <string>
 #include <utility>
@@ -19,6 +20,8 @@ public:
     void draw(sf::RenderWindow& window) override;
 
     void updateMembers(const std::vector<RoomMember>& newMembers);
+    void submitChat();
+
 
 private:
     StateContext& ctx_;
@@ -48,14 +51,17 @@ private:
         sf::Text readyStatusText;   
         
         sf::Vector2f position;
+        int playerId = -1;
 
         void setup(sf::Font& font);
         void setContent(const RoomMember& member);
         void setEmpty();
         void draw(sf::RenderWindow& window);
+        
     };
 
     PlayerSlot slots_[4];
+    std::unordered_map<int, int> playerIdToSlot_;
     
     void setupSlotsLayout();
     void refreshSlotDisplay();
@@ -98,6 +104,24 @@ private:
     Button challengePopupOkBtn_;
 
 
+
+    // ==== Chat popup ====
+    bool chatPopupVisible_ = false;
+    sf::RectangleShape chatPopupBg_;
+    sf::Text chatTitleText_;
+    sf::Text chatInputText_;
+    sf::RectangleShape chatInputBox_;
+    std::string chatInputBuffer_;
+    Button btnChatSend_;
+    Button btnChatClose_;
+
+    struct ChatBubble {
+        uint32_t senderId;
+        std::string text;
+        float ttl;
+    };
+
+    std::vector<ChatBubble> chatBubbles_;
 
 
 };

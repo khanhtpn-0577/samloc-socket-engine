@@ -158,6 +158,12 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
                 needRespond = true;
                 break;
             
+            case MessageType:: CHAT_ROOM:
+                std::cout <<"[Server] Handling CHAT_ROOM\n";
+                chatHandler.handleRoomChat(incoming);
+                needRespond = false; 
+                break;
+            
             case MessageType::FRIEND_LIST_REQUEST:
                 std::cout <<"[Server] Handling FRIEND_LIST_REQUEST\n";
                 response = chatHandler.handleFriendListRequest(incoming);
