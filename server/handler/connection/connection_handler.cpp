@@ -160,7 +160,8 @@ void ConnectionHandler::processIncomingMessage(const Message& incoming) {
             
             case MessageType:: CHAT_ROOM:
                 std::cout <<"[Server] Handling CHAT_ROOM\n";
-                needRespond = true;
+                chatHandler.handleRoomChat(incoming);
+                needRespond = false; 
                 break;
             
             case MessageType::FRIEND_LIST_REQUEST:

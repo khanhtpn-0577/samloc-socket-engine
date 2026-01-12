@@ -9,6 +9,7 @@ enum class MessageType : uint16_t {
     CHAT_DIRECT = 0x0001,
     CHAT_ROOM = 0x0002,
     SERVER_DELIVER_MESSAGE = 0x0003,
+    S_ROOM_CHAT = 0x0004,
 
     JOIN_ROOM = 0x0010,
     PLAY_CARDS = 0x0020,

@@ -182,4 +182,25 @@ Message ChatHandler::handlePrivateChatHistoryRequest(
 }
 
 
+void ChatHandler::handleRoomChat(const Message& incomingMsg) {
+    uint32_t senderId = incomingMsg.header.senderId;
+
+    if (incomingMsg.payload.size() < sizeof(uint32_t)) {
+        std::cerr << "[CHAT_ROOM] Invalid payload\n";
+        return;
+    }
+
+    // payload layout:
+    // [roomId (4 bytes)][message content...]
+    uint32_t roomId;
+    std::memcpy(&roomId, incomingMsg.payload.data(), sizeof(uint32_t));
+    roomId = ntohl(roomId);
+
+    std::string message =
+        incomingMsg.payload.substr(sizeof(uint32_t));
+
+    chatLogic.handleRoomChat(senderId, roomId, message);
+}
+
+
 
