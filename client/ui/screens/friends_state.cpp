@@ -35,8 +35,8 @@ void FriendsState::onEnter() {
             DisplayPendingRequest displayReq;
             displayReq.senderId = req.first;
             displayReq.senderUsername = req.second.first;
-            //displayReq.senderDisplayName = req.second.second.first;
-            displayReq.senderUsername = displayReq.senderUsername
+            displayReq.senderDisplayName = displayReq.senderUsername;
+            //displayReq.senderUsername = displayReq.senderUsername;
             displayReq.timestamp = req.second.second.second;
             displayRequests_.push_back(displayReq);
         }

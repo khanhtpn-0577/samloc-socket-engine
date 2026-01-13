@@ -31,11 +31,8 @@ public:
         ValidationCallback callback = nullptr
     );
 
-<<<<<<< HEAD
     void getCurrentBalance(uint32_t userId);
-=======
     void setValidationCallback(ValidationCallback cb);
->>>>>>> 50ca5d8 (update auth validation checks)
 
     // Update identity (userId + token) for subsequent auth messages
     void updateIdentity(uint32_t newUserId, const std::string& newToken);
