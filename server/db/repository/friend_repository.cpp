@@ -227,9 +227,10 @@ FriendRepository::RemoveResult FriendRepository::removeFriend(uint32_t userId, u
 
     std::cout << "[FriendRepository] removeFriend - userId=" << userId << ", friendId=" << friendId << "\n";
 
+    // Delete both directions in a single statement to keep the friendship symmetric
     bool deleted = db.executePrepared(
-        "DELETE FROM friends WHERE player_id = ? AND friend_id = ?;",
-        {std::to_string(userId), std::to_string(friendId)}
+        "DELETE FROM friends WHERE (player_id = ? AND friend_id = ?) OR (player_id = ? AND friend_id = ?);",
+        {std::to_string(userId), std::to_string(friendId), std::to_string(friendId), std::to_string(userId)}
     );
 
     if (!deleted) {

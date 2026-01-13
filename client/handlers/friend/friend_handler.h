@@ -64,7 +64,7 @@ public:
     explicit FriendHandler(FriendLogic& logic);
 
     // === UI Action Methods (call FriendLogic) ===
-    void onSendFriendRequestClicked(uint32_t userId, const std::string& targetUsername);
+    void onSendFriendRequestClicked(uint32_t userId, const std::string& senderUsername, const std::string& targetUsername);
     void onAcceptRequestClicked(uint32_t userId, uint32_t senderId);
     void onDeclineRequestClicked(uint32_t userId, uint32_t senderId);
     void onRemoveFriendClicked(uint32_t userId, uint32_t friendId);

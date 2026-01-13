@@ -61,6 +61,18 @@ void FriendsState::onEnter() {
         std::cout << "[FriendsState] Friend list updated: " << displayFriends_.size() << " friends\n";
     });
 
+    friendHandler_->setRefreshPendingRequestsCallback([this]() {
+        if (friendHandler_) {
+            friendHandler_->onRequestPendingRequests(ctx_.session.userId());
+        }
+    });
+
+    friendHandler_->setRefreshFriendListCallback([this]() {
+        if (friendHandler_) {
+            friendHandler_->onRequestFriendList(ctx_.session.userId());
+        }
+    });
+
     // Background
     background_.setSize(sf::Vector2f(windowWidth, windowHeight));
     background_.setFillColor(sf::Color(40, 40, 40));
@@ -186,6 +198,14 @@ void FriendsState::onEnter() {
 
 void FriendsState::onExit() {
     std::cout << "[FriendsState] Exiting Friends screen\n";
+
+    if (friendHandler_) {
+        friendHandler_->setMessageCallback({});
+        friendHandler_->setPendingRequestsCallback({});
+        friendHandler_->setFriendListCallback({});
+        friendHandler_->setRefreshPendingRequestsCallback({});
+        friendHandler_->setRefreshFriendListCallback({});
+    }
 }
 
 void FriendsState::handleEvent(const sf::Event& event, const sf::Vector2f& mousePos) {
@@ -387,7 +407,7 @@ void FriendsState::onSendFriendRequestClicked() {
 
     std::cout << "[FriendsState] Sending friend request to: " << usernameInput_ << "\n";
     if (friendHandler_) {
-        friendHandler_->onSendFriendRequestClicked(ctx_.session.userId(), usernameInput_);
+        friendHandler_->onSendFriendRequestClicked(ctx_.session.userId(), ctx_.session.username(), usernameInput_);
     }
     usernameInput_ = "";
     usernameInputText_.setString("");

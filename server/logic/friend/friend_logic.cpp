@@ -23,6 +23,14 @@ SendFriendRequestResult FriendLogic::sendFriendRequest(uint32_t senderId, const 
         return result;
     }
 
+    // Validate user is not trying to add themselves
+    std::string senderUsername = repo.getUsernameById(senderId);
+    if (senderUsername == targetUsername) {
+        result.message = "Cannot add yourself as a friend";
+        std::cout << "[FriendLogic] Self-friend attempt by senderId=" << senderId << "\n";
+        return result;
+    }
+
     // Use repository to send request
     auto repoResult = repo.sendFriendRequest(senderId, targetUsername);
     result.success = repoResult.success;
