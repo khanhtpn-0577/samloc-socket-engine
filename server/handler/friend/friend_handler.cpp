@@ -70,6 +70,7 @@ std::string FriendHandler::buildFriendListPayload(const std::vector<FriendData>&
     for (size_t i = 0; i < friends.size(); i++) {
         ss << "{\"userId\":" << friends[i].userId
            << ",\"username\":\"" << friends[i].username
+              << "\",\"displayName\":\"" << friends[i].displayName
            << "\",\"balance\":" << std::fixed << std::setprecision(2) << friends[i].balance << "}";
         if (i < friends.size() - 1) ss << ",";
         

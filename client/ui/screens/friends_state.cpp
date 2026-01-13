@@ -35,7 +35,8 @@ void FriendsState::onEnter() {
             DisplayPendingRequest displayReq;
             displayReq.senderId = req.first;
             displayReq.senderUsername = req.second.first;
-            displayReq.senderDisplayName = req.second.second.first;
+            displayReq.senderDisplayName = displayReq.senderUsername;
+            //displayReq.senderUsername = displayReq.senderUsername;
             displayReq.timestamp = req.second.second.second;
             displayRequests_.push_back(displayReq);
         }
@@ -50,10 +51,26 @@ void FriendsState::onEnter() {
             displayFriend.userId = f.first;
             displayFriend.username = f.second.first;
             displayFriend.balance = f.second.second.first;
+            // displayFriend.userId = f.userId;
+            // displayFriend.username = f.username;
+            // displayFriend.displayName = f.displayName;
+            // displayFriend.balance = f.balance;
             displayFriends_.push_back(displayFriend);
         }
         redrawFriendList();
         std::cout << "[FriendsState] Friend list updated: " << displayFriends_.size() << " friends\n";
+    });
+
+    friendHandler_->setRefreshPendingRequestsCallback([this]() {
+        if (friendHandler_) {
+            friendHandler_->onRequestPendingRequests(ctx_.session.userId());
+        }
+    });
+
+    friendHandler_->setRefreshFriendListCallback([this]() {
+        if (friendHandler_) {
+            friendHandler_->onRequestFriendList(ctx_.session.userId());
+        }
     });
 
     // Background
@@ -88,7 +105,7 @@ void FriendsState::onEnter() {
 
     // Input bar (top 30% of right panel)
     float inputBarY = 60.0f;
-    inputBar_.setSize(sf::Vector2f(rightWidth - 20.0f, 90.0f));
+    inputBar_.setSize(sf::Vector2f(rightWidth - 20.0f, 130.0f));
     inputBar_.setPosition(rightX + 10.0f, inputBarY);
     inputBar_.setFillColor(sf::Color(60, 60, 60));
 
@@ -119,13 +136,13 @@ void FriendsState::onEnter() {
 
     // Message area (3 lines at top)
     messageText_.setFont(ctx_.font);
-    messageText_.setCharacterSize(14);
+    messageText_.setCharacterSize(16);
     messageText_.setFillColor(sf::Color::White);
-    messageText_.setPosition(rightX + 15.0f, 55.0f);
+    messageText_.setPosition(rightX + 15.0f, inputBarY + inputBar_.getSize().y + 10.0f);
     messageColor_ = sf::Color::White;
 
     // Pending requests area (bottom 70% of right panel)
-    float pendingY = inputBarY + 100.0f;
+    float pendingY = inputBarY + inputBar_.getSize().y + 60.0f;
     pendingRequestsArea_.setSize(sf::Vector2f(rightWidth - 20.0f, windowHeight - pendingY - 60.0f));
     pendingRequestsArea_.setPosition(rightX + 10.0f, pendingY);
     pendingRequestsArea_.setFillColor(sf::Color(60, 60, 60));
@@ -181,6 +198,14 @@ void FriendsState::onEnter() {
 
 void FriendsState::onExit() {
     std::cout << "[FriendsState] Exiting Friends screen\n";
+
+    if (friendHandler_) {
+        friendHandler_->setMessageCallback({});
+        friendHandler_->setPendingRequestsCallback({});
+        friendHandler_->setFriendListCallback({});
+        friendHandler_->setRefreshPendingRequestsCallback({});
+        friendHandler_->setRefreshFriendListCallback({});
+    }
 }
 
 void FriendsState::handleEvent(const sf::Event& event, const sf::Vector2f& mousePos) {
@@ -275,8 +300,9 @@ void FriendsState::draw(sf::RenderWindow& window) {
     for (const auto& friendInfo : displayFriends_) {
         // Friend info text
         std::stringstream ss;
+        std::string nameLabel = friendInfo.displayName.empty() ? friendInfo.username : friendInfo.displayName + " (" + friendInfo.username + ")";
         // Show full balance with cents preserved
-        ss << friendInfo.username << " - Balance: " << std::fixed << std::setprecision(2) << friendInfo.balance;
+        ss << nameLabel << " - Balance: " << std::fixed << std::setprecision(2) << friendInfo.balance;
         sf::Text friendText(ss.str(), ctx_.font, 12);
         friendText.setPosition(30.0f, friendItemY);
         friendText.setFillColor(sf::Color::White);
@@ -297,11 +323,6 @@ void FriendsState::draw(sf::RenderWindow& window) {
     // Draw right panel
     window.draw(rightPanel_);
 
-    // Draw message area
-    if (messageDisplayTime_ > 0) {
-        window.draw(messageText_);
-    }
-
     // Draw input bar
     window.draw(inputBar_);
     window.draw(inputBarTitleText_);
@@ -309,16 +330,21 @@ void FriendsState::draw(sf::RenderWindow& window) {
     window.draw(usernameInputText_);
     sendButton_.draw(window);
 
+    // Draw message area (under input bar)
+    if (messageDisplayTime_ > 0) {
+        window.draw(messageText_);
+    }
+
     // Draw pending requests area
     window.draw(pendingRequestsArea_);
     window.draw(pendingRequestsTitleText_);
 
-    float requestItemY = pendingRequestsArea_.getPosition().y + 35.0f;
+    float requestItemY = pendingRequestsArea_.getPosition().y + 20.0f;
     for (const auto& req : displayRequests_) {
         // Request info
         std::stringstream ss;
         ss << req.senderDisplayName << " (" << req.senderUsername << ") " << req.timestamp;
-        sf::Text requestText(ss.str(), ctx_.font, 11);
+        sf::Text requestText(ss.str(), ctx_.font, 13);
         requestText.setPosition(pendingRequestsArea_.getPosition().x + 15.0f, requestItemY);
         requestText.setFillColor(sf::Color::White);
         window.draw(requestText);
@@ -327,17 +353,21 @@ void FriendsState::draw(sf::RenderWindow& window) {
         window.draw(req.acceptButton);
         window.draw(req.declineButton);
 
-        sf::Text acceptText("✓", ctx_.font, 14);
-        acceptText.setFillColor(sf::Color::Green);
-        acceptText.setPosition(req.acceptButton.getPosition().x + 5.0f, req.acceptButton.getPosition().y + 2.0f);
+        sf::Text acceptText("Accept", ctx_.font, 12);
+        acceptText.setFillColor(sf::Color::White);
+        float ax = req.acceptButton.getPosition().x + (req.acceptButton.getSize().x - acceptText.getLocalBounds().width) / 2.0f;
+        float ay = req.acceptButton.getPosition().y + (req.acceptButton.getSize().y - acceptText.getCharacterSize()) / 2.0f - 2.0f;
+        acceptText.setPosition(ax, ay);
         window.draw(acceptText);
 
-        sf::Text declineText("✕", ctx_.font, 14);
-        declineText.setFillColor(sf::Color::Red);
-        declineText.setPosition(req.declineButton.getPosition().x + 6.0f, req.declineButton.getPosition().y + 2.0f);
+        sf::Text declineText("Decline", ctx_.font, 12);
+        declineText.setFillColor(sf::Color::White);
+        float dx = req.declineButton.getPosition().x + (req.declineButton.getSize().x - declineText.getLocalBounds().width) / 2.0f;
+        float dy = req.declineButton.getPosition().y + (req.declineButton.getSize().y - declineText.getCharacterSize()) / 2.0f - 2.0f;
+        declineText.setPosition(dx, dy);
         window.draw(declineText);
 
-        requestItemY += 35.0f;
+        requestItemY += req.acceptButton.getSize().y + 20.0f;
     }
 
     // Draw back button
@@ -354,7 +384,10 @@ void FriendsState::draw(sf::RenderWindow& window) {
         confirmDialogBackground_.setPosition(dialogX, dialogY);
         window.draw(confirmDialogBackground_);
 
-        confirmDialogText_.setPosition(dialogX + 20.0f, dialogY + 30.0f);
+        sf::FloatRect textBounds = confirmDialogText_.getLocalBounds();
+        confirmDialogText_.setOrigin(textBounds.left + textBounds.width / 2.0f,
+                         textBounds.top + textBounds.height / 2.0f);
+        confirmDialogText_.setPosition(dialogX + 200.0f, dialogY + 75.0f);
         window.draw(confirmDialogText_);
 
         confirmYesButton_.setPosition(sf::Vector2f(dialogX + 70.0f, dialogY + 100.0f));
@@ -374,7 +407,7 @@ void FriendsState::onSendFriendRequestClicked() {
 
     std::cout << "[FriendsState] Sending friend request to: " << usernameInput_ << "\n";
     if (friendHandler_) {
-        friendHandler_->onSendFriendRequestClicked(ctx_.session.userId(), usernameInput_);
+        friendHandler_->onSendFriendRequestClicked(ctx_.session.userId(), ctx_.session.username(), usernameInput_);
     }
     usernameInput_ = "";
     usernameInputText_.setString("");
@@ -385,7 +418,9 @@ void FriendsState::onRemoveFriendClicked(size_t friendIndex) {
 
     if (friendIndex < displayFriends_.size()) {
         selectedFriendForRemoval_ = friendIndex;
-        showRemovalConfirmation(displayFriends_[friendIndex].username);
+        const auto& friendInfo = displayFriends_[friendIndex];
+        std::string nameLabel = friendInfo.displayName.empty() ? friendInfo.username : friendInfo.displayName + " (" + friendInfo.username + ")";
+        showRemovalConfirmation(nameLabel);
     }
 }
 
@@ -459,13 +494,13 @@ void FriendsState::redrawPendingRequests() {
 
     for (auto& req : displayRequests_) {
         // Position accept button
-        req.acceptButton.setSize(sf::Vector2f(30.0f, 25.0f));
-        req.acceptButton.setPosition(rightX + rightWidth - 70.0f, requestY + 5.0f);
+        req.acceptButton.setSize(sf::Vector2f(60.0f, 25.0f));
+        req.acceptButton.setPosition(rightX + rightWidth - 140.0f, requestY + 5.0f);
         req.acceptButton.setFillColor(sf::Color::Green);
 
         // Position decline button
-        req.declineButton.setSize(sf::Vector2f(30.0f, 25.0f));
-        req.declineButton.setPosition(rightX + rightWidth - 35.0f, requestY + 5.0f);
+        req.declineButton.setSize(sf::Vector2f(60.0f, 25.0f));
+        req.declineButton.setPosition(rightX + rightWidth - 70.0f, requestY + 5.0f);
         req.declineButton.setFillColor(sf::Color::Red);
 
         requestY += 35.0f;
@@ -479,7 +514,7 @@ void FriendsState::showRemovalConfirmation(const std::string& friendUsername) {
 
     showConfirmationDialog_ = true;
     confirmationFriendName_ = friendUsername;
-    confirmDialogText_.setString("Are you sure you want to unfriend " + friendUsername + "?");
+    confirmDialogText_.setString("Are you sure you want to unfriend\n" + friendUsername + "?");
 }
 
 void FriendsState::closeRemovalConfirmation() {

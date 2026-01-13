@@ -44,10 +44,18 @@ struct FriendRemovedEvent {
     std::string message;
 };
 
+struct FriendListEntry {
+    uint32_t userId;
+    std::string username;
+    std::string displayName;
+    double balance;
+};
+
 struct FriendListReceivedEvent {
     std::vector<
         std::pair<uint32_t, std::pair<std::string, std::pair<double, bool>>>
     > friends;
+    //std::vector<FriendListEntry> friends;
 };
 
 
@@ -56,7 +64,7 @@ public:
     explicit FriendHandler(FriendLogic& logic);
 
     // === UI Action Methods (call FriendLogic) ===
-    void onSendFriendRequestClicked(uint32_t userId, const std::string& targetUsername);
+    void onSendFriendRequestClicked(uint32_t userId, const std::string& senderUsername, const std::string& targetUsername);
     void onAcceptRequestClicked(uint32_t userId, uint32_t senderId);
     void onDeclineRequestClicked(uint32_t userId, uint32_t senderId);
     void onRemoveFriendClicked(uint32_t userId, uint32_t friendId);
@@ -82,16 +90,23 @@ public:
             std::pair<uint32_t, std::pair<std::string, std::pair<double, bool>>>
         >& friends
     )>;
+    //using FriendListCallback = std::function<void(const std::vector<FriendListEntry>& friends)>;
+    //using FriendListCallback = std::function<void(const std::vector<FriendListEntry>& friends)>;
+    using RefreshCallback = std::function<void()>;
 
     void setMessageCallback(MessageCallback cb);
     void setPendingRequestsCallback(PendingRequestsCallback cb);
     void setFriendListCallback(FriendListCallback cb);
+    void setRefreshPendingRequestsCallback(RefreshCallback cb);
+    void setRefreshFriendListCallback(RefreshCallback cb);
 
 private:
     FriendLogic& logic_;
     MessageCallback messageCallback_;
     PendingRequestsCallback pendingRequestsCallback_;
     FriendListCallback friendListCallback_;
+    RefreshCallback refreshPendingRequestsCallback_;
+    RefreshCallback refreshFriendListCallback_;
 
     // Parse simple JSON-like payload
     std::string parseField(const std::string& payload, const std::string& key);

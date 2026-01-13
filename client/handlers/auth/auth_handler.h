@@ -52,6 +52,13 @@ public:
 
     void setLoginCallback(LoginCallback cb);
 
+    using LogoutCallback = std::function<void(
+        bool success,
+        const std::string& message
+    )>;
+
+    void setLogoutCallback(LogoutCallback cb);
+
 
 private:
     // Parse simple JSON-like payload
@@ -65,5 +72,6 @@ private:
 
     SignupCallback signupCallback_;
     LoginCallback loginCallback_;
+    LogoutCallback logoutCallback_;
 
 };

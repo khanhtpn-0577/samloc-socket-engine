@@ -17,9 +17,17 @@ SendFriendRequestResult FriendLogic::sendFriendRequest(uint32_t senderId, const 
         return result;
     }
 
-    if (targetUsername.length() > 30) {
+    if (targetUsername.length() > 40) {
         result.message = "Username too long";
         std::cout << "[FriendLogic] Username too long\n";
+        return result;
+    }
+
+    // Validate user is not trying to add themselves
+    std::string senderUsername = repo.getUsernameById(senderId);
+    if (senderUsername == targetUsername) {
+        result.message = "Cannot add yourself as a friend";
+        std::cout << "[FriendLogic] Self-friend attempt by senderId=" << senderId << "\n";
         return result;
     }
 

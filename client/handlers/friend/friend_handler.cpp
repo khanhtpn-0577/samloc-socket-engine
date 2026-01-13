@@ -7,8 +7,18 @@ FriendHandler::FriendHandler(FriendLogic& logic)
 
 // === UI Action Methods (call FriendLogic) ===
 
-void FriendHandler::onSendFriendRequestClicked(uint32_t userId, const std::string& targetUsername) {
-    std::cout << "[FriendHandler] onSendFriendRequestClicked: targetUsername=" << targetUsername << "\n";
+void FriendHandler::onSendFriendRequestClicked(uint32_t userId, const std::string& senderUsername, const std::string& targetUsername) {
+    std::cout << "[FriendHandler] onSendFriendRequestClicked: senderUsername=" << senderUsername << ", targetUsername=" << targetUsername << "\n";
+    
+    // Validate user is not trying to add themselves
+    if (senderUsername == targetUsername) {
+        std::cout << "[FriendHandler] Cannot add yourself as a friend\n";
+        if (messageCallback_) {
+            messageCallback_("Cannot add yourself as a friend", "red");
+        }
+        return;
+    }
+    
     logic_.handleSendFriendRequest(userId, targetUsername);
 }
 
@@ -124,6 +134,14 @@ void FriendHandler::setFriendListCallback(FriendListCallback cb) {
     friendListCallback_ = std::move(cb);
 }
 
+void FriendHandler::setRefreshPendingRequestsCallback(RefreshCallback cb) {
+    refreshPendingRequestsCallback_ = std::move(cb);
+}
+
+void FriendHandler::setRefreshFriendListCallback(RefreshCallback cb) {
+    refreshFriendListCallback_ = std::move(cb);
+}
+
 // === Respons handlers with callbacks ===
 void FriendHandler::onSendFriendRequestResponse(const Message& message) {
     std::cout << "[FriendHandler] onSendFriendRequestResponse\n";
@@ -210,6 +228,15 @@ void FriendHandler::onAcceptFriendRequestResponse(const Message& message) {
     if (messageCallback_) {
         messageCallback_(msg, success ? "green" : "red");
     }
+
+    if (success) {
+        if (refreshPendingRequestsCallback_) {
+            refreshPendingRequestsCallback_();
+        }
+        if (refreshFriendListCallback_) {
+            refreshFriendListCallback_();
+        }
+    }
 }
 
 void FriendHandler::onDeclineFriendRequestResponse(const Message& message) {
@@ -220,6 +247,10 @@ void FriendHandler::onDeclineFriendRequestResponse(const Message& message) {
 
     if (messageCallback_) {
         messageCallback_(msg, success ? "yellow" : "red");
+    }
+
+    if (success && refreshPendingRequestsCallback_) {
+        refreshPendingRequestsCallback_();
     }
 }
 
@@ -234,6 +265,10 @@ void FriendHandler::onRemoveFriendResponse(const Message& message) {
     if (messageCallback_) {
         messageCallback_(msg, success ? "green" : "red");
     }
+
+    if (success && refreshFriendListCallback_) {
+        refreshFriendListCallback_();
+    }
 }
 
 void FriendHandler::onFriendRequestReceivedNotification(const Message& message) {
@@ -246,6 +281,10 @@ void FriendHandler::onFriendRequestReceivedNotification(const Message& message) 
 
     if (messageCallback_) {
         messageCallback_(msg, "yellow");
+    }
+
+    if (refreshPendingRequestsCallback_) {
+        refreshPendingRequestsCallback_();
     }
 }
 
@@ -260,12 +299,17 @@ void FriendHandler::onFriendRequestAcceptedNotification(const Message& message) 
     if (messageCallback_) {
         messageCallback_(msg, "green");
     }
+
+    if (refreshFriendListCallback_) {
+        refreshFriendListCallback_();
+    }
 }
 
 void FriendHandler::onGetFriendListResponse(const Message& message) {
     std::cout << "[FriendHandler] onGetFriendListResponse\n";
 
     std::vector<std::pair<uint32_t, std::pair<std::string, std::pair<double, bool>>>> friends;
+    //std::vector<FriendListEntry> friends;
 
     // Parse the friends array
     size_t friendsPos = message.payload.find("\"friends\":");
@@ -303,6 +347,7 @@ void FriendHandler::onGetFriendListResponse(const Message& message) {
 
         uint32_t userId = parseUint32Field(objStr, "userId");
         std::string username = parseField(objStr, "username");
+        std::string displayName = parseField(objStr, "displayName");
         double balance = parseDoubleField(objStr, "balance");
         bool online = parseBoolField(objStr, "online");
 

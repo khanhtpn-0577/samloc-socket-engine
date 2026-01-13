@@ -3,6 +3,7 @@
 #include <string>
 #include <cstdint>
 #include <memory>
+#include <functional>
 #include "../../net/auth/auth_sender.h"
 
 /**
@@ -14,20 +15,29 @@ class AuthLogic {
 public:
     explicit AuthLogic(AuthSender& authSender);
 
+    using ValidationCallback = std::function<void(bool success, const std::string& message)>;
+
     // Signup validation and sending
     void onSignupSender(
         const std::string& username,
         const std::string& password,
-        const std::string& displayName
+        const std::string& displayName,
+        ValidationCallback callback = nullptr
     );
 
     void onLoginSender(
         const std::string& username,
-        const std::string& password
+        const std::string& password,
+        ValidationCallback callback = nullptr
     );
 
     void getCurrentBalance(uint32_t userId);
+    void setValidationCallback(ValidationCallback cb);
+
+    // Update identity (userId + token) for subsequent auth messages
+    void updateIdentity(uint32_t newUserId, const std::string& newToken);
 
 private:
     AuthSender& authSender;
+    ValidationCallback validationCallback_;
 };
