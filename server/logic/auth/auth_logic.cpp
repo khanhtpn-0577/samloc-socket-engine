@@ -1,4 +1,5 @@
 #include "auth_logic.h"
+#include "../../handler/session/session_manager.h"
 #include <openssl/sha.h>
 #include <openssl/rand.h>
 #include <sstream>
@@ -216,6 +217,13 @@ LoginResult AuthLogic::login(
     
     // Get user ID
     uint32_t userId = std::stoul(userResult[0]["player_id"]);
+    
+    // Check if user is already logged in (has an active session)
+    if (SessionManager::instance().get(userId) != nullptr) {
+        result.message = "Account is already logged in elsewhere. Please logout from other devices first.";
+        std::cout << "[AuthLogic] Login rejected: user " << userId << " is already logged in\n";
+        return result;
+    }
     
     // Generate session token
     std::string token = generateToken();
