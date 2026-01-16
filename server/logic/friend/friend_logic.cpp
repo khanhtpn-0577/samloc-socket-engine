@@ -31,6 +31,22 @@ SendFriendRequestResult FriendLogic::sendFriendRequest(uint32_t senderId, const 
         return result;
     }
 
+    // Get target user ID
+    uint32_t targetUserId = repo.getUserIdByUsername(targetUsername);
+    if (targetUserId == 0) {
+        result.message = "User not found";
+        std::cout << "[FriendLogic] Target user not found: " << targetUsername << "\n";
+        return result;
+    }
+
+    // Check if they are already friends
+    if (repo.areFriends(senderId, targetUserId)) {
+        result.message = "Already friends";
+        std::cout << "[FriendLogic] Users are already friends: senderId=" << senderId 
+                  << ", targetUserId=" << targetUserId << "\n";
+        return result;
+    }
+
     // Use repository to send request
     auto repoResult = repo.sendFriendRequest(senderId, targetUsername);
     result.success = repoResult.success;
