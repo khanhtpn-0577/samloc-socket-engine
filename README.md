@@ -1,112 +1,60 @@
-# Sam Lốc Socket Engine (C++ / SQLite / CMake)
+# Hướng dẫn build và chạy project SamLoc
 
-Dự án **Sam Lốc Socket Engine** là nền tảng backend cho trò chơi bài **Sâm Lốc** (và có thể mở rộng cho Mạt Chược).  
-Dự án được viết bằng **C++17**, sử dụng **SQLite** làm cơ sở dữ liệu cục bộ, và **CMake** để biên dịch độc lập trên mọi hệ điều hành.
+Tài liệu này hướng dẫn các bước biên dịch và chạy hệ thống game Sâm Lốc gồm 3 phần: khởi tạo cơ sở dữ liệu, server và client. Project sử dụng CMake, yêu cầu môi trường Linux hoặc macOS với trình biên dịch C++ đã được cài đặt.
 
-## Yêu cầu môi trường
+---
 
-### Cài đặt CMake
+## 1. Khởi tạo cơ sở dữ liệu
 
-1. Tải bản mới nhất tại trang chính thức:
-   [https://cmake.org/download/](https://cmake.org/download/)
+Từ thư mục root của project, thực hiện các lệnh sau:
 
-2. Các bước cài đặt:
-   - Chạy file cài đặt `.msi`
-   - Tại bước "Installation Options", chọn *Add CMake to system PATH for all users*
-
-3. Kiểm tra cài đặt:
-   - Mở lại VS Code hoặc Terminal
-   - Chạy lệnh kiểm tra:
-   ```bash
-   cmake --version
-   ```
-
-## Hướng dẫn chạy project
-
-### Build project bằng CMake
-
-1. Mở Terminal tại thư mục gốc (samloc-socket-engine/) và chạy:
-   ```bash
-   cmake -B build -S . -G "MinGW Makefiles"
-   cmake --build build
-   ```
-
-   Lệnh đầu tiên tạo cấu hình build trong thư mục build/,
-   lệnh thứ hai biên dịch toàn bộ mã nguồn.
-
-2. Nếu build thành công, sẽ xuất hiện file thực thi:
-   ```
-   build/samloc.exe
-   build/init_db.exe
-   ```
-
-3. Khởi tạo hoặc cập nhật database:
-   ```bash
-   ./build/init_db.exe
-   ```
-
-   Lệnh này sẽ tạo file `samloc.db` trong thư mục gốc project hoặc cập nhật nó
-   nếu đã tồn tại theo các migration scripts.
-
-### Chạy chương trình
-
-Chạy lệnh sau trong terminal (từ thư mục gốc):
 ```bash
-./build/samloc.exe
+cd server/db
+mkdir build
+cd build
+cmake ..
+make
+./init_db
 ```
 
-## Kiểm tra dữ liệu bằng DB Browser for SQLite
+Lệnh `init_db` sẽ tạo schema và dữ liệu mẫu cho cơ sở dữ liệu phục vụ server.
 
-### Cài đặt DB Browser
+---
 
-1. Tải bản mới nhất tại:
-   [https://sqlitebrowser.org](https://sqlitebrowser.org)
+## 2. Biên dịch và chạy Server
 
-2. Chọn phiên bản tương ứng với Windows (64-bit)
-
-3. Cài đặt như phần mềm bình thường
-
-### Sử dụng DB Browser
-
-1. Mở DB Browser for SQLite
-
-2. Nhấn "Open Database"
-
-3. Chọn file samloc.db trong thư mục gốc project
-
-4. Vào tab "Browse Data"
-
-5. Chọn bảng cần xem (ví dụ: players, rooms, game_results...)
-
-## Quản lý Database Migrations
-
-### Cấu trúc thư mục migrations
-
-Các migration scripts được lưu trữ trong thư mục `server/migrations/`:
-```
-server/migrations/
-├── 001_init_schema.sql
-├── 002_add_users_table.sql
-├── 003_add_game_sessions.sql
-└── ...
+Quay lại thư mục root, sau đó thực hiện:
+```bash
+cd server
+mkdir build
+cd build
+cmake ..
+make
+./samloc_server
 ```
 
-### Quy tắc Migration
+Server sẽ khởi chạy và lắng nghe kết nối client tại cổng mặc định được cấu hình trong mã nguồn.
 
-1. **Tạo migration mới**: Khi cần cập nhật database, tạo một file SQL mới với tên theo quy cách:
-   - Định dạng: `NNN_description.sql` (NNN là số thứ tự tăng dần)
-   - Ví dụ: `004_add_rankings_table.sql`
+---
 
-2. **Nội dung migration**: Viết các lệnh SQL để:
-   - Tạo bảng mới (CREATE TABLE)
-   - Thêm cột mới (ALTER TABLE ADD COLUMN)
-   - Cập nhật cấu trúc cơ sở dữ liệu
+## 3. Biên dịch và chạy Client
 
-3. **Áp dụng migration**: Sau khi tạo file migration mới, chạy lại:
-   ```bash
-   ./build/init_db.exe
-   ```
+Từ thư mục root, thực hiện:
 
-   Chương trình sẽ tự động phát hiện và thực thi các migration chưa được áp dụng.
+```bash
+cd client
+mkdir build
+cd build
+cmake ..
+make
+./samloc_client
+```
 
-4. **Kiểm tra kết quả**: Mở DB Browser for SQLite để xác nhận các thay đổi đã được áp dụng thành công.
+Sau khi client được khởi chạy, người dùng có thể đăng nhập và sử dụng các chức năng của game thông qua giao diện đồ họa.
+
+---
+
+## Ghi chú
+
+- Cần đảm bảo server đang chạy trước khi khởi động client.
+- Nếu thay đổi mã nguồn, cần chạy lại các bước `cmake` và `make` tương ứng.
