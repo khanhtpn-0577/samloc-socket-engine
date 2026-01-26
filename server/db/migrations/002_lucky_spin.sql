@@ -23,7 +23,7 @@ VALUES
 ('10k coin',     'coin',        10000,    20.0),
 ('20k coin',     'coin',        20000,    15.0),
 ('50k coin',     'coin',        50000,    10.0),
-('1 Extra Spin', 'extra_spin',  1,        10.0),
+('75k coin',     'coin',        75000,    10.0),
 ('100k coin',    'coin',        100000,   8.0),
 ('200k coin',    'coin',        200000,   5.0),
 ('1M coin',      'coin',        1000000,  2.0);
