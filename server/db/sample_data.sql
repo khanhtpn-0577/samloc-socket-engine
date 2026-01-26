@@ -1,6 +1,4 @@
--- ================================================================
--- 🎯 SAMPLE DATA for SamLoc Engine
--- ================================================================
+
 
 PRAGMA foreign_keys = ON;
 
@@ -14,22 +12,6 @@ INSERT INTO players (username, password, display_name, balance, status) VALUES
 ('player3', '123456', 'Cao Thủ 3', 5000000, 'OFFLINE'),
 ('player4', '123456', 'Gà Mờ 4', 5000000, 'OFFLINE');
 
-
--------------------------------------------------
--- 2. Friend Requests
--------------------------------------------------
-INSERT INTO friend_requests (sender_id, receiver_id, status)
-VALUES
-(1, 2, 'accepted'),
-(2, 3, 'pending');
-
--------------------------------------------------
--- 3. Friends (Alice - Bob)
--------------------------------------------------
-INSERT INTO friends (player_id, friend_id)
-VALUES
-(1, 2),
-(2, 1);
 
 -------------------------------------------------
 -- 4. Rooms
@@ -47,31 +29,6 @@ INSERT INTO rooms (room_code, room_name, room_type, bet_amount, is_private, stat
 (2003, 'Đếm Lá Cao Cấp', 'dem_la', 5000, 0, 'waiting', 4, 0, 1),
 (2004, 'Đếm Lá Sinh Tử', 'dem_la', 5000, 0, 'waiting', 4, 0, 1);
 
--------------------------------------------------
--- 5. Room Players
--------------------------------------------------
-INSERT INTO room_players (room_id, player_id, position)
-VALUES
-(1, 1, 1),
-(1, 2, 2),
-(2, 3, 1),
-(2, 4, 2);
-
--------------------------------------------------
--- 6. Games
--------------------------------------------------
-INSERT INTO games (room_id, game_type, start_time, end_time, winner_id, status)
-VALUES
-(1, 'sam_loc', datetime('now', '-5 minutes'), datetime('now'), 1, 'finished'),
-(2, 'mat_chuoc', datetime('now', '-2 minutes'), NULL, NULL, 'playing');
-
--------------------------------------------------
--- 7. Game Results
--------------------------------------------------
-INSERT INTO game_results (game_id, player_id, ranking, card_left_count, reward)
-VALUES
-(1, 1, 1, 0, 300),
-(1, 2, 2, 5, -100);
 
 -------------------------------------------------
 -- 8. Penalties
@@ -83,21 +40,6 @@ INSERT INTO penalties (description) VALUES
 ('Chặt Chồng'),
 ('Thối Tứ Quý');
 
--------------------------------------------------
--- 9. Chats
--------------------------------------------------
-INSERT INTO chats (room_id, sender_id, message)
-VALUES
-(1, 1, 'Chơi vui nhé!'),
-(1, 2, 'Ok luôn!');
-
--------------------------------------------------
--- 10. Game Moves
--------------------------------------------------
-INSERT INTO game_moves (user_id, game_id, card_played, move_type)
-VALUES
-(1, 1, '{"cards": ["A♠", "A♥"]}', 'play'),
-(2, 1, '{"cards": []}', 'pass');
 
 -------------------------------------------------
 -- 11. Cards

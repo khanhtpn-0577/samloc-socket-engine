@@ -53,11 +53,11 @@ int main(int, char*[]) {
         return 1;
     }
 
-    // // Bước 4: Load Sample Data (Bật lên nếu cần test)
-    // std::cout << "Nap du lieu mau...\n";
-    // if (!db.loadSampleDataFromFile(sampleDataPath)) {
-    //     std::cerr << "[WARN] Khong load duoc sample data.\n";
-    // }
+    // Bước 4: Load Sample Data (Bật lên nếu cần test)
+    std::cout << "Nap du lieu mau...\n";
+    if (!db.loadSampleDataFromFile(sampleDataPath)) {
+        std::cerr << "[WARN] Khong load duoc sample data.\n";
+    }
 
     std::cout << "\n=== [SUCCESS] DB INIT HOAN TAT ===\n";
     return 0;
